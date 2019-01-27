@@ -43,7 +43,9 @@ public class Scores {
 
     private CrudConnectionThreadPool pool;
 
-    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd"){{
+
+    public static final String YYYY_MM_DD = "yyyy-MM-dd";
+    private SimpleDateFormat formatter = new SimpleDateFormat(YYYY_MM_DD){{
         setTimeZone(TimeZone.getTimeZone("Europe/Kiev"));
     }};
 
@@ -65,12 +67,10 @@ public class Scores {
         pool.update("INSERT INTO scores " +
                         "(day, time, email, score) " +
                         "VALUES (?,?,?,?);",
-                new Object[]{
-                        formatter.format(date),
-                        JDBCTimeUtils.toString(date),
-                        email,
-                        score
-                });
+                formatter.format(date),
+                JDBCTimeUtils.toString(date),
+                email,
+                score);
     }
 
     public void saveScores(long time, List<PlayerInfo> playersInfos) {
@@ -108,9 +108,9 @@ public class Scores {
         );
     }
 
-    public void deleteByName(String name) {
-        pool.update("DELETE FROM scores WHERE name = ?;",
-                new Object[]{name});
+    public void deleteByName(String email) {
+        pool.update("DELETE FROM scores WHERE email = ?;",
+                email);
     }
 
     public List<String> getDays() {
@@ -126,8 +126,8 @@ public class Scores {
     }
 
     public void deleteByDay(String day) {
-        pool.update("DELETE FROM scores WHERE c = ?;",
-                new Object[]{day});
+        pool.update("DELETE FROM scores WHERE day = ?;",
+                day);
     }
 
     public long getLastTime(long time) {
@@ -149,10 +149,6 @@ public class Scores {
     private boolean isPast(String day, long lastTime) {
         Date date = getDate(getDay(lastTime));
         Date last = getDate(day);
-        if (last == null) {
-            return true;
-        }
-
         return last.before(date);
     }
 
@@ -160,7 +156,7 @@ public class Scores {
         try {
             return formatter.parse(day);
         } catch (ParseException e) {
-            return null;
+            throw new RuntimeException("Unexpected day format, should be: " + YYYY_MM_DD, e);
         }
     }
 }
