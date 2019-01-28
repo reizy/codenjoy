@@ -261,6 +261,10 @@ public class Dispatcher {
     }
 
     public List<PlayerScore> getScores(String day) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("getScores for {}, currentScores = {}", day, currentScores);
+        }
+
         List<PlayerScore> cached = currentScores.get(day);
         if (cached != null) {
             return cached;
