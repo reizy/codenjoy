@@ -31,28 +31,48 @@ var result = function(partOfId, data) {
 }
 
 var server = function(name) {
-    return $('#' + name + '-server').val().replace('THIS_SERVER', window.location.host)
+    return $('#' + name + '-server').val();
 }
 
 var _ajax = function(name, ajaxObject) {
+    var tryAfter = function(data) {
+        if (!!ajaxObject.after) {
+            ajaxObject.after(data);
+        }
+    }
+
     if (!ajaxObject.success) {
         ajaxObject.success = function(data) {
             result(name, data);
+            tryAfter(data);
         };
+    } else {
+        var old = ajaxObject.success;
+        ajaxObject.success = function(data) {
+            old(data);
+            tryAfter(data);
+        }
     }
 
     if (!ajaxObject.error) {
         ajaxObject.error = function(data) {
             error(name, data);
+            tryAfter(data);
         };
+    } else {
+        var old = ajaxObject.error;
+        ajaxObject.error = function(data) {
+            old(data);
+            tryAfter(data);
+        }
     }
 
     ajaxObject.dataType = 'json';
     ajaxObject.async = false;
 
     $('#' + name + '-request').val(
-        "[" + ajaxObject.type + "] " + ajaxObject.url +
-        ((!!ajaxObject.data) ? (" > " + ajaxObject.data) : "")
+        '[' + ajaxObject.type + '] ' + ajaxObject.url +
+        ((!!ajaxObject.data) ? (' > \n' + ajaxObject.data) : '')
     );
 
     $.ajax(ajaxObject);
@@ -72,7 +92,13 @@ var registerUser = function(email, firstName,
             '"password" : "' + password + '", ' +
             '"city" : "' + city + '", ' +
             '"skills" : "' + skills + '", ' +
-            '"comment" : "' + comment + '"}'
+            '"comment" : "' + comment + '"}',
+        after: function(){
+            var old = $('#preffix').val();
+            var index = parseInt(old.match(/\d+/g)[0]);
+            var aNew = old.replace('' + index, '' + (index + 1));
+            $('#preffix').val(aNew);
+        }
     });
 };
 
@@ -135,7 +161,7 @@ var getDebug = function(adminPassword) {
         type: 'GET',
         url: server('balancer') + '/debug/get/' + adminPassword,
         success: function(data) {
-            $('#debug-result').attr("checked", data);
+            $('#debug-result').attr('checked', data);
         }
     });
 };
@@ -145,7 +171,8 @@ var setDebug = function(enabled, adminPassword) {
         type: 'GET',
         url: server('balancer') + '/debug/set/' + enabled + '/' + adminPassword,
         success: function(data) {
-            $('#debug-result').attr("checked", data);
+            $('#debug-result').attr('checked', data);
+            $('#debug-error').val('');
         }
     });
 };
@@ -155,7 +182,7 @@ var getContest = function(adminPassword) {
         type: 'GET',
         url: server('balancer') + '/contest/enable/get/' + adminPassword,
         success: function(data) {
-            $('#contest-result').attr("checked", data);
+            $('#contest-result').attr('checked', data);
         }
     });
 };
@@ -166,12 +193,28 @@ var setContest = function(enabled, adminPassword) {
         url: server('balancer') + '/contest/enable/set/' + enabled + '/' + adminPassword,
         success: function(data) {
             $('#contest-result-data').val(JSON.stringify(data));
+            $('#contest-error').val('');
+
             getContest($.md5($('#admin-password').val()));
+        },
+        error: function(data) {
+            $('#contest-result-data').val('');
+            $('#contest-error').val(JSON.stringify(data));
         }
     });
 };
 
 $(document).ready(function() {
+    var balancerHost = window.location.host;
+    var gameHost = 'game1.' + window.location.host;
+    if (window.location.hostname == '127.0.0.1') {
+        gameHost = '127.0.0.1:8080';
+    }
+    $('#balancer-server').val(window.location.protocol + '//' + balancerHost + $('#balancer-server').val());
+    $('#game-server').val(window.location.protocol + '//' + gameHost + $('#game-server').val());
+
+    $('#scores-day').val(new Date().toISOString().split('T')[0]);
+
     $('#register').click(function() {
         var preffix = $('#preffix').val();
         registerUser(
