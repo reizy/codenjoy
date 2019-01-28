@@ -261,16 +261,16 @@ public class Dispatcher {
     }
 
     public List<PlayerScore> getScores(String day) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("getScores for {}, currentScores = {}", day, currentScores);
-        }
-
         List<PlayerScore> cached = currentScores.get(day);
         if (cached != null) {
             return cached;
         }
 
         List<PlayerScore> result = scores.getScores(day, lastTime);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("scores.getScores(day, lastTime) {} {}", lastTime, result);
+        }
 
         List<String> emails = result.stream()
                 .map(score -> score.getId())
