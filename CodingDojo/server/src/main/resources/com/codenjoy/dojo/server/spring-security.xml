@@ -47,6 +47,8 @@
                     connect-src 'self' ws:;
                     font-src 'self';
                     style-src 'self' 'unsafe-inline';"/>
+            <header name="Access-Control-Allow-Origin"
+                    value="https://epam-bot-challenge.com.ua"/>
             <xss-protection enabled="true" block="false"/>
             <cache-control/>
         </headers>
