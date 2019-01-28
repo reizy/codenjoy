@@ -268,10 +268,6 @@ public class Dispatcher {
 
         List<PlayerScore> result = scores.getScores(day, lastTime);
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("scores.getScores(day, lastTime) {} {}", lastTime, result);
-        }
-
         List<String> emails = result.stream()
                 .map(score -> score.getId())
                 .collect(toList());
