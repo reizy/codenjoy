@@ -44,7 +44,7 @@ import java.util.TimeZone;
 public class Scores {
 
     private CrudConnectionThreadPool pool;
-    @Autowired private ConfigProperties properties;
+    @Autowired protected ConfigProperties properties;
 
 
     public static final String YYYY_MM_DD = "yyyy-MM-dd";
