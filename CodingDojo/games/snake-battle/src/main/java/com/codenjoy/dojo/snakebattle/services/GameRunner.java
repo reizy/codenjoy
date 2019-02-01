@@ -48,12 +48,20 @@ public class GameRunner extends AbstractGameType implements GameType {
     private final Parameter<Integer> timeBeforeStart;
     private final Parameter<Integer> roundsPerMatch;
     private final Parameter<Integer> playersPerRoom;
+    private final Parameter<Integer> flyingCount;
+    private final Parameter<Integer> furyCount;
+    private final Parameter<Integer> stoneReducedValue;
+    private final Parameter<Integer> timePerRound;
 
     public GameRunner() {
         new Scores(0, settings);
+        timePerRound = settings.addEditBox("Time per Round").type(Integer.class).def(300);
         timeBeforeStart = settings.addEditBox("Time before start Round").type(Integer.class).def(5);
         roundsPerMatch = settings.addEditBox("Rounds per Match").type(Integer.class).def(1);
-        playersPerRoom = settings.addEditBox("Players per Room").type(Integer.class).def(10);
+        playersPerRoom = settings.addEditBox("Players per Room").type(Integer.class).def(5);
+        flyingCount = settings.addEditBox("Flying count").type(Integer.class).def(10);
+        furyCount = settings.addEditBox("Fury count").type(Integer.class).def(10);
+        stoneReducedValue = settings.addEditBox("Stone reduced value").type(Integer.class).def(3);
         level = new LevelImpl(getMap());
     }
 
@@ -91,7 +99,13 @@ public class GameRunner extends AbstractGameType implements GameType {
     }
 
     public GameField createGame(int levelNumber) {
-        return new SnakeBoard(level, getDice(), new Timer(timeBeforeStart), roundsPerMatch);
+        return new SnakeBoard(level, getDice(),
+                new Timer(timeBeforeStart),
+                new Timer(timePerRound),
+                roundsPerMatch,
+                flyingCount,
+                furyCount,
+                stoneReducedValue);
     }
 
     @Override
@@ -116,7 +130,7 @@ public class GameRunner extends AbstractGameType implements GameType {
 
     @Override
     public Class<? extends Solver> getAI() {
-        return DummyAISolver.class;
+        return AISolver.class;
     }
 
     @Override

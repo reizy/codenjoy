@@ -43,7 +43,7 @@ public class Player extends GamePlayer<Hero, Field> {
     public void start(int round) {
         event(Events.START);
         printMessage("Round " + round);
-        hero.setReady(true);
+        hero.setActive(true);
     }
 
     public Hero getHero() {
@@ -67,10 +67,6 @@ public class Player extends GamePlayer<Hero, Field> {
 
     public boolean isActive() {
         return hero != null && hero.isActive();
-    }
-
-    public boolean isReady() {
-        return hero != null && hero.isReady();
     }
 
     @Override

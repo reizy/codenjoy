@@ -23,7 +23,6 @@ package com.codenjoy.dojo.snakebattle.model;
  */
 
 
-import com.codenjoy.dojo.services.CustomMessage;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.EventListener;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
@@ -37,6 +36,7 @@ import com.codenjoy.dojo.snakebattle.services.Events;
 import com.codenjoy.dojo.utils.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -72,7 +72,11 @@ public class SnakeMultiplayerTest {
         LevelImpl level = new LevelImpl(board);
         game = new SnakeBoard(level, dice,
                 new Timer(timer),
-                roundsPerMatch);
+                new Timer(new SimpleParameter<>(300)),
+                roundsPerMatch,
+                new SimpleParameter<>(10),
+                new SimpleParameter<>(10),
+                new SimpleParameter<>(3));
 
         Hero hero = level.getHero();
         hero.setActive(true);
@@ -179,6 +183,9 @@ public class SnakeMultiplayerTest {
         enemy.up();
         game.tick();
 
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[DIE]");
+
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼  ╓  ☼" +
@@ -194,8 +201,6 @@ public class SnakeMultiplayerTest {
                 "☼  ╙  ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
-
-        verify(heroEvents).event(Events.DIE);
 
         game.tick();
 
@@ -249,6 +254,9 @@ public class SnakeMultiplayerTest {
         enemy.up();
         game.tick();
 
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[EAT[2], WIN]");
+
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼    ╓☼" +
@@ -265,8 +273,6 @@ public class SnakeMultiplayerTest {
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
 
-        verify(heroEvents).event(Events.DIE);
-        verify(enemyEvents).event(Events.WIN);
         game.tick();
 
         assertH("☼☼☼☼☼☼☼" +
@@ -329,7 +335,7 @@ public class SnakeMultiplayerTest {
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼ ╘☻► ☼" +
+                "☼ ╘☺☻ ☼" +
                 "☼  ¤  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -337,19 +343,19 @@ public class SnakeMultiplayerTest {
 
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼ ×☺> ☼" +
+                "☼ ×☻☺ ☼" +
                 "☼  ╙  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
 
-        verify(heroEvents).event(Events.WIN);
-        verify(enemyEvents).event(Events.DIE);
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[DIE]");
         game.tick();
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼  ╘═►☼" +
+                "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -357,7 +363,7 @@ public class SnakeMultiplayerTest {
 
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼  ×─>☼" +
+                "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -398,7 +404,7 @@ public class SnakeMultiplayerTest {
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼  ╓  ☼" +
-                "☼ ×☻> ☼" +
+                "☼ ×☻☺ ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -406,20 +412,20 @@ public class SnakeMultiplayerTest {
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼  æ  ☼" +
-                "☼ ╘☺► ☼" +
+                "☼ ╘☺☻ ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
 
-        verify(heroEvents).event(Events.DIE);
-        verify(enemyEvents).event(Events.WIN);
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[DIE]");
 
         game.tick();
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼     ☼" +
-                "☼  ×─>☼" +
+                "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -427,7 +433,7 @@ public class SnakeMultiplayerTest {
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼     ☼" +
-                "☼  ╘═►☼" +
+                "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -437,9 +443,88 @@ public class SnakeMultiplayerTest {
     @Test
     public void shouldDie_whenTailCrashToOtherSnake_enemyDie() {
         // когда в игрока врезается противник
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼ ╘═►  ☼" +
+                "☼×─>   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼ ╘═►  ☼" +
+                "☼×─>   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼ ×─>  ☼" +
+                "☼╘═►   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        enemy.up();
+        game.tick();
+
+        verifyEvents(heroEvents, "[EAT[3], WIN]");
+        verifyEvents(enemyEvents, "[DIE]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ☺═► ☼" +
+                "☼ ×┘   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ☻─> ☼" +
+                "☼ ╘╝   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼   ╘═►☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼   ×─>☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
+    // а если лобовое столкновение
+    @Test
+    public void shouldDie_whenTailCrashToOtherSnake_bothDie() {
+        // когда в игрока врезается противник
         givenFl("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼ ╘►  ☼" +
+                "☼╘═►  ☼" +
                 "☼×─>  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -447,7 +532,7 @@ public class SnakeMultiplayerTest {
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼ ╘►  ☼" +
+                "☼╘═►  ☼" +
                 "☼×─>  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -455,7 +540,7 @@ public class SnakeMultiplayerTest {
 
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼ ×>  ☼" +
+                "☼×─>  ☼" +
                 "☼╘═►  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -464,12 +549,12 @@ public class SnakeMultiplayerTest {
         enemy.up();
         game.tick();
 
-        verify(heroEvents).event(Events.WIN);
-        verify(enemyEvents).event(Events.DIE);
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[DIE]");
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼  ☻► ☼" +
+                "☼ ╘☺☻ ☼" +
                 "☼ ×┘  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -477,7 +562,7 @@ public class SnakeMultiplayerTest {
 
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼  ☺> ☼" +
+                "☼ ×☻☺ ☼" +
                 "☼ ╘╝  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -487,7 +572,7 @@ public class SnakeMultiplayerTest {
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼   ╘►☼" +
+                "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -495,7 +580,7 @@ public class SnakeMultiplayerTest {
 
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼   ×>☼" +
+                "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
@@ -503,29 +588,103 @@ public class SnakeMultiplayerTest {
     }
 
     // такой же тест, но врезается игрок в противника
-    // (последовательность героев в списке может оказывать значение на результат)
     @Test
     public void shouldDie_whenTailCrashToOtherSnake_heroDie() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼ ×─>  ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼ ×─>  ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼×─>   ☼" +
+                "☼ ╘═►  ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        hero.down();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼ ╘╗   ☼" +
+                "☼  ☻─> ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼ ×┐   ☼" +
+                "☼  ☺═► ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[EAT[3], WIN]");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼   ×─>☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼   ╘═►☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    // а тут лобовое столкновение
+    @Test
+    public void shouldDie_whenTailCrashToOtherSnake_bothDie2() {
         givenFl("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼ ╘►  ☼" +
-                "☼ ×>  ☼" +
+                "☼╘═►  ☼" +
+                "☼×─>  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼ ╘►  ☼" +
-                "☼ ×>  ☼" +
+                "☼╘═►  ☼" +
+                "☼×─>  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
 
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼ ×>  ☼" +
-                "☼ ╘►  ☼" +
+                "☼×─>  ☼" +
+                "☼╘═►  ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -533,31 +692,31 @@ public class SnakeMultiplayerTest {
         hero.down();
         game.tick();
 
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[DIE]");
+
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼  ╓  ☼" +
-                "☼  ☻> ☼" +
+                "☼ ╘╗  ☼" +
+                "☼ ×☻☺ ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
 
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
-                "☼  æ  ☼" +
-                "☼  ☺► ☼" +
+                "☼ ×┐  ☼" +
+                "☼ ╘☺☻ ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
-
-        verify(heroEvents).event(Events.DIE);
-        verify(enemyEvents).event(Events.WIN);
 
         game.tick();
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼     ☼" +
-                "☼   ×>☼" +
+                "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -565,7 +724,7 @@ public class SnakeMultiplayerTest {
         assertE("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼     ☼" +
-                "☼   ╘►☼" +
+                "☼     ☼" +
                 "☼     ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -676,6 +835,9 @@ public class SnakeMultiplayerTest {
 
         game.tick();
         game.tick();
+
+        verifyEvents(enemyEvents, "[APPLE, APPLE]");
+
         hero.down();
         enemy.up();
         game.tick();
@@ -688,6 +850,9 @@ public class SnakeMultiplayerTest {
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
 
+        verifyEvents(heroEvents, "[EAT[4], WIN]");
+        verifyEvents(enemyEvents, "[DIE]");
+
         game.tick();
 
         assertH("☼☼☼☼☼☼☼" +
@@ -697,6 +862,9 @@ public class SnakeMultiplayerTest {
                 "☼    ♥☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
     }
 
     // в случае ярости, можно откусить кусок змейки соперника
@@ -712,10 +880,10 @@ public class SnakeMultiplayerTest {
                 "☼☼☼☼☼☼☼");
 
         game.tick();
-        verify(heroEvents).event(Events.APPLE);
+        verifyEvents(heroEvents, "[APPLE]");
         enemy.up();
         game.tick();
-        verify(heroEvents, times(2)).event(Events.APPLE);
+        verifyEvents(heroEvents, "[APPLE]");
         game.tick();
 
         assertH("☼☼☼☼☼☼☼" +
@@ -794,8 +962,8 @@ public class SnakeMultiplayerTest {
 
         game.tick();
 
-        verify(enemyEvents).event(Events.DIE);
-        verify(heroEvents).event(Events.WIN);
+        verifyEvents(enemyEvents, "[DIE]");
+        verifyEvents(heroEvents, "[WIN]");
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
@@ -852,26 +1020,23 @@ public class SnakeMultiplayerTest {
         // ждем 4 тика
         game.tick();
 
-        verify(heroEvents).event(new CustomMessage("...3..."));
-        verify(enemyEvents).event(new CustomMessage("...3..."));
+        verifyEvents(heroEvents, "[[...3...]]");
+        verifyEvents(enemyEvents, "[[...3...]]");
 
         game.tick();
 
-        verify(heroEvents).event(new CustomMessage("..2.."));
-        verify(enemyEvents).event(new CustomMessage("..2.."));
+        verifyEvents(heroEvents, "[[..2..]]");
+        verifyEvents(enemyEvents, "[[..2..]]");
 
         game.tick();
 
-        verify(heroEvents).event(new CustomMessage(".1."));
-        verify(enemyEvents).event(new CustomMessage(".1."));
+        verifyEvents(heroEvents, "[[.1.]]");
+        verifyEvents(enemyEvents, "[[.1.]]");
 
         game.tick();
 
-        verify(heroEvents).event(Events.START);
-        verify(enemyEvents).event(Events.START);
-
-        verify(heroEvents).event(new CustomMessage("Round 1"));
-        verify(enemyEvents).event(new CustomMessage("Round 1"));
+        verifyEvents(heroEvents, "[START, [Round 1]]");
+        verifyEvents(enemyEvents, "[START, [Round 1]]");
 
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
@@ -942,13 +1107,8 @@ public class SnakeMultiplayerTest {
         assertEquals(true, enemyPlayer.isAlive());
         assertEquals(true, enemyPlayer.isActive());
 
-        verify(heroEvents).event(Events.START);
-        verify(enemyEvents).event(Events.START);
-
-        verify(heroEvents).event(new CustomMessage("Round 1"));
-        verify(enemyEvents).event(new CustomMessage("Round 1"));
-        verifyNoMoreInteractions(heroEvents, enemyEvents);
-        reset(heroEvents, enemyEvents);
+        verifyEvents(heroEvents, "[START, [Round 1]]");
+        verifyEvents(enemyEvents, "[START, [Round 1]]");
 
         assertH("☼☼☼☼☼☼☼☼" +
                 "☼☼     ☼" +
@@ -970,8 +1130,8 @@ public class SnakeMultiplayerTest {
                 "☼☼     ☼" +
                 "☼☼☼☼☼☼☼☼");
 
-        verify(heroEvents).event(Events.DIE);
-        verify(enemyEvents).event(Events.WIN);
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[WIN]");
         verifyNoMoreInteractions(heroEvents, enemyEvents);
         reset(heroEvents, enemyEvents);
 
@@ -1010,20 +1170,16 @@ public class SnakeMultiplayerTest {
         game.tick();
 
         assertEquals(true, heroPlayer.isAlive());
-        assertEquals(false, heroPlayer.isActive());
+        assertEquals(true, heroPlayer.isActive());
 
         assertEquals(true, enemyPlayer.isAlive());
-        assertEquals(false, enemyPlayer.isActive());
+        assertEquals(true, enemyPlayer.isActive());
 
-        verify(heroEvents).event(Events.START);
-        verify(enemyEvents).event(Events.START);
+        verifyEvents(heroEvents, "[START, [Round 2]]");
+        verifyEvents(enemyEvents, "[START, [Round 2]]");
 
-        verify(heroEvents).event(new CustomMessage("Round 2"));
-        verify(enemyEvents).event(new CustomMessage("Round 2"));
-        verifyNoMoreInteractions(heroEvents, enemyEvents);
-        reset(heroEvents, enemyEvents);
-
-        readyGo();
+        assertEquals(true, heroPlayer.isActive());
+        assertEquals(true, enemyPlayer.isActive());
 
         assertH("☼☼☼☼☼☼☼☼" +
                 "☼☼     ☼" +
@@ -1050,8 +1206,8 @@ public class SnakeMultiplayerTest {
                 "☼☼     ☼" +
                 "☼☼☼☼☼☼☼☼");
 
-        verify(heroEvents).event(Events.DIE);
-        verify(enemyEvents).event(Events.DIE);
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[DIE]");
         verifyNoMoreInteractions(heroEvents, enemyEvents);
         reset(heroEvents, enemyEvents);
 
@@ -1085,35 +1241,16 @@ public class SnakeMultiplayerTest {
         game.tick();
 
         assertEquals(true, heroPlayer.isAlive());
-        assertEquals(false, heroPlayer.isActive());
+        assertEquals(true, heroPlayer.isActive());
 
         assertEquals(true, enemyPlayer.isAlive());
-        assertEquals(false, enemyPlayer.isActive());
+        assertEquals(true, enemyPlayer.isActive());
 
-        verify(heroEvents).event(Events.START);
-        verify(enemyEvents).event(Events.START);
+        verifyEvents(heroEvents, "[START, [Round 3]]");
+        verifyEvents(enemyEvents, "[START, [Round 3]]");
 
-        verify(heroEvents).event(new CustomMessage("Round 3"));
-        verify(enemyEvents).event(new CustomMessage("Round 3"));
-        verifyNoMoreInteractions(heroEvents, enemyEvents);
-        reset(heroEvents, enemyEvents);
-
-        // пока змейку не мувнут, они не двигаются
-        game.tick();
-        game.tick();
-        game.tick();
-        game.tick();
-
-        assertH("☼☼☼☼☼☼☼☼" +
-                "☼☼     ☼" +
-                "☼☼     ☼" +
-                "~&     ☼" +
-                "*ø     ☼" +
-                "☼☼     ☼" +
-                "☼☼     ☼" +
-                "☼☼☼☼☼☼☼☼");
-
-        readyGo();
+        assertEquals(true, heroPlayer.isActive());
+        assertEquals(true, enemyPlayer.isActive());
 
         assertH("☼☼☼☼☼☼☼☼" +
                 "☼☼     ☼" +
@@ -1162,8 +1299,8 @@ public class SnakeMultiplayerTest {
                 "☼☼     ☼" +
                 "☼☼☼☼☼☼☼☼");
 
-        verify(heroEvents).event(Events.DIE);
-        verify(enemyEvents).event(Events.DIE);
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[DIE]");
         verifyNoMoreInteractions(heroEvents, enemyEvents);
         reset(heroEvents, enemyEvents);
 
@@ -1176,17 +1313,6 @@ public class SnakeMultiplayerTest {
         game.remove(heroPlayer);  // это делает автоматом фреймворк потому что heroPlayer.shouldLeave()
         game.remove(enemyPlayer); // это делает автоматом фреймворк потому что enemyPlayer.shouldLeave()
 
-    }
-
-    private void readyGo() {
-        assertEquals(false, heroPlayer.isActive());
-        assertEquals(false, enemyPlayer.isActive());
-        heroPlayer.getHero().act(); // первое движение змейки заставляет ее начинать движение
-        assertEquals(true, heroPlayer.isActive());
-        assertEquals(false, enemyPlayer.isActive());
-        enemyPlayer.getHero().act(); // первое движение змейки заставляет ее начинать движение
-        assertEquals(true, heroPlayer.isActive());
-        assertEquals(true, enemyPlayer.isActive());
     }
 
     // Змейка с одной только головой не живет
@@ -1223,10 +1349,13 @@ public class SnakeMultiplayerTest {
         game.tick();
         game.tick();
 
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[EAT[3], WIN]");
+
         assertH("☼☼☼☼☼☼☼☼" +
                 "☼      ☼" +
                 "☼      ☼" +
-                "☼   ♣► ☼" +
+                "☼  ╘♣☻ ☼" +
                 "☼   ¤  ☼" +
                 "☼      ☼" +
                 "☼      ☼" +
@@ -1235,7 +1364,7 @@ public class SnakeMultiplayerTest {
         assertE("☼☼☼☼☼☼☼☼" +
                 "☼      ☼" +
                 "☼      ☼" +
-                "☼   ♥> ☼" +
+                "☼  ×♥☺ ☼" +
                 "☼   ╙  ☼" +
                 "☼      ☼" +
                 "☼      ☼" +
@@ -1246,7 +1375,7 @@ public class SnakeMultiplayerTest {
         assertH("☼☼☼☼☼☼☼☼" +
                 "☼      ☼" +
                 "☼   ♣  ☼" +
-                "☼   ¤ ►☼" +
+                "☼   ¤  ☼" +
                 "☼      ☼" +
                 "☼      ☼" +
                 "☼      ☼" +
@@ -1255,16 +1384,426 @@ public class SnakeMultiplayerTest {
         assertE("☼☼☼☼☼☼☼☼" +
                 "☼      ☼" +
                 "☼   ♥  ☼" +
-                "☼   ╙ >☼" +
+                "☼   ╙  ☼" +
                 "☼      ☼" +
                 "☼      ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
-//        verify(heroEvents).event(Events.WIN);
-//        verify(enemyEvents).event(Events.DIE);
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
+    @Test
+    public void shouldCutTail_whenFury() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼  ®   ☼" +
+                "☼  ˄   ☼" +
+                "☼  ¤   ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼  ®   ☼" +
+                "☼  ˄   ☼" +
+                "☼  ¤   ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼×─>   ☼" +
+                "☼  ®   ☼" +
+                "☼  ▲   ☼" +
+                "☼  ╙   ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼ ╘═►  ☼" +
+                "☼  ♣   ☼" +
+                "☼  ¤   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼ ×─>  ☼" +
+                "☼  ♥   ☼" +
+                "☼  ╙   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
 
 
+        game.tick();
+
+        verifyEvents(heroEvents, "[]");
+        verifyEvents(enemyEvents, "[EAT[1]]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ♣╘► ☼" +
+                "☼  ¤   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ♥×> ☼" +
+                "☼  ╙   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼  ♣   ☼" +
+                "☼  ¤ ╘►☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼  ♥   ☼" +
+                "☼  ╙ ×>☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
+    // с помощью этой команды можно самоуничтожиться
+    // при этом на месте старой змейки появится много яблок :)
+    @Test
+    public void shouldDieAndLeaveApples_whenAct0() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼╔═══╕ ☼" +
+                "☼║     ☼" +
+                "☼╚═══╗ ☼" +
+                "☼  ©◄╝ ☼" +
+                "☼      ☼" +
+                "☼×>    ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+        hero.up();
+        game.tick();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼╔╕    ☼" +
+                "☼║ ♠   ☼" +
+                "☼╚═║═╗ ☼" +
+                "☼  ╚═╝ ☼" +
+                "☼      ☼" +
+                "☼   ×> ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼┌ö    ☼" +
+                "☼│ ♦   ☼" +
+                "☼└─│─┐ ☼" +
+                "☼  └─┘ ☼" +
+                "☼      ☼" +
+                "☼   ╘► ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        hero.act(0);
+        game.tick();
+
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[WIN]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼○○    ☼" +
+                "☼○ ○   ☼" +
+                "☼○○○○○ ☼" +
+                "☼  ○○○ ☼" +
+                "☼      ☼" +
+                "☼    ×>☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼○○    ☼" +
+                "☼○ ○   ☼" +
+                "☼○○○○○ ☼" +
+                "☼  ○○○ ☼" +
+                "☼      ☼" +
+                "☼    ╘►☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
+    // Кейз когда змейки сталкиваются головами
+    @Test
+    public void shouldCase6() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼┌─┐   ☼" +
+                "☼│ ¤   ☼" +
+                "☼│     ☼" +
+                "☼˅     ☼" +
+                "☼◄══╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        enemy.right();
+        hero.up();
+        game.tick();
+
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[EAT[4], WIN]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼┌─ö   ☼" +
+                "☼│     ☼" +
+                "☼│     ☼" +
+                "☼☻>    ☼" +
+                "☼╚═╕   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼╔═╕   ☼" +
+                "☼║     ☼" +
+                "☼║     ☼" +
+                "☼☺►    ☼" +
+                "☼└─ö   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼×─>   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
+    public static void verifyEvents(EventListener events, String expected) {
+        if (expected.equals("[]")) {
+            verify(events, never()).event(any(Events.class));
+        } else {
+            ArgumentCaptor<Events> captor = ArgumentCaptor.forClass(Events.class);
+            verify(events, atLeast(1)).event(captor.capture());
+            assertEquals(expected, captor.getAllValues().toString());
+        }
+        reset(events);
+    }
+
+    @Test
+    public void shouldCase6_2() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼╔═╗   ☼" +
+                "☼║ ╙   ☼" +
+                "☼║     ☼" +
+                "☼▼     ☼" +
+                "☼<──ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        hero.right();
+        enemy.up();
+        game.tick();
+
+        verifyEvents(heroEvents, "[EAT[4], WIN]");
+        verifyEvents(enemyEvents, "[DIE]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼╔═╕   ☼" +
+                "☼║     ☼" +
+                "☼║     ☼" +
+                "☼☺►    ☼" +
+                "☼└─ö   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼┌─ö   ☼" +
+                "☼│     ☼" +
+                "☼│     ☼" +
+                "☼☻>    ☼" +
+                "☼╚═╕   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼×─>   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
+    @Test
+    public void shouldCase6_3() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼│     ☼" +
+                "☼│     ☼" +
+                "☼˅     ☼" +
+                "☼◄════╕☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        enemy.right();
+        hero.up();
+        game.tick();
+
+        verifyEvents(heroEvents, "[EAT[4], WIN]");
+        verifyEvents(enemyEvents, "[DIE]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼│     ☼" +
+                "☼▲☺    ☼" +
+                "☼╚═══╕ ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼║     ☼" +
+                "☼˄☻    ☼" +
+                "☼└───ö ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼▲     ☼" +
+                "☼╙     ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼˄     ☼" +
+                "☼¤     ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
+    @Test
+    public void shouldCase7() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼┌─┐   ☼" +
+                "☼│ ¤   ☼" +
+                "☼│     ☼" +
+                "☼˅     ☼" +
+                "☼◄══╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        hero.up();
+        game.tick();
+
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[EAT[4], WIN]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼┌─ö   ☼" +
+                "☼│     ☼" +
+                "☼│     ☼" +
+                "☼☻     ☼" +
+                "☼˅═╕   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼╔═╕   ☼" +
+                "☼║     ☼" +
+                "☼║     ☼" +
+                "☼☺     ☼" +
+                "☼▼─ö   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼│     ☼" +
+                "☼˅     ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼║     ☼" +
+                "☼▼     ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
     }
 }
 

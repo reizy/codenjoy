@@ -23,10 +23,7 @@ package com.codenjoy.dojo.snakebattle.model.board;
  */
 
 
-import com.codenjoy.dojo.services.BoardUtils;
-import com.codenjoy.dojo.services.Dice;
-import com.codenjoy.dojo.services.Direction;
-import com.codenjoy.dojo.services.Point;
+import com.codenjoy.dojo.services.*;
 import com.codenjoy.dojo.services.printer.BoardReader;
 import com.codenjoy.dojo.services.settings.Parameter;
 import com.codenjoy.dojo.snakebattle.model.Player;
@@ -36,11 +33,13 @@ import com.codenjoy.dojo.snakebattle.model.objects.*;
 import com.codenjoy.dojo.snakebattle.services.Events;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.codenjoy.dojo.services.PointImpl.pt;
+import static com.codenjoy.dojo.snakebattle.model.hero.Hero.NEXT_TICK;
 import static java.util.stream.Collectors.toList;
 
 public class SnakeBoard implements Field {
@@ -56,16 +55,25 @@ public class SnakeBoard implements Field {
     private List<Player> players;
     private List<Player> theWalkingDead;
 
-    private Timer timer;
-    private Parameter<Integer> roundsPerMatch;
+    private Timer fightTimer;
+    private Timer roundTimer;
     private int round;
+
+    private Parameter<Integer> roundsPerMatch;
+    private Parameter<Integer> flyingCount;
+    private Parameter<Integer> furyCount;
+    private Parameter<Integer> stoneReduced;
 
     private int size;
     private Dice dice;
 
-    public SnakeBoard(Level level, Dice dice, Timer timer, Parameter<Integer> roundsPerMatch) {
-        this.dice = dice;
+    public SnakeBoard(Level level, Dice dice, Timer fightTimer, Timer roundTimer, Parameter<Integer> roundsPerMatch, Parameter<Integer> flyingCount, Parameter<Integer> furyCount, Parameter<Integer> stoneReduced) {
+        this.flyingCount = flyingCount;
+        this.furyCount = furyCount;
+        this.stoneReduced = stoneReduced;
         this.roundsPerMatch = roundsPerMatch;
+
+        this.dice = dice;
         round = 0;
         walls = level.getWalls();
         starts = level.getStartPoints();
@@ -78,26 +86,51 @@ public class SnakeBoard implements Field {
         players = new LinkedList<>();
         theWalkingDead = new LinkedList<>();
 
-        this.timer = timer.reset();
+        this.fightTimer = fightTimer.start();
+//        this.roundTimer = roundTimer.stop();
     }
 
     @Override
     public void tick() {
         snakesClear();
 
-        timer.tick(this::sendTimerStatus);
 
-        if (timer.justFinished()) {
+        fightTimer.tick(this::sendTimerStatus);
+//        roundTimer.tick(() -> {});
+
+// TODO родить это чудо :)
+//        if (roundTimer.justFinished()) {
+//            Integer maxScore = aliveActive().stream()
+//                    .map(p -> p.getHero().size())
+//                    .max(Comparator.comparingInt(i1 -> i1))
+//                    .orElse(Integer.MAX_VALUE);
+//
+//            aliveActive().stream()
+//                    .filter(p -> p.getHero().size() == maxScore)
+//                    .forEach(p -> p.event(Events.WIN));
+//
+//            aliveActive().stream()
+//                    .filter(p -> p.getHero().size() != maxScore)
+//                    .forEach(p -> p.printMessage("Time is out"));
+//
+//            aliveActive().forEach(player -> reset(player));
+//
+//            fightTimer.start();
+//            return;
+//        }
+
+        if (fightTimer.justFinished()) {
             round++;
             players.forEach(p -> p.start(round));
+//            roundTimer.start();
         }
 
-        if (!timer.done()) {
+        if (!fightTimer.done()) {
             return;
         }
 
-        if (restartIfLast() || restartIfNoGame()) {
-            timer.reset();
+        if (restartIfLast()) {
+            fightTimer.start();
             return;
         }
 
@@ -107,25 +140,9 @@ public class SnakeBoard implements Field {
         setNewObjects();
     }
 
-    private boolean restartIfNoGame() {
-        // если есть активные ребята - выходим
-        if (!aliveActive().isEmpty()) {
-            return false;
-        }
-
-        // если зависшие на старте змейки 20 тиков
-        // не выполняли команлды - мы перегружаемся
-        boolean result = ticksWithoutGame() >= 20;
-        if (result) {
-            players.forEach(p -> p.getHero().die());
-            return true;
-        }
-        return false;
-    }
-
     private void sendTimerStatus() {
-        String pad = StringUtils.leftPad("", timer.time(), '.');
-        String message = pad + timer.time() + pad;
+        String pad = StringUtils.leftPad("", fightTimer.time(), '.');
+        String message = pad + fightTimer.time() + pad;
         players.forEach(player -> player.printMessage(message));
     }
 
@@ -180,28 +197,8 @@ public class SnakeBoard implements Field {
                 .collect(toList());
     }
 
-    private List<Player> aliveActiveOrReady() {
-        return players.stream()
-                .filter(p -> p.isAlive() && (p.isActive() || p.isReady()))
-                .collect(toList());
-    }
-
-    private int ticksWithoutGame() {
-        List<Player> ready = players.stream()
-                .filter(p -> p.isAlive() && p.isReady())
-                .collect(toList());
-        if (ready.isEmpty()) {
-            return 0;
-        }
-
-        return ready.stream()
-                .map(p -> p.getHero().getTicksWithoutCommand())
-                .min(Integer::compareTo)
-                .get();
-    }
-
     private void snakesMove() {
-        for (Player player : aliveActiveOrReady()) {
+        for (Player player : aliveActive()) {
             Hero hero = player.getHero();
             Point head = hero.getNextPoint();
             hero.tick();
@@ -229,53 +226,101 @@ public class SnakeBoard implements Field {
         }
     }
 
-    private void snakesFight() {
-        for (Player player : players) {
-            if (!player.isActive())
-                continue;
-            Hero hero = player.getHero();
-            if (hero.isFlying())
-                continue;
-            Hero enemy = checkHeadByHeadCollision(hero);
-            if (enemy != null) {
-                if (enemy.isFlying())
-                    continue;
-                if (hero.isFury() && !enemy.isFury()) {
-                    enemy.die();
-                } else if (!hero.isFury() && enemy.isFury()) {
-                    hero.die();
-                } else {
-                    int hSize = hero.size();
-                    hero.reduce(enemy.size());
-                    enemy.reduce(hSize);
-                }
-            } else if (isAnotherHero(hero)) {
-                if (hero.isFury()) {
-                    Hero reducedEnemy = getAnotherHero(hero);
-                    reducedEnemy.reduceFromPoint(hero.getHead());
-                } else
-                    hero.die();
-            }
+    static class ReduceInfo {
+        Hero hero;
+        int reduce;
+
+        public ReduceInfo(Hero hero, int reduce) {
+            this.hero = hero;
+            this.reduce = reduce;
         }
     }
 
+    private void snakesFight() {
+        List<ReduceInfo> info = new LinkedList<>();
+        notFlyingHeroes().forEach(hero -> {
+            Hero enemy = enemyCrossedWith(hero);
+            if (enemy != null) {
+                if (enemy.isFlying()) {
+                    return;
+                }
+                if (hero.isFury() && !enemy.isFury()) {
+                    if (enemy.isAlive()) {
+                        enemy.die();
+                        info.add(new ReduceInfo(hero, enemy.size()));
+                    }
+                } else if (!hero.isFury() && enemy.isFury()) {
+                    if (hero.isAlive()) {
+                        hero.die();
+                        info.add(new ReduceInfo(enemy, hero.size()));
+                    }
+                } else {
+                    int heroCut = hero.size();
+                    int enemyCut = enemy.size();
+
+                    if (!hero.reduced()) {
+                        int len = hero.reduce(enemyCut, NEXT_TICK);
+                        info.add(new ReduceInfo(enemy, len));
+                    }
+
+                    if (!enemy.reduced()) {
+                        int len = enemy.reduce(heroCut, NEXT_TICK);
+                        info.add(new ReduceInfo(hero, len));
+                    }
+                }
+                return;
+            }
+
+            enemy = enemyEatenWith(hero);
+            if (enemy != null) {
+                if (hero.isFury()) {
+                    if (!enemy.reduced()) {
+                        int len = enemy.reduceFrom(hero.head());
+                        info.add(new ReduceInfo(hero, len));
+                    }
+                } else {
+                    hero.die();
+                    info.add(new ReduceInfo(enemy, hero.size()));
+                }
+            }
+        });
+
+        info.stream()
+                .filter(i -> i.hero.isAlive())
+                .forEach(i -> {
+                    Hero hero = i.hero;
+                    hero.clearReduced();
+                    hero.event(Events.EAT.apply(i.reduce));
+                });
+    }
+
+    private Stream<Hero> notFlyingHeroes() {
+        return aliveActive().stream()
+                .map(Player::getHero)
+                .filter(h -> !h.isFlying());
+    }
+
     private boolean restartIfLast() {
-        if (timer.unlimited()) {
+        if (fightTimer.unlimited()) {
             return false;
         }
 
-        List<Player> players = aliveActiveOrReady();
+        List<Player> players = aliveActive();
         if (players.size() == 1) {
-            if (isMatchOver()) {
-                players.get(0).leaveBoard();
-            } else {
-                newGame(players.get(0));
-            }
+            reset(players.get(0));
         }
 
         // если остался один игрок или вообще никого -
         // мы перегружаемся
         return players.size() <= 1;
+    }
+
+    private void reset(Player player) {
+        if (isMatchOver()) {
+            player.leaveBoard();
+        } else {
+            newGame(player);
+        }
     }
 
     private boolean isMatchOver() {
@@ -361,22 +406,18 @@ public class SnakeBoard implements Field {
     }
 
     @Override
-    public boolean isAnotherHero(Hero h) {
-        return getAnotherHero(h) != null;
+    public Hero enemyEatenWith(Hero me) {
+        return aliveEnemies(me)
+                .filter(h -> !h.isFlying())
+                .filter(h -> h.getBody().contains(me.head()))
+                .findFirst()
+                .orElse(null);
     }
 
-    @Override
-    public Hero getAnotherHero(Hero h) {
-        for (Player anotherPlayer : players) {
-            Hero enemy = anotherPlayer.getHero();
-            if (enemy.equals(h) ||
-                    !enemy.isAlive() ||
-                    enemy.isFlying())
-                continue;
-            if (enemy.getBody().contains(h.getHead()))
-                return enemy;
-        }
-        return null;
+    private Stream<Hero> aliveEnemies(Hero me) {
+        return aliveActive().stream()
+                .map(Player::getHero)
+                .filter(h -> !h.equals(me));
     }
 
     @Override
@@ -385,18 +426,26 @@ public class SnakeBoard implements Field {
         theWalkingDead.add(player);
     }
 
-    private Hero checkHeadByHeadCollision(Hero h) {
-        for (Player anotherPlayer : players) {
-            Hero enemy = anotherPlayer.getHero();
-            if (enemy.equals(h))
-                continue;
-            if (!enemy.isAlive())
-                continue;
-            if (enemy.getHead().equals(h.getHead()) ||
-                    enemy.getNeck().equals(h.getHead()) && h.getNeck().equals(enemy.getHead()))
-                return anotherPlayer.getHero();
-        }
-        return null;
+    @Override
+    public Parameter<Integer> flyingCount() {
+        return flyingCount;
+    }
+
+    @Override
+    public Parameter<Integer> furyCount() {
+        return furyCount;
+    }
+
+    @Override
+    public Parameter<Integer> stoneReduced() {
+        return stoneReduced;
+    }
+
+    private Hero enemyCrossedWith(Hero me) {
+        return aliveEnemies(me)
+                .filter(h -> me.isHeadIntersect(h))
+                .findFirst()
+                .orElse(null);
     }
 
     public void addToPoint(Point p) {
@@ -414,7 +463,8 @@ public class SnakeBoard implements Field {
             fail("Невозможно добавить на поле объект типа " + p.getClass());
     }
 
-    private void setApple(Point p) {
+    @Override
+    public void setApple(Point p) {
         if (isFree(p))
             apples.add(new Apple(p));
     }
@@ -451,11 +501,9 @@ public class SnakeBoard implements Field {
     }
 
     public List<Hero> getHeroes() {
-        List<Hero> result = new ArrayList<>(players.size());
-        for (Player player : players) {
-            result.add(player.getHero());
-        }
-        return result;
+        return players.stream()
+                .map(Player::getHero)
+                .collect(toList());
     }
 
     public void newGame(Player player) {
@@ -545,7 +593,7 @@ public class SnakeBoard implements Field {
             return new Wall(additionObject);
         for (Player player : players)
             if (player.getHero().getBody().contains(additionObject))
-                return player.getHero().getNeck(); // это просто любой объект типа Tail
+                return player.getHero().neck(); // это просто любой объект типа Tail
         return null;
     }
 }
