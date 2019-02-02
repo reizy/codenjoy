@@ -83,7 +83,7 @@ public class RestController {
         return doIt(new DoItOnServers<ServerLocation>() {
             @Override
             public ServerLocation onGame() {
-                return dispatcher.register(player.getEmail(), player.getPassword(), getIp(request));
+                return dispatcher.registerNew(player.getEmail(), player.getPassword(), getIp(request));
             }
 
             @Override
@@ -118,12 +118,43 @@ public class RestController {
         T onBalancer(T data);
     }
 
-    @RequestMapping(value = "/player/{player}/active", method = RequestMethod.POST)
+    @RequestMapping(value = "/player/{player}/active/{code}", method = RequestMethod.GET)
     @ResponseBody
-    public boolean login(@PathVariable("player") String email) {
-        validator.checkEmail(email, Validator.CANT_BE_NULL);
+    public boolean login(@PathVariable("player") String email,
+                         @PathVariable("code") String code)
+    {
+        Player player = validator.checkPlayerCode(email, code);
 
-        return dispatcher.exists(email);
+        return dispatcher.exists(player.getEmail());
+    }
+
+    @RequestMapping(value = "/player/{player}/join/{code}", method = RequestMethod.GET)
+    @ResponseBody
+    public boolean joinToGameServer(@PathVariable("player") String email,
+                                      @PathVariable("code") String code,
+                                      HttpServletRequest request)
+    {
+        Player player = validator.checkPlayerCode(email, code);
+
+        ServerLocation location = dispatcher.registerIfNotExists(
+                player.getServer(),
+                player.getEmail(),
+                player.getPassword(),
+                getIp(request));
+        return location != null;
+    }
+
+    @RequestMapping(value = "/player/{player}/exit/{code}", method = RequestMethod.GET)
+    @ResponseBody
+    public boolean exitFromGameServer(@PathVariable("player") String email,
+                                    @PathVariable("code") String code)
+    {
+        Player player = validator.checkPlayerCode(email, code);
+
+        return dispatcher.remove(
+                player.getServer(),
+                player.getEmail(),
+                player.getCode());
     }
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
@@ -151,8 +182,7 @@ public class RestController {
                         current.getServer(),
                         current.getEmail(),
                         current.getCode(),
-                        callback
-                );
+                        callback);
             }
 
             @Override
@@ -219,7 +249,7 @@ public class RestController {
     public boolean remove(@PathVariable("player") String email,
                           @PathVariable("adminPassword") String adminPassword)
     {
-        verifyIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword);
 
         Player player = players.get(email);
         if (player == null) {
@@ -247,7 +277,7 @@ public class RestController {
     @RequestMapping(value = "/players/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public List<Player> getPlayers(@PathVariable("adminPassword") String adminPassword) {
-        verifyIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword);
 
         return players.getPlayersDetails();
     }
@@ -271,7 +301,7 @@ public class RestController {
     public boolean saveSettings(@PathVariable("adminPassword") String adminPassword,
                                    @RequestBody DispatcherSettings settings)
     {
-        verifyIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword);
 
         dispatcher.saveSettings(settings);
 
@@ -281,7 +311,7 @@ public class RestController {
     @RequestMapping(value = "/settings/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public DispatcherSettings getSettings(@PathVariable("adminPassword") String adminPassword) {
-        verifyIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword);
 
         return dispatcher.getSettings();
     }
@@ -289,7 +319,7 @@ public class RestController {
     @RequestMapping(value = "/debug/get/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public boolean getDebug(@PathVariable("adminPassword") String adminPassword) {
-        verifyIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword);
 
         return debug.isWorking();
     }
@@ -299,15 +329,11 @@ public class RestController {
     public boolean setDebug(@PathVariable("adminPassword") String adminPassword,
                                           @PathVariable("enabled") boolean enabled)
     {
-        verifyIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword);
 
         debug.setDebugEnable(enabled);
 
         return debug.isWorking();
-    }
-
-    private void verifyIsAdmin(String adminPassword) {
-        validator.validateAdmin(properties.getAdminPassword(), adminPassword);
     }
 
     @RequestMapping(value = "/contest/enable/set/{enabled}/{adminPassword}", method = RequestMethod.GET)
@@ -315,7 +341,7 @@ public class RestController {
     public List<String> startContestStarted(@PathVariable("adminPassword") String adminPassword,
                                      @PathVariable("enabled") boolean enabled)
     {
-        verifyIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword);
 
         List<String> status = new LinkedList<>();
         if (enabled) {
@@ -335,7 +361,7 @@ public class RestController {
     @RequestMapping(value = "/contest/enable/get/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public boolean getContestStarted(@PathVariable("adminPassword") String adminPassword) {
-        verifyIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword);
 
         return timer.isPaused();
     }
