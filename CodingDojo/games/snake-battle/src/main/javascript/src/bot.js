@@ -35,10 +35,10 @@ export function getNextSnakeMove(board, logger) {
     }
     logger('Head:' + JSON.stringify(headPosition));
 
-    const sorround = getSorround(board, headPosition); // (LEFT, UP, RIGHT, DOWN)
-    logger('Sorround: ' + JSON.stringify(sorround));
+    const surround = getSurround(board, headPosition); // (LEFT, UP, RIGHT, DOWN)
+    logger('Surround: ' + JSON.stringify(surround));
 
-    const raitings = sorround.map(rateElement);
+    const raitings = surround.map(rateElement);
     logger('Raitings:' + JSON.stringify(raitings));
 
     const command = getCommandByRaitings(raitings);
@@ -46,7 +46,7 @@ export function getNextSnakeMove(board, logger) {
     return command;
 }
 
-function getSorround(board, position) {
+function getSurround(board, position) {
     const p = position;
     return [
         getElementByXY(board, {x: p.x - 1, y: p.y }), // LEFT
