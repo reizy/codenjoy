@@ -23,8 +23,9 @@ package com.codenjoy.dojo.services.dao;
  */
 
 
+import com.codenjoy.dojo.services.ConfigProperties;
 import com.codenjoy.dojo.services.ContextPathGetter;
-import com.codenjoy.dojo.services.dao.Registration;
+import com.codenjoy.dojo.services.hash.Hash;
 import com.codenjoy.dojo.services.jdbc.SqliteConnectionThreadPoolFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -38,6 +39,7 @@ import static org.junit.Assert.*;
 
 public class RegistrationTest {
 
+    public static final String HASH = "someHash";
     private static Registration service;
 
     @Before
@@ -50,7 +52,15 @@ public class RegistrationTest {
                             public String getContext() {
                                 return "context";
                             }
-                        }));
+                        }))
+        {{
+            this.config = new ConfigProperties(){
+                @Override
+                public String getEmailHash() {
+                    return HASH;
+                }
+            };
+        }};
     }
 
     @After
@@ -297,6 +307,46 @@ public class RegistrationTest {
     }
 
     @Test
+    public void shouldReplaceExistingUser_withoutCode() {
+        // given
+        String code1 = service.register("user1", "name1", "pass1", "someData1");
+        String code2 = service.register("user2", "name2", "pass2", "someData2");
+
+        assertEquals("[User{email='user1', " +
+                        "readable_name=name1, " +
+                        "email_approved=0, " +
+                        "password='pass1', " +
+                        "code='111578566106438208', " +
+                        "data='someData1'}, " +
+                        "User{email='user2', " +
+                        "readable_name=name2, " +
+                        "email_approved=0, " +
+                        "password='pass2', " +
+                        "code='111578567106438209', " +
+                        "data='someData2'}]",
+                service.getUsers().toString());
+
+        // when
+        String noCode = null;
+        service.replace(new Registration.User("user1", "name1", 1, "newPassword1", noCode, "newData1"));
+
+        // then
+        assertEquals("[User{email='user1', " +
+                        "readable_name=name1, " +
+                        "email_approved=1, " +
+                        "password='newPassword1', " +
+                        "code='111578566623713482', " +
+                        "data='newData1'}, " +
+                        "User{email='user2', " +
+                        "readable_name=name2, " +
+                        "email_approved=0, " +
+                        "password='pass2', " +
+                        "code='111578567106438209', " +
+                        "data='someData2'}]",
+                service.getUsers().toString());
+    }
+
+    @Test
     public void shouldReplaceNonExistingUser() {
         // given
         String code1 = service.register("user1", "name1", "pass1", "someData1");
@@ -374,4 +424,42 @@ public class RegistrationTest {
                 service.getUsers().toString());
     }
 
+    @Test
+    public void shouldCheckUser_whenOnlyEmails() {
+        String email = "user@email.com";
+
+        String code = service.register(email, "name", "pass", "someData");
+
+        assertEquals(true, service.checkUser(email, code));
+    }
+
+    @Test
+    public void shouldCheckUser_whenIdStoredOnDb_askWithEmail() {
+        String email = "user@email.com";
+        String id = Hash.getId(email, HASH);
+
+        String code = service.register(id, "name", "pass", "someData");
+
+        assertEquals(true, service.checkUser(email, code));
+    }
+
+    @Test
+    public void shouldCheckUser_whenEmailStoredOnDb_askWithId() {
+        String email = "user@email.com";
+        String id = Hash.getId(email, HASH);
+
+        String code = service.register(email, "name", "pass", "someData");
+
+        assertEquals(true, service.checkUser(id, code));
+    }
+
+    @Test
+    public void shouldCheckUser_whenOnlyIds() {
+        String email = "user@email.com";
+        String id = Hash.getId(email, HASH);
+
+        String code = service.register(id, "name", "pass", "someData");
+
+        assertEquals(true, service.checkUser(id, code));
+    }
 }

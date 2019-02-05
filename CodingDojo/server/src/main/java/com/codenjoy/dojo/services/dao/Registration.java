@@ -23,9 +23,13 @@ package com.codenjoy.dojo.services.dao;
  */
 
 
+import com.codenjoy.dojo.services.ConfigProperties;
 import com.codenjoy.dojo.services.hash.Hash;
 import com.codenjoy.dojo.services.jdbc.ConnectionThreadPoolFactory;
 import com.codenjoy.dojo.services.jdbc.CrudConnectionThreadPool;
+import org.apache.commons.lang.StringUtils;
+import org.eclipse.jetty.util.StringUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
@@ -35,6 +39,9 @@ import java.util.List;
 public class Registration {
 
     private CrudConnectionThreadPool pool;
+
+    @Autowired
+    protected ConfigProperties config;
 
     public Registration(ConnectionThreadPoolFactory factory) {
         pool = factory.create(
@@ -75,7 +82,7 @@ public class Registration {
     }
 
     public String register(String email, String readableName, String password, String data) {
-        String code = makeCode(email, password);
+        String code = Hash.getCode(email, password);
         pool.update("INSERT INTO users (email, readable_name, email_approved, password, code, data) VALUES (?,?,?,?,?,?);",
                 new Object[]{email, readableName, 0, password, code, data});
         return code;
@@ -88,13 +95,27 @@ public class Registration {
         );
     }
 
-    public static String makeCode(String email, String password) {
-        return "" + Math.abs(email.hashCode()) + Math.abs(password.hashCode());
-    }
-
     public boolean checkUser(String email, String code) {
-        String actualName = getEmail(code);
-        return actualName != null && actualName.equals(email);
+        String stored = getEmail(code);
+        String soul = config.getEmailHash();
+
+        if (stored == null) {
+            return false;
+        }
+
+        if (stored.equals(email)) {
+            return true;
+        }
+
+        if (!stored.contains("@")) {
+            return Hash.getEmail(stored, soul).equals(email);
+        }
+
+        if (!email.contains("@")) {
+            return stored.equals(Hash.getEmail(email, soul));
+        }
+
+        return false;
     }
 
     public String getEmail(String code) {
@@ -218,7 +239,12 @@ public class Registration {
     }
 
     public void replace(User user) {
-        Object[] parameters = {user.getReadableName(), 1, user.getPassword(), user.getCode(), user.getData(), user.getEmail()};
+        String code = user.getCode();
+        if (StringUtils.isEmpty(code)) {
+            code = Hash.getCode(user.getEmail(), user.getPassword());
+        }
+
+        Object[] parameters = {user.getReadableName(), 1, user.getPassword(), code, user.getData(), user.getEmail()};
         if (getCode(user.getEmail()) == null) {
             pool.update("INSERT INTO users (readable_name, email_approved, password, code, data, email) VALUES (?,?,?,?,?,?);",
                     parameters);

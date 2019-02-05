@@ -25,6 +25,7 @@ package com.codenjoy.dojo.web.rest;
 
 import com.codenjoy.dojo.services.*;
 import com.codenjoy.dojo.services.dao.Registration;
+import com.codenjoy.dojo.services.hash.Hash;
 import com.codenjoy.dojo.web.controller.Validator;
 import com.codenjoy.dojo.web.rest.pojo.PlayerDetailInfo;
 import com.codenjoy.dojo.web.rest.pojo.PlayerInfo;
@@ -126,14 +127,11 @@ public class RestRegistrationController {
     @RequestMapping(value = "/player/create/{adminPassword}", method = RequestMethod.POST)
     @ResponseBody
     public synchronized String createPlayer(@RequestBody PlayerDetailInfo player,
-                               @PathVariable("adminPassword") String adminPassword) {
+                               @PathVariable("adminPassword") String adminPassword)
+    {
         validator.checkIsAdmin(adminPassword);
 
         Registration.User user = player.getRegistration();
-
-        String code = Registration.makeCode(user.getEmail(), user.getPassword());
-        user.setCode(code);
-
         registration.replace(user);
 
         boolean fromSave = player.getScore() == null;
@@ -156,7 +154,7 @@ public class RestRegistrationController {
                     new JSONObject(player.getSave()));
         }
 
-        return code;
+        return user.getCode();
     }
 
     // TODO test me
