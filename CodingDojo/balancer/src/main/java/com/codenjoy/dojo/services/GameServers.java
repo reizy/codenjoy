@@ -33,17 +33,21 @@ import java.util.stream.Stream;
 @Component
 public class GameServers {
 
-    @Autowired ConfigProperties properties;
-    @Autowired DispatcherSettings settings;
+    @Autowired ConfigProperties config;
 
     private List<String> servers = new CopyOnWriteArrayList<>();
     private volatile int currentServer;
     private volatile int countRegistered;
 
+    @PostConstruct
+    public void postConstruct() {
+        update(config.getServers());
+    }
+
     // несколько потоков могут параллельно регаться, и этот инкремент по кругу
     // должeн быть многопоточнобезопасным
     public synchronized String getNextServer() {
-        if (countRegistered++ % properties.getGameRoom() == 0) {
+        if (countRegistered++ % config.getGameRoom() == 0) {
             currentServer++;
             if (currentServer >= servers.size()) {
                 currentServer = 0;
@@ -58,6 +62,10 @@ public class GameServers {
     }
 
     public void update(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            throw new IllegalArgumentException("Game servers list is empty. Nothing to add");
+        }
+
         servers.clear();
         servers.addAll(list);
     }

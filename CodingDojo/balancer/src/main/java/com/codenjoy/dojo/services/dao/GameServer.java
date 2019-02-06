@@ -24,7 +24,6 @@ package com.codenjoy.dojo.services.dao;
 
 import com.codenjoy.dojo.services.ConfigProperties;
 import com.codenjoy.dojo.services.DLoggerFactory;
-import com.codenjoy.dojo.services.DispatcherSettings;
 import com.codenjoy.dojo.services.entity.server.PlayerDetailInfo;
 import com.codenjoy.dojo.services.entity.server.PlayerInfo;
 import com.codenjoy.dojo.services.entity.server.User;
@@ -48,42 +47,41 @@ public class GameServer {
     private static Logger logger = DLoggerFactory.getLogger(GameServer.class);
 
     @Autowired ConfigProperties config;
-    @Autowired DispatcherSettings settings;
 
     private String playerExistsUrl(String server, String email) {
-        return String.format(settings.getUrlExistsPlayer(),
+        return String.format(config.getUrlExistsPlayer(),
                 server,
                 config.getId(email));
     }
 
     private String gameEnabledUrl(String server, boolean enabled) {
-        return String.format(settings.getUrlGameEnabled(),
+        return String.format(config.getUrlGameEnabled(),
                 server,
                 enabled,
                 config.getAdminToken());
     }
 
     private String getPlayersUrl(String server) {
-        return String.format(settings.getUrlGetPlayers(),
+        return String.format(config.getUrlGetPlayers(),
                 server,
-                settings.getGameType());
+                config.getGameType());
     }
 
     private String createPlayerUrl(String server) {
-        return String.format(settings.getUrlCreatePlayer(),
+        return String.format(config.getUrlCreatePlayer(),
                 server,
                 config.getAdminToken());
     }
 
     private String removePlayerUrl(String server, String email, String code) {
-        return String.format(settings.getUrlRemovePlayer(),
+        return String.format(config.getUrlRemovePlayer(),
                 server,
                 config.getId(email),
                 code);
     }
 
     private String clearPlayersScoreUrl(String server) {
-        return String.format(settings.getUrlClearScores(),
+        return String.format(config.getUrlClearScores(),
                 server,
                 config.getAdminToken());
     }
@@ -106,17 +104,21 @@ public class GameServer {
         String id = config.getId(email);
         String code = Hash.getCode(email, password);
 
-
         RestTemplate rest = new RestTemplate();
         ResponseEntity<String> entity = null;
         try {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Create new player {} ({}) for '{}' on server {} with save {} and score {}",
+                        id, code, name, server, save, score);
+            }
+
             entity = rest.postForEntity(
                     createPlayerUrl(server),
                     new PlayerDetailInfo(
                             id,
                             name,
                             callbackUrl,
-                            settings.getGameType(),
+                            config.getGameType(),
                             score,
                             save,
                             new User(
@@ -146,6 +148,11 @@ public class GameServer {
 
     public boolean existsOnServer(String server, String email) {
         try {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Check is player {} exists on server {}",
+                        email, server);
+            }
+
             RestTemplate rest = new RestTemplate();
             ResponseEntity<Boolean> entity = rest.exchange(
                     playerExistsUrl(server, email),
@@ -162,6 +169,11 @@ public class GameServer {
 
     public String clearScores(String server) {
         try {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Clear all scores on server {}",
+                        server);
+            }
+
             RestTemplate rest = new RestTemplate();
             ResponseEntity<Void> entity = rest.exchange(
                     clearPlayersScoreUrl(server),
@@ -181,6 +193,11 @@ public class GameServer {
     public String gameEnable(String server, boolean enable) {
         String status = enable ? "start" : "stop";
         try {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Set status {} of game on server {}",
+                        status, server);
+            }
+
             RestTemplate rest = new RestTemplate();
             ResponseEntity<Boolean> entity = rest.exchange(
                     gameEnabledUrl(server, enable),
@@ -201,7 +218,12 @@ public class GameServer {
         RestTemplate rest = new RestTemplate();
         ResponseEntity<Boolean> entity = null;
         try {
-            rest.exchange(
+            if (logger.isDebugEnabled()) {
+                logger.debug("Remove player {} ({}) on server {}",
+                        email, code, server);
+            }
+
+            entity = rest.exchange(
                     removePlayerUrl(server, email, code),
                     HttpMethod.GET,
                     null,

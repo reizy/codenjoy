@@ -148,17 +148,28 @@ public class Dispatcher {
         disqualified.addAll(players);
     }
 
-    public synchronized List<PlayerScore> getFinalists(int finalistsCount, String from, String to) {
+    public synchronized List<PlayerScore> getFinalists() {
         List<PlayerScore> cached = currentFinalists;
         if (cached != null && !cached.isEmpty()) {
             return cached;
         }
 
-        List<PlayerScore> scores = this.scores.getFinalists(from, to, lastTime, finalistsCount, disqualified);
+        List<PlayerScore> scores = loadFinalists();
+
         List<PlayerScore> result = prepareScoresForClient(scores);
 
         currentFinalists = result;
         return result;
+    }
+
+    private List<PlayerScore> loadFinalists() {
+        return this.scores.getFinalists(
+                config.getDayStart(),
+                config.getDayEnd(),
+                lastTime,
+                config.getDayFinalistCount(),
+                disqualified
+        );
     }
 
     public synchronized List<PlayerScore> getScores(String day) {
@@ -168,10 +179,27 @@ public class Dispatcher {
         }
 
         List<PlayerScore> scores = this.scores.getScores(day, lastTime);
-        List<PlayerScore> result = prepareScoresForClient(scores);
+        List<PlayerScore> updated = prepareScoresForClient(scores);
+        List<PlayerScore> result = prepareFinalistsInfo(updated);
 
         currentScores.put(day, result);
         return result;
+    }
+
+    private List<PlayerScore> prepareFinalistsInfo(List<PlayerScore> scores) {
+        Map<String, PlayerScore> finalists = loadFinalists().stream()
+                .collect(toMap(s -> s.getId(), s -> s));
+
+        return scores.stream()
+                .map(score -> {
+                    if (finalists.containsKey(score.getId())) {
+                        PlayerScore finalistScore = finalists.get(score.getId());
+                        String day = finalistScore.getDay();
+                        score.setDay(day);
+                    }
+                    return score;
+                })
+                .collect(toList());
     }
 
     private List<PlayerScore> prepareScoresForClient(List<PlayerScore> result) {

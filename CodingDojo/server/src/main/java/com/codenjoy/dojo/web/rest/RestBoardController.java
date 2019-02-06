@@ -105,14 +105,16 @@ public class RestBoardController {
         return new GameTypeInfo(game);
     }
 
-    @RequestMapping(value = "/player/{playerName}/{code}/level/{level}", method = RequestMethod.GET)
+    @RequestMapping(value = "/player/{player}/{code}/level/{level}", method = RequestMethod.GET)
     @ResponseBody
-    public synchronized boolean changeLevel(@PathVariable("playerName") String playerName,
+    public synchronized boolean changeLevel(@PathVariable("player") String emailOrId,
                                 @PathVariable("code") String code,
                                 @PathVariable("level") int level)
     {
-        validator.checkPlayerCode(playerName, code);
-        playerGames.changeLevel(playerName, level);
+        String id = validator.checkPlayerCode(emailOrId, code);
+
+        playerGames.changeLevel(id, level);
+
         return true;
     }
 
@@ -124,9 +126,9 @@ public class RestBoardController {
         List<Player> players = playerService.getAll();
         List<List<String>> groups = playerGamesView.getGroups();
         for (List<String> group : groups) {
-            String playerName = group.get(0);
+            String playerId = group.get(0);
             Player player = players.stream()
-                    .filter(p -> p.getName().equals(playerName))
+                    .filter(p -> p.getName().equals(playerId))
                     .findFirst()
                     .orElse(NullPlayer.INSTANCE);
 
@@ -172,18 +174,18 @@ public class RestBoardController {
     }
 
     // TODO test me
-    @RequestMapping(value = "/player/{playerName}/{code}/reset", method = RequestMethod.GET)
+    @RequestMapping(value = "/player/{player}/{code}/reset", method = RequestMethod.GET)
     @ResponseBody
-    public synchronized boolean reset(@PathVariable("playerName") String playerName, @PathVariable("code") String code){
-        validator.checkPlayerCode(playerName, code);
+    public synchronized boolean reset(@PathVariable("player") String emailOrId, @PathVariable("code") String code){
+        String id = validator.checkPlayerCode(emailOrId, code);
 
-        saveService.save(playerName);
-        Player player = playerService.get(playerName);
+        saveService.save(id);
+        Player player = playerService.get(id);
 
-        boolean loaded = saveService.load(playerName);
+        boolean loaded = saveService.load(id);
         if (!loaded) {
-            if (playerService.contains(playerName)) {
-                playerService.remove(playerName);
+            if (playerService.contains(id)) {
+                playerService.remove(id);
             }
             playerService.register(new PlayerSave(player));
         }
@@ -192,20 +194,20 @@ public class RestBoardController {
     }
 
     // TODO test me
-    @RequestMapping(value = "/player/{playerName}/{code}/wantsToPlay/{gameName}", method = RequestMethod.GET)
+    @RequestMapping(value = "/player/{player}/{code}/wantsToPlay/{gameName}", method = RequestMethod.GET)
     @ResponseBody
     public synchronized PPlayerWantsToPlay playerWantsToPlay(
-            @PathVariable("playerName") String playerName,
+            @PathVariable("player") String emailOrId,
             @PathVariable("code") String code,
             @PathVariable("gameName") String gameName)
     {
-        validator.checkPlayerName(playerName, Validator.CAN_BE_NULL);
+        validator.checkPlayerName(emailOrId, Validator.CAN_BE_NULL);
         validator.checkCode(code, Validator.CAN_BE_NULL);
         validator.checkGameName(gameName, Validator.CANT_BE_NULL);
 
         String context = getContext();
         GameTypeInfo gameType = getGameType(gameName);
-        boolean registered = registration.checkUser(playerName, code) == null;
+        boolean registered = registration.checkUser(emailOrId, code) == null;
         List<String> sprites = getSpritesForGame(gameName);
         String alphabet = getSpritesAlphabet();
         List<PlayerInfo> players = registrationController.getGamePlayers(gameName);

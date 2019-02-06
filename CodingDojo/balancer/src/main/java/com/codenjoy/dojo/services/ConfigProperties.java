@@ -23,6 +23,7 @@ package com.codenjoy.dojo.services;
  */
 
 import com.codenjoy.dojo.services.hash.Hash;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
@@ -74,6 +75,19 @@ public class ConfigProperties {
 
     @Value("#{'${game.servers}'.split(',')}")
     private List<String> servers;
+
+    @Value("${game.start.day}")
+    private String dayStart;
+
+    @Value("${game.end.day}")
+    private String dayEnd;
+
+    @Value("${game.finalists.count}")
+    private int dayFinalistsCount;
+
+    public void updateFrom(ConfigProperties config) {
+        BeanUtils.copyProperties(config, this);
+    }
 
     public String getAdminPassword() {
         return adminPassword;
@@ -135,4 +149,75 @@ public class ConfigProperties {
         return DigestUtils.md5DigestAsHex(adminPassword.getBytes());
     }
 
+    public String getDayStart() {
+        return dayStart;
+    }
+
+    public String getDayEnd() {
+        return dayEnd;
+    }
+
+    public int getDayFinalistCount() {
+        return dayFinalistsCount;
+    }
+
+    public void setAdminPassword(String adminPassword) {
+        this.adminPassword = adminPassword;
+    }
+
+    public void setEmailHash(String emailHash) {
+        this.emailHash = emailHash;
+    }
+
+    public void setUrlCreatePlayer(String urlCreatePlayer) {
+        this.urlCreatePlayer = urlCreatePlayer;
+    }
+
+    public void setUrlRemovePlayer(String urlRemovePlayer) {
+        this.urlRemovePlayer = urlRemovePlayer;
+    }
+
+    public void setUrlGetPlayers(String urlGetPlayers) {
+        this.urlGetPlayers = urlGetPlayers;
+    }
+
+    public void setUrlClearScores(String urlClearScores) {
+        this.urlClearScores = urlClearScores;
+    }
+
+    public void setUrlExistsPlayer(String urlExistsPlayer) {
+        this.urlExistsPlayer = urlExistsPlayer;
+    }
+
+    public void setUrlGameEnabled(String urlGameEnabled) {
+        this.urlGameEnabled = urlGameEnabled;
+    }
+
+    public void setGameType(String gameType) {
+        this.gameType = gameType;
+    }
+
+    public void setGameRoom(int gameRoom) {
+        this.gameRoom = gameRoom;
+    }
+
+    public void setGameFinalTime(String gameFinalTime) {
+        this.gameFinalTime = gameFinalTime;
+    }
+
+    public void setServers(List<String> servers) {
+        this.servers = servers;
+    }
+
+    public void setDayStart(String dayStart) {
+        this.dayStart = dayStart;
+    }
+
+    public void setDayEnd(String dayEnd) {
+        this.dayEnd = dayEnd;
+    }
+
+    public void setDayFinalistsCount(int dayFinalistsCount) {
+        this.dayFinalistsCount = dayFinalistsCount;
+    }
 }

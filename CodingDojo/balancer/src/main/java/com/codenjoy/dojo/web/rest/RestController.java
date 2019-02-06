@@ -27,7 +27,6 @@ import com.codenjoy.dojo.services.*;
 import com.codenjoy.dojo.services.dao.GameServer;
 import com.codenjoy.dojo.services.hash.Hash;
 import com.codenjoy.dojo.services.dao.Players;
-import com.codenjoy.dojo.services.DispatcherSettings;
 import com.codenjoy.dojo.services.entity.Player;
 import com.codenjoy.dojo.services.entity.PlayerScore;
 import com.codenjoy.dojo.services.entity.ServerLocation;
@@ -58,8 +57,8 @@ public class RestController {
     @Autowired private Validator validator;
     @Autowired private DebugService debug;
     @Autowired private GameServer game;
-    @Autowired private ConfigProperties properties;
-    @Autowired private DispatcherSettings settings;
+    @Autowired private GameServers gameSerers;
+    @Autowired private ConfigProperties config;
 
     @RequestMapping(value = "/score/day/{day}", method = RequestMethod.GET)
     @ResponseBody
@@ -69,17 +68,10 @@ public class RestController {
         return dispatcher.getScores(day);
     }
 
-    @RequestMapping(value = "/score/finalists/{from}/{to}/{count}", method = RequestMethod.GET)
+    @RequestMapping(value = "/score/finalists", method = RequestMethod.GET)
     @ResponseBody
-    public List<PlayerScore> finalistsScores(@PathVariable("from") String from,
-                                             @PathVariable("to") String to,
-                                             @PathVariable("count") int count)
-    {
-        validator.checkDay(from);
-        validator.checkDay(to);
-        validator.checkPositiveInteger(count);
-
-        return dispatcher.getFinalists(count, from, to);
+    public List<PlayerScore> finalistsScores() {
+        return dispatcher.getFinalists();
     }
 
     @RequestMapping(value = "/score/disqualify/{player}/{adminPassword}", method = RequestMethod.POST)
@@ -300,7 +292,7 @@ public class RestController {
 
         return onLogin.onSuccess(
                 new ServerLocation(email,
-                        Hash.getId(email, properties.getEmailHash()),
+                        Hash.getId(email, config.getEmailHash()),
                         exist.getCode(),
                         server
                 ));
@@ -395,21 +387,22 @@ public class RestController {
     @RequestMapping(value = "/settings/{adminPassword}", method = RequestMethod.POST)
     @ResponseBody
     public boolean saveSettings(@PathVariable("adminPassword") String adminPassword,
-                                   @RequestBody DispatcherSettings settings)
+                                   @RequestBody ConfigProperties config)
     {
         validator.checkIsAdmin(adminPassword);
 
-        this.settings.updateFrom(settings);
+        this.config.updateFrom(config);
+        gameSerers.update(config.getServers());
 
         return true;
     }
 
     @RequestMapping(value = "/settings/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
-    public DispatcherSettings getSettings(@PathVariable("adminPassword") String adminPassword) {
+    public ConfigProperties getSettings(@PathVariable("adminPassword") String adminPassword) {
         validator.checkIsAdmin(adminPassword);
 
-        return settings;
+        return config;
     }
 
     @RequestMapping(value = "/debug/get/{adminPassword}", method = RequestMethod.GET)
