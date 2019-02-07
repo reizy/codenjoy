@@ -78,7 +78,7 @@ public class SnakeMultiplayerTest {
                 new SimpleParameter<>(10),
                 new SimpleParameter<>(10),
                 new SimpleParameter<>(3),
-                new SimpleParameter<>(10));
+                new SimpleParameter<>(2));
 
         Hero hero = level.getHero();
         hero.setActive(true);
@@ -1390,6 +1390,84 @@ public class SnakeMultiplayerTest {
         game.remove(heroPlayer);  // это делает автоматом фреймворк потому что heroPlayer.shouldLeave()
         game.remove(enemyPlayer); // это делает автоматом фреймворк потому что enemyPlayer.shouldLeave()
 
+    }
+
+    // Лобовое столкновение змеек - одна под fury
+    @Test
+    public void shouldDie_whenHeadAttack() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼    ® ☼" +
+                "☼    ˄ ☼" +
+                "☼    ¤ ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼    ® ☼" +
+                "☼    ˄ ☼" +
+                "☼    ¤ ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼×─>   ☼" +
+                "☼    ® ☼" +
+                "☼    ▲ ☼" +
+                "☼    ╙ ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+        game.tick();
+
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[EAT[3], WIN]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ╘═☻ ☼" +
+                "☼    ¤ ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ×─☺ ☼" +
+                "☼    ╙ ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼    ♣ ☼" +
+                "☼    ¤ ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼    ♥ ☼" +
+                "☼    ╙ ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
     }
 
     // Змейка с одной только головой не живет
