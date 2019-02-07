@@ -45,6 +45,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.codenjoy.dojo.web.controller.Validator.CANT_BE_NULL;
+import static com.codenjoy.dojo.web.controller.Validator.CAN_BE_NULL;
+
 @Controller
 @RequestMapping(value = "/rest")
 public class RestController {
@@ -60,6 +63,7 @@ public class RestController {
     @Autowired private GameServers gameSerers;
     @Autowired private ConfigProperties config;
 
+    // TODO test me
     @RequestMapping(value = "/score/day/{day}", method = RequestMethod.GET)
     @ResponseBody
     public List<PlayerScore> dayScores(@PathVariable("day") String day) {
@@ -68,6 +72,7 @@ public class RestController {
         return dispatcher.getScores(day);
     }
 
+    // TODO test me
     // TODO add to admin page
     @RequestMapping(value = "/score/finalists", method = RequestMethod.GET)
     @ResponseBody
@@ -75,6 +80,7 @@ public class RestController {
         return dispatcher.getFinalists();
     }
 
+    // TODO test me
     // TODO add to admin page
     @RequestMapping(value = "/score/disqualify/{player}/{adminPassword}", method = RequestMethod.POST)
     @ResponseBody
@@ -82,13 +88,14 @@ public class RestController {
                                        @PathVariable("adminPassword") String adminPassword)
     {
         validator.checkIsAdmin(adminPassword);
-        players.stream().forEach(email -> validator.checkEmail(email, Validator.CANT_BE_NULL));
+        players.stream().forEach(email -> validator.checkEmail(email, CANT_BE_NULL));
 
         dispatcher.disqualify(players);
 
         return true;
     }
 
+    // TODO test me
     // TODO add to admin page
     @RequestMapping(value = "/score/disqualified/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
@@ -102,12 +109,14 @@ public class RestController {
     @ResponseBody
     public ServerLocation register(@RequestBody Player player, HttpServletRequest request) {
         String email = player.getEmail();
-        validator.checkEmail(email, false);
-        validator.checkString(player.getFirstName());
-        validator.checkString(player.getLastName());
-        validator.checkMD5(player.getPassword(), Validator.CANT_BE_NULL);
-        validator.checkString(player.getCity());
-        validator.checkString(player.getSkills());
+        validator.all(
+                () -> validator.checkEmail(email, CANT_BE_NULL),
+                () -> validator.checkString("FirstName", player.getFirstName()),
+                () -> validator.checkString("LastName", player.getLastName()),
+                () -> validator.checkMD5(player.getPassword(), CANT_BE_NULL),
+                () -> validator.checkString("City", player.getCity()),
+                () -> validator.checkString("Skills", player.getSkills())
+        );
 
         if (players.getCode(email) != null) {
             throw new IllegalArgumentException("User already registered");
@@ -165,8 +174,9 @@ public class RestController {
     public boolean login(@PathVariable("player") String email,
                          @PathVariable("code") String code)
     {
-        Player player = validator.checkPlayerCode(email, code);
+        Player player = validator.checkPlayerCode(email, code); // TODO test me
 
+        // TODO test me when not found on balancer
         return dispatcher.exists(player.getEmail());
     }
 
@@ -176,8 +186,9 @@ public class RestController {
                                       @PathVariable("code") String code,
                                       HttpServletRequest request)
     {
-        Player player = validator.checkPlayerCode(email, code);
+        Player player = validator.checkPlayerCode(email, code); // TODO test me
 
+        // TODO test me when not exists - should remove from other servers and join
         ServerLocation location = dispatcher.registerIfNotExists(
                 player.getServer(),
                 player.getEmail(),
@@ -192,7 +203,7 @@ public class RestController {
     public boolean exitFromGameServer(@PathVariable("player") String email,
                                     @PathVariable("code") String code)
     {
-        Player player = validator.checkPlayerCode(email, code);
+        Player player = validator.checkPlayerCode(email, code); // TODO test me
 
         return game.remove(
                 player.getServer(),
@@ -212,11 +223,13 @@ public class RestController {
 
             @Override
             public ServerLocation onFailed(ServerLocation data) {
-               throw new LoginException("User name or password/code is incorrect");
+                // TODO test me
+                throw new LoginException("User name or password/code is incorrect");
             }
         });
     }
 
+    // TODO test me
     @RequestMapping(value = "/update", method = RequestMethod.POST)
     @ResponseBody
     public ServerLocation changePassword(@RequestBody Player player, HttpServletRequest request) {
@@ -256,6 +269,7 @@ public class RestController {
         return doIt(new DoItOnServers<ServerLocation>() {
             @Override
             public ServerLocation onGame() {
+                // TODO test not exists - remove from other and create
                 return dispatcher.registerIfNotExists(
                         current.getServer(),
                         current.getEmail(),
@@ -267,7 +281,10 @@ public class RestController {
             @Override
             public ServerLocation onBalancer(ServerLocation updated) {
                 if (updated == null) {
+                    // TODO test me
                     return current;
+                } else {
+                    // TODO test me
                 }
 
                 players.updateServer(email, updated.getServer(), updated.getCode());
@@ -282,9 +299,9 @@ public class RestController {
         String password = player.getPassword();
         String code = player.getCode();
 
-        validator.checkEmail(email, false);
-        validator.checkMD5(password, Validator.CAN_BE_NULL);
-        validator.checkCode(code, Validator.CAN_BE_NULL);
+        validator.checkEmail(email, CANT_BE_NULL); // TODO test me
+        validator.checkMD5(password, CAN_BE_NULL); // TODO test me
+        validator.checkCode(code, CAN_BE_NULL); // TODO test me
 
         Player exist = players.get(email);
         if (!isValid(exist, password, code)) {
@@ -340,10 +357,11 @@ public class RestController {
     public boolean remove(@PathVariable("player") String email,
                           @PathVariable("adminPassword") String adminPassword)
     {
-        validator.checkIsAdmin(adminPassword);
+        validator.checkIsAdmin(adminPassword); // TODO test me
 
         Player player = players.get(email);
         if (player == null) {
+            // TODO test me
             throw new IllegalArgumentException("Attempt to delete non-existing user");
         }
 
@@ -359,12 +377,15 @@ public class RestController {
                 if (removed != null && removed) {
 //                    scores.delete(email);
                     players.remove(email);
+                } else {
+                    // TODO test me
                 }
                 return removed;
             }
         });
     }
 
+    // TODO test me
     @RequestMapping(value = "/players/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public List<Player> getPlayers(@PathVariable("adminPassword") String adminPassword) {
@@ -387,6 +408,7 @@ public class RestController {
                 HttpStatus.UNAUTHORIZED);
     }
 
+    // TODO test me
     @RequestMapping(value = "/settings/{adminPassword}", method = RequestMethod.POST)
     @ResponseBody
     public boolean saveSettings(@PathVariable("adminPassword") String adminPassword,
@@ -400,6 +422,7 @@ public class RestController {
         return true;
     }
 
+    // TODO test me
     @RequestMapping(value = "/settings/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public ConfigProperties getSettings(@PathVariable("adminPassword") String adminPassword) {
@@ -408,6 +431,7 @@ public class RestController {
         return config;
     }
 
+    // TODO test me
     @RequestMapping(value = "/debug/get/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public boolean getDebug(@PathVariable("adminPassword") String adminPassword) {
@@ -416,6 +440,7 @@ public class RestController {
         return debug.isWorking();
     }
 
+    // TODO test me
     @RequestMapping(value = "/debug/set/{enabled}/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public boolean setDebug(@PathVariable("adminPassword") String adminPassword,
@@ -428,6 +453,7 @@ public class RestController {
         return debug.isWorking();
     }
 
+    // TODO test me
     @RequestMapping(value = "/contest/enable/set/{enabled}/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public List<String> startContestStarted(@PathVariable("adminPassword") String adminPassword,
@@ -450,6 +476,7 @@ public class RestController {
     }
 
 
+    // TODO test me
     @RequestMapping(value = "/contest/enable/get/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public boolean getContestStarted(@PathVariable("adminPassword") String adminPassword) {
@@ -458,6 +485,7 @@ public class RestController {
         return timer.isPaused();
     }
 
+    // TODO test me
     @RequestMapping(value = "/cache/clear/{adminPassword}", method = RequestMethod.GET)
     @ResponseBody
     public boolean invalidateCache(@PathVariable("adminPassword") String adminPassword) {

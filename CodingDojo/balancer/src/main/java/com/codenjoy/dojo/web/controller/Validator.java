@@ -27,13 +27,14 @@ import com.codenjoy.dojo.services.ConfigProperties;
 import com.codenjoy.dojo.services.PlayerCommand;
 import com.codenjoy.dojo.services.dao.Players;
 import com.codenjoy.dojo.services.entity.Player;
-import com.codenjoy.dojo.web.rest.RestController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PathVariable;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -119,13 +120,13 @@ public class Validator {
         }
     }
 
-    public void checkString(String input) {
+    public void checkString(String name, String input) {
         if (StringUtils.isEmpty(input)) {
-            throw new IllegalArgumentException("String can be empty: " + input);
+            throw new IllegalArgumentException(name + " string is empty: " + input);
         }
     }
 
-    public Player checkPlayerCode(@PathVariable("player") String email, @PathVariable("code") String code) {
+    public Player checkPlayerCode(String email, String code) {
         checkEmail(email, Validator.CANT_BE_NULL);
         checkCode(code, Validator.CANT_BE_NULL);
 
@@ -145,6 +146,28 @@ public class Validator {
     public void checkPositiveInteger(int count) {
         if (count <= 0){
             throw new IllegalArgumentException("Should be positive integer: " + count);
+        }
+    }
+
+    public void all(Runnable... validators) {
+        List<String> messages = new LinkedList<>();
+        Arrays.stream(validators)
+                .forEach(v -> {
+                    try {
+                        v.run();
+                    } catch (IllegalArgumentException e) {
+                        messages.add(e.getMessage());
+                    }
+                });
+        if (messages.isEmpty()) {
+            return;
+        }
+
+        if (messages.size() == 1) {
+            throw new IllegalArgumentException(messages.iterator().next());
+        } else {
+            throw new IllegalArgumentException("Something wrong with parameters on this request: " +
+                    messages.toString());
         }
     }
 }
