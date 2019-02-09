@@ -146,7 +146,7 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     private String gerCodeForAI(String aiName) {
-        return Hash.getCode(aiName, StringUtils.EMPTY);
+        return Hash.getCode(aiName, aiName);
     }
 
     private void registerAI(String playerName, GameType gameType) {
@@ -311,7 +311,7 @@ public class PlayerServiceImpl implements PlayerService {
                 if (playerController.requestControl(player, board)) {
                     requested++;
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("Unable to send control request to player " + player.getName() +
                         " URL: " + player.getCallbackUrl(), e);
             }

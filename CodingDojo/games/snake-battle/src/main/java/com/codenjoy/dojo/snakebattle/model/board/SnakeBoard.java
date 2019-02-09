@@ -33,9 +33,9 @@ import com.codenjoy.dojo.snakebattle.model.objects.*;
 import com.codenjoy.dojo.snakebattle.services.Events;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.codenjoy.dojo.services.PointImpl.pt;
@@ -58,6 +58,7 @@ public class SnakeBoard implements Field {
     private Timer startTimer;
     private Timer roundTimer;
     private int round;
+    private Timer winnerTimer;
 
     private Parameter<Integer> roundsPerMatch;
     private Parameter<Integer> flyingCount;
@@ -68,7 +69,7 @@ public class SnakeBoard implements Field {
     private int size;
     private Dice dice;
 
-    public SnakeBoard(Level level, Dice dice, Timer startTimer, Timer roundTimer, Parameter<Integer> roundsPerMatch, Parameter<Integer> flyingCount, Parameter<Integer> furyCount, Parameter<Integer> stoneReduced, Parameter<Integer> minTicksForWin) {
+    public SnakeBoard(Level level, Dice dice, Timer startTimer, Timer roundTimer, Timer winnerTimer, Parameter<Integer> roundsPerMatch, Parameter<Integer> flyingCount, Parameter<Integer> furyCount, Parameter<Integer> stoneReduced, Parameter<Integer> minTicksForWin) {
         this.flyingCount = flyingCount;
         this.furyCount = furyCount;
         this.stoneReduced = stoneReduced;
@@ -90,22 +91,16 @@ public class SnakeBoard implements Field {
 
         this.startTimer = startTimer.start();
         this.roundTimer = roundTimer.stop();
+        this.winnerTimer = winnerTimer.stop();
     }
 
     @Override
     public void tick() {
         snakesClear();
 
-
         startTimer.tick(this::sendTimerStatus);
         roundTimer.tick(() -> {});
-
-        if (roundTimer.justFinished()) {
-            rewardWinnersByTimeout();
-
-            startTimer.start();
-            return;
-        }
+        winnerTimer.tick(() -> {});
 
         if (startTimer.justFinished()) {
             round++;
@@ -117,9 +112,25 @@ public class SnakeBoard implements Field {
             return;
         }
 
-        if (restartIfLast()) {
+        if (roundTimer.justFinished()) {
+            rewardWinnersByTimeout();
+
             startTimer.start();
             return;
+        }
+
+
+        if (isNoOneOnBoard() || winnerTimer.justFinished()) {
+            if (isLastOnBoard()) {
+                reset(getLast());
+            }
+
+            startTimer.start();
+            return;
+        }
+
+        if (!startTimer.unlimited() && winnerTimer.done() && isLastOnBoard()) {
+            winnerTimer.start();
         }
 
         snakesMove();
@@ -196,12 +207,15 @@ public class SnakeBoard implements Field {
         }
         theWalkingDead.clear();
 
-        List<Player> alive = aliveActive();
-        if (alive.size() == 1) {
-            if (roundTimer.time() > minTicksForWin.getValue()) {
-                alive.forEach(p -> p.event(Events.WIN));
+        if (isLastOnBoard()) {
+            if (roundTimer.time() >= minTicksForWin.getValue()) {
+                getLast().event(Events.WIN);
             }
         }
+    }
+
+    private Player getLast() {
+        return aliveActive().iterator().next();
     }
 
     private List<Player> aliveActive() {
@@ -265,10 +279,10 @@ public class SnakeBoard implements Field {
             enemy = enemyEatenWith(hero);
             if (enemy != null) {
                 if (hero.isFury()) {
-                    if (!enemy.reduced()) {
+//                    if (!enemy.reduced()) { // TODO подумать когда такой кейз возможен
                         int len = enemy.reduceFrom(hero.head());
                         info.add(new ReduceInfo(hero, len));
-                    }
+//                    }
                 } else {
                     hero.die();
                     info.add(new ReduceInfo(enemy, hero.size()));
@@ -320,21 +334,12 @@ public class SnakeBoard implements Field {
                 .filter(h -> !h.isFlying());
     }
 
-    private boolean restartIfLast() {
-        if (startTimer.unlimited()) {
-            return false;
-        }
+    private boolean isNoOneOnBoard() {
+        return aliveActive().size() == 0;
+    }
 
-        List<Player> players = aliveActive();
-        if (players.size() == 1) {
-            // TODO этого никогда не случится. потому что фреймворк решает что последнего игрока надо кикнуть
-            // TODO надо бы и тесты пофиксить так как они рассчитывают на этот кусок кода
-            reset(players.get(0));
-        }
-
-        // если остался один игрок или вообще никого -
-        // мы перегружаемся
-        return players.size() <= 1;
+    private boolean isLastOnBoard() {
+        return aliveActive().size() == 1;
     }
 
     private void reset(Player player) {
@@ -396,7 +401,7 @@ public class SnakeBoard implements Field {
 
     private boolean freeOfHero(Point pt) {
         for (Hero h : getHeroes()) {
-            if (h != null && h.getBody().contains(pt) &&
+            if (h != null && h.body().contains(pt) &&
                     !pt.equals(h.getTailPoint()))
                 return false;
         }
@@ -432,7 +437,7 @@ public class SnakeBoard implements Field {
     public Hero enemyEatenWith(Hero me) {
         return aliveEnemies(me)
                 .filter(h -> !h.isFlying())
-                .filter(h -> h.getBody().contains(me.head()))
+                .filter(h -> h.body().contains(me.head()))
                 .findFirst()
                 .orElse(null);
     }
@@ -580,8 +585,11 @@ public class SnakeBoard implements Field {
 
             @Override
             public Iterable<? extends Point> elements() {
-                return new LinkedList<Point>(){{
-                    SnakeBoard.this.getHeroes().forEach(hero -> addAll(hero.getBody()));
+                return new LinkedHashSet<Point>(){{
+                    drawHeroes(hero -> !hero.isAlive(), hero -> Arrays.asList(hero.head()));
+                    drawHeroes(hero -> hero.isFlying(), hero -> hero.reversedBody());
+                    drawHeroes(hero -> !hero.isFlying(), hero -> hero.reversedBody());
+
                     addAll(SnakeBoard.this.getWalls());
                     addAll(SnakeBoard.this.getApples());
                     addAll(SnakeBoard.this.getStones());
@@ -589,13 +597,23 @@ public class SnakeBoard implements Field {
                     addAll(SnakeBoard.this.getFuryPills());
                     addAll(SnakeBoard.this.getGold());
                     addAll(SnakeBoard.this.getStarts());
-                    for (int i = 0; i < size(); i++) {
-                        Point p = get(i);
-                        if (p.isOutOf(SnakeBoard.this.size())) { // TODO могут ли существовать объекты за границей поля? (выползать из-за края змея)
+
+                    for (Point p : this.toArray(new Point[0])) {
+                        if (p.isOutOf(SnakeBoard.this.size())) {
                             remove(p);
                         }
                     }
-                }};
+                }
+
+                    private void drawHeroes(Predicate<Hero> filter,
+                                            Function<Hero, List<? extends Point>> getElements)
+                    {
+                        SnakeBoard.this.getHeroes().stream()
+                                .filter(filter)
+                                .sorted(Comparator.comparingInt(Hero::size))
+                                .forEach(hero -> addAll(getElements.apply(hero)));
+                    }
+                };
             }
         };
     }
@@ -604,24 +622,33 @@ public class SnakeBoard implements Field {
         throw new RuntimeException(message);
     }
 
-    public Point getObjOn(Point additionObject) {
-        if (apples.contains(additionObject))
-            return new Apple(additionObject);
-        if (stones.contains(additionObject))
-            return new Stone(additionObject);
-        if (flyingPills.contains(additionObject))
-            return new FlyingPill(additionObject);
-        if (furyPills.contains(additionObject))
-            return new FuryPill(additionObject);
-        if (gold.contains(additionObject))
-            return new Gold(additionObject);
-        if (starts.contains(additionObject))
-            return new StartFloor(additionObject);
-        if (walls.contains(additionObject))
-            return new Wall(additionObject);
-        for (Player player : players)
-            if (player.getHero().getBody().contains(additionObject))
+    public Point getOn(Point pt) {
+        if (apples.contains(pt)) {
+            return new Apple(pt);
+        }
+        if (stones.contains(pt)) {
+            return new Stone(pt);
+        }
+        if (flyingPills.contains(pt)) {
+            return new FlyingPill(pt);
+        }
+        if (furyPills.contains(pt)) {
+            return new FuryPill(pt);
+        }
+        if (gold.contains(pt)) {
+            return new Gold(pt);
+        }
+        if (starts.contains(pt)) {
+            return new StartFloor(pt);
+        }
+        if (walls.contains(pt)) {
+            return new Wall(pt);
+        }
+        for (Player player : players) {
+            if (player.getHero().body().contains(pt)) {
                 return player.getHero().neck(); // это просто любой объект типа Tail
+            }
+        }
         return null;
     }
 }

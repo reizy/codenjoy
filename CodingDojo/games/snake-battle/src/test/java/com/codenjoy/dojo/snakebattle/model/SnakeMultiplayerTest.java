@@ -37,6 +37,7 @@ import com.codenjoy.dojo.utils.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.exceptions.verification.NeverWantedButInvoked;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -61,26 +62,29 @@ public class SnakeMultiplayerTest {
     private PrinterFactory printer = new PrinterFactoryImpl();
     private SimpleParameter<Integer> timer;
     private SimpleParameter<Integer> roundsPerMatch;
+    private SimpleParameter<Integer> minTicksForWin;
 
     @Before
     public void setup() {
         dice = mock(Dice.class);
         timer = new SimpleParameter<>(0);
         roundsPerMatch = new SimpleParameter<>(5);
+        minTicksForWin = new SimpleParameter<>(1);
     }
 
     private void givenFl(String board) {
-        LevelImpl level = new LevelImpl(board);
+        LevelImpl level = new LevelImpl(board.replaceAll("\n", ""));
         game = new SnakeBoard(level, dice,
                 new Timer(timer),
                 new Timer(new SimpleParameter<>(300)),
+                new Timer(new SimpleParameter<>(1)),
                 roundsPerMatch,
                 new SimpleParameter<>(10),
                 new SimpleParameter<>(10),
                 new SimpleParameter<>(3),
-                new SimpleParameter<>(2));
+                minTicksForWin);
 
-        Hero hero = level.getHero();
+        Hero hero = level.getHero(game);
         hero.setActive(true);
         heroEvents = mock(EventListener.class);
         heroPlayer = new Player(heroEvents);
@@ -89,7 +93,7 @@ public class SnakeMultiplayerTest {
         hero.init(game);
         this.hero = game.getHeroes().get(0);
 
-        Hero enemy = level.getEnemy();
+        Hero enemy = level.getEnemy(game);
         enemy.setActive(true);
         enemyEvents = mock(EventListener.class);
         enemyPlayer = new Player(enemyEvents);
@@ -798,7 +802,7 @@ public class SnakeMultiplayerTest {
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼  ╓  ☼" +
-                "☼  ▼  ☼" +
+                "☼  ♦  ☼" +
                 "☼  ¤  ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -808,7 +812,7 @@ public class SnakeMultiplayerTest {
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼  ♦  ☼" +
-                "☼  ╓  ☼" +
+                "☼  ¤  ☼" +
                 "☼  ▼  ☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -847,7 +851,7 @@ public class SnakeMultiplayerTest {
         assertH("☼☼☼☼☼☼☼" +
                 "☼     ☼" +
                 "☼    ╓☼" +
-                "☼    ♥☼" +
+                "☼    ☺☼" +
                 "☼  ×─┘☼" +
                 "☼     ☼" +
                 "☼☼☼☼☼☼☼");
@@ -925,7 +929,7 @@ public class SnakeMultiplayerTest {
     }
 
     private void assertBoard(String expected, Player player) {
-        assertEquals(TestUtils.injectN(expected),
+        assertEquals(TestUtils.injectN(expected.replaceAll("\n", "")),
                 printer.getPrinter(game.reader(), player).print());
     }
 
@@ -1232,16 +1236,28 @@ public class SnakeMultiplayerTest {
         assertEquals(false, heroPlayer.isActive());
 
         assertEquals(true, enemyPlayer.isAlive());
-        assertEquals(false, enemyPlayer.isActive());
+        assertEquals(true, enemyPlayer.isActive());
 
-        assertH("☼☼☼☼☼☼☼☼" +
-                "☼☼     ☼" +
-                "☼☼     ☼" +
-                "~&     ☼" +
-                "*ø     ☼" +
-                "☼☼     ☼" +
-                "☼☼     ☼" +
-                "☼☼☼☼☼☼☼☼");
+        assertH("☼☼☼☼☼☼☼☼\n" +
+                "☼☼     ☼\n" +
+                "☼☼     ☼\n" +
+                "~&     ☼\n" +
+                "☼#  ×> ☼\n" +
+                "☼☼     ☼\n" +
+                "☼☼     ☼\n" +
+                "☼☼☼☼☼☼☼☼\n");
+
+        // последний победный тик героя!
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼\n" +
+                "☼☼     ☼\n" +
+                "☼☼     ☼\n" +
+                "~&     ☼\n" +
+                "*ø     ☼\n" +
+                "☼☼     ☼\n" +
+                "☼☼     ☼\n" +
+                "☼☼☼☼☼☼☼☼\n");
 
         // ждем перехода на второй уровень
         game.tick();
@@ -1313,6 +1329,9 @@ public class SnakeMultiplayerTest {
                 "☼☼     ☼" +
                 "☼☼     ☼" +
                 "☼☼☼☼☼☼☼☼");
+
+        // последний тик победителя тут неуместен, все погибли
+        // game.tick();
 
         // ждем перехода на третий уровень
         game.tick();
@@ -1646,6 +1665,121 @@ public class SnakeMultiplayerTest {
         verifyNoMoreInteractions(enemyEvents);
     }
 
+    @Test
+    public void shouldCutLongTail_whenFury() {
+        givenFl("☼☼☼☼☼☼☼☼☼☼" +
+                "☼╔══════╗☼" +
+                "☼║╔════╕║☼" +
+                "☼║╚═════╝☼" +
+                "☼╚═══►   ☼" +
+                "☼    ®   ☼" +
+                "☼    ˄   ☼" +
+                "☼    ¤   ☼" +
+                "☼        ☼" +
+                "☼☼☼☼☼☼☼☼☼☼");
+
+        assertH("☼☼☼☼☼☼☼☼☼☼" +
+                "☼╔══════╗☼" +
+                "☼║╔════╕║☼" +
+                "☼║╚═════╝☼" +
+                "☼╚═══►   ☼" +
+                "☼    ®   ☼" +
+                "☼    ˄   ☼" +
+                "☼    ¤   ☼" +
+                "☼        ☼" +
+                "☼☼☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼┌──────┐☼\n" +
+                "☼│┌────ö│☼\n" +
+                "☼│└─────┘☼\n" +
+                "☼└───>   ☼\n" +
+                "☼    ®   ☼\n" +
+                "☼    ▲   ☼\n" +
+                "☼    ╙   ☼\n" +
+                "☼        ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼╔══════╗☼\n" +
+                "☼║╔═══╕ ║☼\n" +
+                "☼║╚═════╝☼\n" +
+                "☼╚════►  ☼\n" +
+                "☼    ♣   ☼\n" +
+                "☼    ¤   ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼┌──────┐☼\n" +
+                "☼│┌───ö │☼\n" +
+                "☼│└─────┘☼\n" +
+                "☼└────>  ☼\n" +
+                "☼    ♥   ☼\n" +
+                "☼    ╙   ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼\n");
+
+
+        game.tick();
+
+        verifyEvents(heroEvents, "[]");
+        verifyEvents(enemyEvents, "[EAT[27]]");
+
+        assertH("☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼    ♣╘► ☼\n" +
+                "☼    ¤   ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼    ♥×> ☼\n" +
+                "☼    ╙   ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼    ♣   ☼\n" +
+                "☼    ¤ ╘►☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼    ♥   ☼\n" +
+                "☼    ╙ ×>☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼        ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼\n");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
     // с помощью этой команды можно самоуничтожиться
     // при этом на месте старой змейки появится много яблок :)
     @Test
@@ -1773,13 +1907,21 @@ public class SnakeMultiplayerTest {
 
     public static void verifyEvents(EventListener events, String expected) {
         if (expected.equals("[]")) {
-            verify(events, never()).event(any(Events.class));
+            try {
+                verify(events, never()).event(any(Events.class));
+            } catch (NeverWantedButInvoked e) {
+                assertEquals(expected, getEvents(events));
+            }
         } else {
-            ArgumentCaptor<Events> captor = ArgumentCaptor.forClass(Events.class);
-            verify(events, atLeast(1)).event(captor.capture());
-            assertEquals(expected, captor.getAllValues().toString());
+            assertEquals(expected, getEvents(events));
         }
         reset(events);
+    }
+
+    private static String getEvents(EventListener events) {
+        ArgumentCaptor<Events> captor = ArgumentCaptor.forClass(Events.class);
+        verify(events, atLeast(1)).event(captor.capture());
+        return captor.getAllValues().toString();
     }
 
     @Test
@@ -1864,7 +2006,7 @@ public class SnakeMultiplayerTest {
                 "☼      ☼" +
                 "☼æ     ☼" +
                 "☼│     ☼" +
-                "☼▲☺    ☼" +
+                "☼└☺    ☼" +
                 "☼╚═══╕ ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
@@ -1873,7 +2015,7 @@ public class SnakeMultiplayerTest {
                 "☼      ☼" +
                 "☼╓     ☼" +
                 "☼║     ☼" +
-                "☼˄☻    ☼" +
+                "☼╚☻    ☼" +
                 "☼└───ö ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
@@ -1924,7 +2066,7 @@ public class SnakeMultiplayerTest {
                 "☼│     ☼" +
                 "☼│     ☼" +
                 "☼☻     ☼" +
-                "☼˅═╕   ☼" +
+                "☼╚═╕   ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -1933,7 +2075,7 @@ public class SnakeMultiplayerTest {
                 "☼║     ☼" +
                 "☼║     ☼" +
                 "☼☺     ☼" +
-                "☼▼─ö   ☼" +
+                "☼└─ö   ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2045,7 +2187,7 @@ public class SnakeMultiplayerTest {
                 "☼║     ☼" +
                 "☼║     ☼" +
                 "☼║     ☼" +
-                "☼♥───ö ☼" +
+                "☼☺───ö ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2054,7 +2196,7 @@ public class SnakeMultiplayerTest {
                 "☼│     ☼" +
                 "☼│     ☼" +
                 "☼│     ☼" +
-                "☼♣═══╕ ☼" +
+                "☼☻═══╕ ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2166,7 +2308,7 @@ public class SnakeMultiplayerTest {
                 "☼║ ╙   ☼" +
                 "☼║     ☼" +
                 "☼║     ☼" +
-                "☼▼───ö ☼" +
+                "☼☺───ö ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2175,7 +2317,7 @@ public class SnakeMultiplayerTest {
                 "☼│ ¤   ☼" +
                 "☼│     ☼" +
                 "☼│     ☼" +
-                "☼˅═══╕ ☼" +
+                "☼☻═══╕ ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2291,7 +2433,7 @@ public class SnakeMultiplayerTest {
                 "☼╓     ☼" +
                 "☼║     ☼" +
                 "☼║     ☼" +
-                "☼▼ö    ☼" +
+                "☼☺ö    ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2300,7 +2442,7 @@ public class SnakeMultiplayerTest {
                 "☼æ     ☼" +
                 "☼│     ☼" +
                 "☼│     ☼" +
-                "☼˅╕    ☼" +
+                "☼☻╕    ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2489,7 +2631,7 @@ public class SnakeMultiplayerTest {
                 "☼║     ☼" +
                 "☼║     ☼" +
                 "☼║     ☼" +
-                "☼▼───ö ☼" +
+                "☼☺───ö ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2498,7 +2640,7 @@ public class SnakeMultiplayerTest {
                 "☼│     ☼" +
                 "☼│     ☼" +
                 "☼│     ☼" +
-                "☼˅═══╕ ☼" +
+                "☼☻═══╕ ☼" +
                 "☼      ☼" +
                 "☼☼☼☼☼☼☼☼");
 
@@ -2682,6 +2824,1617 @@ public class SnakeMultiplayerTest {
                 "☼│      ☼" +
                 "☼│      ☼" +
                 "☼☺☼☼☼☼☼☼☼");
+    }
+
+    // если тиков для победы недостаточно, то WIN ты не получишь
+    @Test
+    public void shouldNoWin_whenIsNotEnoughTicksForWin() {
+        minTicksForWin.update(10);
+
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼┌─┐   ☼" +
+                "☼│ ¤   ☼" +
+                "☼│     ☼" +
+                "☼˅     ☼" +
+                "☼◄══╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        enemy.right();
+        hero.up();
+        game.tick();
+
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[EAT[4]]");
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼┌─ö   ☼" +
+                "☼│     ☼" +
+                "☼│     ☼" +
+                "☼☻>    ☼" +
+                "☼╚═╕   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼╔═╕   ☼" +
+                "☼║     ☼" +
+                "☼║     ☼" +
+                "☼☺►    ☼" +
+                "☼└─ö   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼×─>   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╘═►   ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        verifyNoMoreInteractions(heroEvents);
+        verifyNoMoreInteractions(enemyEvents);
+    }
+
+    // с таблеткой полета и яростью я не откусываю хвост врага
+    @Test
+    public void shouldCase12_furyPlusFlying() {
+        givenFl("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼            ┌──>           ☼\n" +
+                "☼#○           ¤♥  ○          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚══╕         ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼");
+
+        hero.eatFlying(); // добрали таблетку полета
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼            ×♠──>          ☼\n" +
+                "☼#○            ║  ○          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚═╕          ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        hero.right();
+        enemy.down();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼            ×╔♠─┐          ☼\n" +
+                "☼#○            ║  ˅          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚╕           ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+        game.tick();
+
+        hero.count();
+        hero.count();
+        hero.count();
+        hero.count();
+        assertEquals(2, hero.getFuryCount());
+        assertEquals(2, hero.getFlyingCount());
+        hero.count();
+        assertEquals(1, hero.getFuryCount());
+        assertEquals(1, hero.getFlyingCount());
+
+        enemy.left();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼             ╔═×┐►         ☼\n" +
+                "☼#○            ║  │          ☼\n" +
+                "☼☼         ©  ╔╝  │          ☼\n" +
+                "☼☼        ☼☼☼ ╚╕ <┘          ☼\n" +
+                "☼☼       ☼  ☼                ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        verifyEvents(heroEvents, "[]");
+        verifyEvents(enemyEvents, "[APPLE]");
+    }
+
+    // с таблеткой ярости я отгрызаю хвосты,
+    // даже те которые под яблоком вырастают
+    @Test
+    public void shouldCase12_justFury() {
+        givenFl("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼            ┌──>           ☼\n" +
+                "☼#○           ¤♥  ○          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚══╕         ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼             ♥×─>          ☼\n" +
+                "☼#○            ║  ○          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚═╕          ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        hero.right();
+        enemy.down();
+        game.tick();
+
+        verifyEvents(heroEvents, "[EAT[2], EAT[1]]");
+        verifyEvents(enemyEvents, "[APPLE]");
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼             ╔♥×┐          ☼\n" +
+                "☼#○            ║  ˅          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚╕           ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        verifyEvents(heroEvents, "[]");
+        verifyEvents(enemyEvents, "[]");
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼             ╔═♥æ          ☼\n" +
+                "☼#○            ║  │          ☼\n" +
+                "☼☼         ©  ╔╝  ˅          ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╙            ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+    }
+
+    // с таблеткой полета я пархаю над врагом
+    // пока полет не закончится - там змея моя
+    // погибнет и враг заберет очки
+    @Test
+    public void shouldCase12_justFlying() {
+        givenFl("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼            ┌──>           ☼\n" +
+                "☼#○           ¤♠  ○          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚══╕         ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼            ×♠──>          ☼\n" +
+                "☼#○            ║  ○          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚═╕          ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        hero.right();
+        enemy.down();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼            ×╔♠─┐          ☼\n" +
+                "☼#○            ║  ˅          ☼\n" +
+                "☼☼         ©  ╔╝             ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╚╕           ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        verifyEvents(heroEvents, "[]");
+        verifyEvents(enemyEvents, "[APPLE]");
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼             ╔═♠┐          ☼\n" +
+                "☼#○            ║  │          ☼\n" +
+                "☼☼         ©  ╔╝  ˅          ☼\n" +
+                "☼☼        ☼☼☼ ╚═╗            ☼\n" +
+                "☼☼       ☼  ☼   ╙            ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        hero.count();
+        hero.count();
+        hero.count();
+        hero.count();
+        hero.count();
+        hero.count();
+        assertEquals(1, hero.getFlyingCount());
+        hero.count();
+        assertEquals(0, hero.getFlyingCount());
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼      ○                    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼         ○       ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼                ☼   ●      ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼             ╔×─☻          ☼\n" +
+                "☼#○            ║  │          ☼\n" +
+                "☼☼         ©  ╔╝  │          ☼\n" +
+                "☼☼        ☼☼☼ ╚═╕ ˅          ☼\n" +
+                "☼☼       ☼  ☼                ☼\n" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼   ○ ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼                  ®    ©   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        verifyEvents(heroEvents, "[DIE]");
+        verifyEvents(enemyEvents, "[EAT[10], WIN]");
+
+    }
+
+    @Test
+    public void shouldChangeHeadSprite() {
+        givenFl("☼☼☼☼☼☼☼☼☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼╘►     ☼" +
+                "☼       ☼" +
+                "☼×>     ☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼☼☼☼☼☼☼☼☼");
+
+        assertH("☼☼☼☼☼☼☼☼☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼╘►     ☼" +
+                "☼       ☼" +
+                "☼×>     ☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼×>     ☼" +
+                "☼       ☼" +
+                "☼╘►     ☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼☼☼☼☼☼☼☼☼");
+
+        hero.eatFlying();
+        enemy.eatFury();
+
+        assertH("☼☼☼☼☼☼☼☼☼\n" +
+                "☼       ☼\n" +
+                "☼       ☼\n" +
+                "☼╘♠     ☼\n" +
+                "☼       ☼\n" +
+                "☼×♣     ☼\n" +
+                "☼       ☼\n" +
+                "☼       ☼\n" +
+                "☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼×♦     ☼" +
+                "☼       ☼" +
+                "☼╘♥     ☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼☼☼☼☼☼☼☼☼");
+
+        hero.eatFury();
+        enemy.eatFlying();
+
+        assertH("☼☼☼☼☼☼☼☼☼\n" +
+                "☼       ☼\n" +
+                "☼       ☼\n" +
+                "☼╘♠     ☼\n" +
+                "☼       ☼\n" +
+                "☼×♦     ☼\n" +
+                "☼       ☼\n" +
+                "☼       ☼\n" +
+                "☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼×♦     ☼" +
+                "☼       ☼" +
+                "☼╘♠     ☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼☼☼☼☼☼☼☼☼");
+
+        hero.removeFlying();
+        enemy.removeFury();
+
+        assertH("☼☼☼☼☼☼☼☼☼\n" +
+                "☼       ☼\n" +
+                "☼       ☼\n" +
+                "☼╘♥     ☼\n" +
+                "☼       ☼\n" +
+                "☼×♦     ☼\n" +
+                "☼       ☼\n" +
+                "☼       ☼\n" +
+                "☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼×♣     ☼" +
+                "☼       ☼" +
+                "☼╘♠     ☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼☼☼☼☼☼☼☼☼");
+
+        hero.removeFury();
+        enemy.removeFlying();
+
+        assertH("☼☼☼☼☼☼☼☼☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼╘►     ☼" +
+                "☼       ☼" +
+                "☼×>     ☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼×>     ☼" +
+                "☼       ☼" +
+                "☼╘►     ☼" +
+                "☼       ☼" +
+                "☼       ☼" +
+                "☼☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void shouldCase13() {
+        givenFl("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                         ● ☼\n" +
+                "☼#        ○                  ☼\n" +
+                "☼☼       ●                   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼                 ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼        $       ☼          ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼     ●                     ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼ ●                         ☼\n" +
+                "☼☼ ● ○    ☼☼☼                ☼\n" +
+                "☼☼       ☼  ☼                ☼\n" +
+                "☼☼      ☼☼☼☼#    ●☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼    ○         ×─┐          ☼\n" +
+                "☼☼                └─┐        ☼\n" +
+                "☼#                  └┐     ● ☼\n" +
+                "☼☼               ┌───┘╓      ☼\n" +
+                "☼☼               └───♣╚► ©   ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼");
+
+        hero.up();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                         ● ☼\n" +
+                "☼#        ○                  ☼\n" +
+                "☼☼       ●                   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼                 ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼        $       ☼          ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼     ●                     ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼ ●                         ☼\n" +
+                "☼☼ ● ○    ☼☼☼                ☼\n" +
+                "☼☼       ☼  ☼                ☼\n" +
+                "☼☼      ☼☼☼☼#    ●☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼    ○          ×┐          ☼\n" +
+                "☼☼                └─┐        ☼\n" +
+                "☼#                  └┐     ● ☼\n" +
+                "☼☼               ┌───┘ ▲     ☼\n" +
+                "☼☼               └────♣╙ ©   ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼☼                         ● ☼\n" +
+                "☼#        ○                  ☼\n" +
+                "☼☼       ●                   ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼     ☼☼☼☼☼                 ☼\n" +
+                "☼☼     ☼                     ☼\n" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼\n" +
+                "☼☼     ☼          ☼   ☼  ●   ☼\n" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼\n" +
+                "☼☼        $       ☼          ☼\n" +
+                "☼☼                ☼          ☼\n" +
+                "☼☼     ●                     ☼\n" +
+                "☼#                           ☼\n" +
+                "☼☼ ●                         ☼\n" +
+                "☼☼ ● ○    ☼☼☼                ☼\n" +
+                "☼☼       ☼  ☼                ☼\n" +
+                "☼☼      ☼☼☼☼#    ●☼☼   ☼#    ☼\n" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼\n" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                ☼     ☼    ☼\n" +
+                "☼☼                           ☼\n" +
+                "☼☼    ○           æ          ☼\n" +
+                "☼☼                └─┐        ☼\n" +
+                "☼#                  └┐ ▲   ● ☼\n" +
+                "☼☼               ┌───┘ ╙     ☼\n" +
+                "☼☼               └─────♣ ©   ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+    }
+
+    @Test
+    public void headStrikeDisplay() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼˅     ☼" +
+                "☼ ◄══╕ ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼☺══╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼☻──ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void headStrikeDisplayInverted() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼▼     ☼" +
+                "☼ <──ö ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼☻──ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼☺══╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void headStrikeDisplay_sameSize() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼│     ☼" +
+                "☼˅     ☼" +
+                "☼ ◄═╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼│     ☼" +
+                "☼☻═╕   ☼" + // TODO тут рисуется не та голова, как в 90% случаев
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼║     ☼" +
+                "☼☺─ö   ☼" +  // TODO тут рисуется не та голова, как в 90% случаев
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void headStrikeDisplayInverted_sameSize() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼║     ☼" +
+                "☼▼     ☼" +
+                "☼ <─ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼║     ☼" +
+                "☼☻─ö   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼│     ☼" +
+                "☼☺═╕   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void headStrikeDisplay2() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼│     ☼" +
+                "☼˅     ☼" +
+                "☼ ◄╕   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼│     ☼" +
+                "☼☻╕    ☼" + // TODO тут рисуется не та голова, как в 90% случаев
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼║     ☼" +
+                "☼☺ö    ☼" + // TODO тут рисуется не та голова, как в 90% случаев
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void headStrikeDisplayInverted2() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼║     ☼" +
+                "☼▼     ☼" +
+                "☼ <ö   ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼╓     ☼" +
+                "☼║     ☼" +
+                "☼☺ö    ☼" + // TODO тут рисуется не та голова, как в 90% случаев
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼æ     ☼" +
+                "☼│     ☼" +
+                "☼☻╕    ☼" + // TODO тут рисуется не та голова, как в 90% случаев
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void bodyStrikeDisplay() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼  ˅   ☼" +
+                "☼ ◄══╕ ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼◄═☺╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼<─☻ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void bodyStrikeDisplayInverted() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼  ▼   ☼" +
+                "☼ <──ö ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼<─☻ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼◄═☺╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void flightOverBodyDisplay() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼  ˅   ☼" +
+                "☼  ©   ☼" +
+                "☼  ◄══╕☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼◄═♦╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼<─♠ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☻══æ   ☼\n" +
+                "☼  ♦   ☼\n" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☺──╓   ☼\n" +
+                "☼  ♠   ☼\n" +
+                "☼☼☼☼☼☼☼☼");
+    }
+
+    @Test
+    public void flightOverBodyDisplayInverted() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼  ▼   ☼" +
+                "☼  ©   ☼" +
+                "☼  <──ö☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼<─♠ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼◄═♦╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☺──╓   ☼\n" +
+                "☼  ♠   ☼\n" +
+                "☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☻══æ   ☼\n" +
+                "☼  ♦   ☼\n" +
+                "☼☼☼☼☼☼☼☼\n");
+    }
+
+    @Test
+    public void flightOverHeadDisplay() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼  ˅   ☼" +
+                "☼  ©   ☼" +
+                "☼    ◄╕☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼  ♦╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼  ♠ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼ ◄æ   ☼\n" +
+                "☼  ♦   ☼\n" +
+                "☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼ <╓   ☼\n" +
+                "☼  ♠   ☼\n" +
+                "☼☼☼☼☼☼☼☼\n");
+    }
+
+    @Test
+    public void flightOverHeadDisplayInverted() {
+        givenFl("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼  ▼   ☼" +
+                "☼  ©   ☼" +
+                "☼    <ö☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  ╓   ☼" +
+                "☼  ♠ö  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        assertE("☼☼☼☼☼☼☼☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼      ☼" +
+                "☼  æ   ☼" +
+                "☼  ♦╕  ☼" +
+                "☼      ☼" +
+                "☼☼☼☼☼☼☼☼");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼ <╓   ☼\n" +
+                "☼  ♠   ☼\n" +
+                "☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼      ☼\n" +
+                "☼ ◄æ   ☼\n" +
+                "☼  ♦   ☼\n" +
+                "☼☼☼☼☼☼☼☼\n");
+    }
+
+    @Test
+    public void headTwoFlyingSnakes_drawSmallerOnTop_start() {
+        givenFl("☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼           ☼" +
+                "☼           ☼" +
+                "☼           ☼" +
+                "☼           ☼" +
+                "☼           ☼" +
+                "☼   ┌─> ◄══╕☼" +
+                "☼   │       ☼" +
+                "☼   │       ☼" +
+                "☼   └───ö   ☼" +
+                "☼           ☼" +
+                "☼           ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼");
+
+        hero.eatFlying();
+        enemy.eatFlying();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ┌──♠══╕ ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   └──ö    ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ╔══♦──ö ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ╚══╕    ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ┌─♠══╕  ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   └─ö     ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ╔═♦──ö  ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ╚═╕     ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ┌♠══╕♦  ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   └ö      ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ╔♦──ö♠  ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ╚╕      ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ♠══╕──♦ ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   ¤       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ♦──ö══♠ ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ╙       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        hero.down();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ╔═╕────♦☼\n" +
+                "☼   ♠       ☼\n" +
+                "☼   ¤       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼   ┌─ö════♠☼\n" +
+                "☼   ♦       ☼\n" +
+                "☼   ╙       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+    }
+
+    @Test
+    public void headTwoFlyingSnakes_drawSmallerOnTop_finishWithFlying() {
+        headTwoFlyingSnakes_drawSmallerOnTop_start();
+
+        enemy.up();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ♦☼\n" +
+                "☼   ╔╕─────┘☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ♠       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ♠☼\n" +
+                "☼   ┌ö═════╝☼\n" +
+                "☼   │       ☼\n" +
+                "☼   ♦       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ♦☼\n" +
+                "☼          │☼\n" +
+                "☼   ╓──────┘☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ♠       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ♠☼\n" +
+                "☼          ║☼\n" +
+                "☼   æ══════╝☼\n" +
+                "☼   │       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   ♦       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ♦☼\n" +
+                "☼          │☼\n" +
+                "☼          │☼\n" +
+                "☼    ×─────┘☼\n" +
+                "☼   ╓       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ♠       ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ♠☼\n" +
+                "☼          ║☼\n" +
+                "☼          ║☼\n" +
+                "☼    ╘═════╝☼\n" +
+                "☼   æ       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   ♦       ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+    }
+    @Test
+    public void headTwoFlyingSnakes_drawSmallerOnTop_finishWithoutFlying() {
+        headTwoFlyingSnakes_drawSmallerOnTop_start();
+
+        hero.removeFlying();
+        enemy.removeFlying();
+
+        assertEquals(0, hero.getFlyingCount());
+        assertEquals(0, enemy.getFlyingCount());
+
+        enemy.up();
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ˄☼\n" +
+                "☼   ╔╕─────┘☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ▼       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ▲☼\n" +
+                "☼   ┌ö═════╝☼\n" +
+                "☼   │       ☼\n" +
+                "☼   ˅       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ˄☼\n" +
+                "☼          │☼\n" +
+                "☼   ╓──────┘☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ▼       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ▲☼\n" +
+                "☼          ║☼\n" +
+                "☼   æ══════╝☼\n" +
+                "☼   │       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   ˅       ☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        game.tick();
+
+        assertH("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ˄☼\n" +
+                "☼          │☼\n" +
+                "☼          │☼\n" +
+                "☼    ×─────┘☼\n" +
+                "☼   ╓       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ║       ☼\n" +
+                "☼   ▼       ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
+
+        assertE("☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                "☼           ☼\n" +
+                "☼           ☼\n" +
+                "☼          ▲☼\n" +
+                "☼          ║☼\n" +
+                "☼          ║☼\n" +
+                "☼    ╘═════╝☼\n" +
+                "☼   æ       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   │       ☼\n" +
+                "☼   ˅       ☼\n" +
+                "☼           ☼\n" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼\n");
     }
 }
 
