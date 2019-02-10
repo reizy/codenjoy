@@ -54,6 +54,7 @@ public class ActionLogger extends Suspendable {
                     "player_name varchar(255), " +
                     "game_type varchar(255), " +
                     "score varchar(255), " +
+                    "command varchar(255), " +
                     "board varchar(10000));");
         active = false;
         count = 0;
@@ -70,8 +71,8 @@ public class ActionLogger extends Suspendable {
     public void saveToDB() {
         pool.run(connection -> {
             String sql = "INSERT INTO player_boards " +
-                    "(time, player_name, game_type, score, board) " +
-                    "VALUES (?,?,?,?,?);";
+                    "(time, player_name, game_type, score, command, board) " +
+                    "VALUES (?,?,?,?,?,?);";
 
             BoardLog data;
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -86,7 +87,8 @@ public class ActionLogger extends Suspendable {
                     stmt.setString(2, data.getPlayerName());
                     stmt.setString(3, data.getGameType());
                     stmt.setString(4, data.getScore().toString());
-                    stmt.setString(5, data.getBoard());
+                    stmt.setString(5, data.getCommand());
+                    stmt.setString(6, data.getBoard());
                     stmt.addBatch();
                 }
                 stmt.executeBatch();
@@ -100,14 +102,15 @@ public class ActionLogger extends Suspendable {
     public void log(PlayerGames playerGames) {
         if (!active || playerGames.size() == 0) return;
 
-        long tick = System.currentTimeMillis();
+        long tick = now();
         for (PlayerGame playerGame : playerGames) {
             Player player = playerGame.getPlayer();
             cache.add(new BoardLog(tick,
                     player.getName(),
                     player.getGameName(),
                     player.getScore(),
-                    playerGame.getGame().getBoardAsString().toString()));
+                    playerGame.getGame().getBoardAsString().toString(),
+                    playerGame.popLastCommand()));
         }
 
         if (count++ % ticks == 0) {
@@ -116,15 +119,40 @@ public class ActionLogger extends Suspendable {
         }
     }
 
+    protected long now() {
+        return System.currentTimeMillis();
+    }
+
     public List<BoardLog> getAll() {
         return pool.select("SELECT * FROM player_boards;",
-                rs -> {
-                    List<BoardLog> result = new LinkedList<>();
-                    while (rs.next()) {
-                        result.add(new BoardLog(rs));
-                    }
-                    return result;
+                rs -> getBoardLogs(rs));
+    }
+
+    private LinkedList<BoardLog> getBoardLogs(ResultSet rs) throws SQLException {
+        return new LinkedList<BoardLog>(){{
+                while (rs.next()) {
+                    add(new BoardLog(rs));
                 }
-        );
+            }};
+    }
+
+    // TODO test me
+    public long getLastTime(String player) {
+        return pool.select("SELECT MAX(time) AS time FROM player_boards WHERE player_name = ?;",
+                new Object[]{ player },
+                rs -> (rs.next()) ? JDBCTimeUtils.getTimeLong(rs) : 0);
+    }
+
+    // TODO test me
+    public List<BoardLog> getBoardLogsFor(String player, long time, int count) {
+        return pool.select(
+                    "SELECT * FROM (SELECT * FROM player_boards WHERE player_name = ? AND time <= ? ORDER BY time ASC LIMIT ?) AS before" +
+                    " UNION " +
+                    "SELECT * FROM (SELECT * FROM player_boards WHERE player_name = ? AND time > ? ORDER BY time ASC LIMIT ?) AS after;",
+                new Object[]{
+                    player, JDBCTimeUtils.toString(new java.util.Date(time)), count + 1,
+                    player, JDBCTimeUtils.toString(new java.util.Date(time)), count
+                },
+                rs -> getBoardLogs(rs));
     }
 }
