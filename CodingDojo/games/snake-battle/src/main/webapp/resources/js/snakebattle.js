@@ -41,8 +41,11 @@ var initHelpLink = function() {
 }
 var initAdditionalLink = function() {
     if (game.onlyLeaderBoard) {
-        $('#additional-link').attr('href', '/codenjoy-contest/resources/user/snakebattle-servers.zip')
-        $('#additional-link').text('Get client')
+        $('#additional-link').attr('href', '/codenjoy-contest/resources/user/snakebattle-servers-java.zip')
+        $('#additional-link').text('Java client')
+
+        $('#additional-link').attr('href', '/codenjoy-contest/resources/user/snakebattle-servers-js.zip')
+        $('#additional-link').text('JS client')
     }
 }
 
