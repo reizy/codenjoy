@@ -35,6 +35,9 @@ import javax.servlet.http.HttpServletRequest;
 @Component
 public class SecureAuthenticationService implements AuthenticationService {
 
+    public static final int MAX_PLAYER_ID_LENGTH = 100;
+    public static final int MAX_PLAYER_CODE_LENGTH = 50;
+
     private static Logger logger = DLoggerFactory.getLogger(SecureAuthenticationService.class);
 
     @Autowired
@@ -45,6 +48,14 @@ public class SecureAuthenticationService implements AuthenticationService {
         String user = request.getParameter("user");
         String code = request.getParameter("code");
 
+        if ((user != null && user.length() > MAX_PLAYER_ID_LENGTH)
+                || (code != null && code.length() > MAX_PLAYER_CODE_LENGTH))
+        {
+            logger.warn("Thee are unexpected pair of user {} and code {}. " +
+                    "We will drop this user.", user, code);
+            return null;
+        }
+
         if (isAI(user)){
             if (logger.isDebugEnabled()) {
                 logger.debug("User {} with code {} logged in as AI", user, code);
@@ -53,7 +64,13 @@ public class SecureAuthenticationService implements AuthenticationService {
             return user;
         }
 
-        String result = registration.checkUser(user, code);
+        String result = null;
+        try {
+            result = registration.checkUser(user, code);
+        } catch (Exception e) {
+            logger.error(String.format("Error during check user on authenticate " +
+                    "for user %s with code %s", user, code), e);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("User {} with code {} logged as {}", user, code, result);
