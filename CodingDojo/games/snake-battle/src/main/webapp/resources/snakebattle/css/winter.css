@@ -238,10 +238,6 @@ body {
 
 /* hide unused elements */
 
-.header-container {
-    display: none;
-}
-
 footer {
     display: none;
 }

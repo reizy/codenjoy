@@ -4,7 +4,7 @@
  * %%
  * Copyright (C) 2018 Codenjoy
  * %%
- * This program is free software: you can redistribute it and/or modify
+ * This program is free so  ftware: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
@@ -30,6 +30,7 @@
         gameName: "gameName",
         userData: {
             email: "registration-email",
+            readableName: "registration-readableName",
             data: "registration-data",
             data1: "registration-data1",
             data2: "registration-data2",
@@ -46,6 +47,7 @@
             data = data || {
                 showGamesOnRegistration : true,
                 showNamesOnRegistration : false,
+                showCitiesOnRegistration : false,
                 showTechSkillsOnRegistration : false,
                 showUniversityOnRegistration : false,
                 defaultGameOnRegistration : 'Contest'
@@ -57,6 +59,11 @@
                 $('#game').hide();
             }
             if (data.showNamesOnRegistration) {
+                $('#readableName').show();
+            } else {
+                $('#readableName').hide();
+            }
+            if (data.showCitiesOnRegistration) {
                 $('#data1').show();
             } else {
                 $('#data1').hide();
@@ -109,6 +116,7 @@
             };
         };
 
+        configurable('readableName');
         configurable('data1');
         configurable('data2');
         configurable('data3');
@@ -121,7 +129,7 @@
 
                 var element = $('#' + index);
                 var value = element.find('input').val();
-                if (checkEls[index](value)) {
+                if (!element.attr('hidden') && checkEls[index](value)) {
                     element.addClass('not-valid');
                     element.removeClass('valid');
                 } else {
@@ -144,6 +152,7 @@
         };
 
         $('#email').checkAndTriggerAutoFillEvent();
+        $('#readableName').checkAndTriggerAutoFillEvent();
         $('#password').checkAndTriggerAutoFillEvent();
 
         for (var index in checkEls) {
@@ -169,7 +178,7 @@
         };
 
         $('#submit-button').click(submitForm);
-        $('#email, #password, #game, #skills, #data1, #data2, #data3').keypress(function (e) {
+        $('#email, #password, #game, #skills, #readableName, #data1, #data2, #data3').keypress(function (e) {
             var code = (e.keyCode ? e.keyCode : e.which);
             if (code == 13) {
                 submitForm();
@@ -180,8 +189,8 @@
 
     function loadInput(key, selector) {
         var value = localStorage.getItem(key);
-        if (!!value) {
-            $(selector).val(value);
+        if (!!value && !$(selector).attr('hidden')) {
+            $(selector).find('input').val(value);
         }
     }
 
@@ -196,15 +205,17 @@
             }
         }
 
-        loadInput(KEYS.userData.email, '#email input');
-        loadInput(KEYS.userData.data1, '#data1 input');
-        loadInput(KEYS.userData.data2, '#data2 input');
-        loadInput(KEYS.userData.data3, '#data3 input');
+        loadInput(KEYS.userData.email, '#email');
+        loadInput(KEYS.userData.readableName, '#readableName');
+        loadInput(KEYS.userData.data1, '#data1');
+        loadInput(KEYS.userData.data2, '#data2');
+        loadInput(KEYS.userData.data3, '#data3');
     }
 
     function saveDataToLocalStorage() {
         localStorage.setItem(KEYS.gameName, $('#game').find('option:selected').text());
         localStorage.setItem(KEYS.userData.email, $('#email input').val());
+        localStorage.setItem(KEYS.userData.readableName, $('#readableName input').val());
         localStorage.setItem(KEYS.userData.data1, $('#data1 input').val());
         localStorage.setItem(KEYS.userData.data2, $('#data2 input').val());
         localStorage.setItem(KEYS.userData.data3, $('#data3 input').val());
