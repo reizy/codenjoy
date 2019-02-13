@@ -36,16 +36,18 @@ game.showBody = false;
 game.debug = false;
 
 var initHelpLink = function() {
-    var pageName = gameName.split(' ').join('-').toLowerCase();
-    $('#help-link').attr('href', '/codenjoy-contest/resources/snakebattle/landing-' + pageName + '.html')
+    $('#help-link').attr('href', '/codenjoy-contest/resources/snakebattle/rules.html');
+}
+var initRegisterLink = function() {
+    $('#register-link').attr('href', '/codenjoy-contest/resources/snakebattle/registration.html');
 }
 var initAdditionalLink = function() {
     if (game.onlyLeaderBoard) {
-        $('#additional-link1').attr('href', '/codenjoy-contest/resources/user/snakebattle-servers-java.zip')
-        $('#additional-link1').text('Java client')
+        $('#additional-link1').attr('href', '/codenjoy-contest/resources/user/snakebattle-servers-java.zip');
+        $('#additional-link1').text('Java');
 
-        $('#additional-link2').attr('href', '/codenjoy-contest/resources/user/snakebattle-servers-js.zip')
-        $('#additional-link2').text('JS client')
+        $('#additional-link2').attr('href', '/codenjoy-contest/resources/user/snakebattle-servers-js.zip');
+        $('#additional-link2').text('JS');
     }
 }
 
@@ -57,6 +59,7 @@ game.onBoardAllPageLoad = function() {
             boardAllPageLoad();
             initHelpLink();
             initAdditionalLink();
+            initRegisterLink();
         });
 }
 

@@ -175,7 +175,7 @@ body {
 }
 
 .wrapper-rules .title {
-    margin-left: 5px;
+    margin-left: 15px;
     text-transform: none;
     vertical-align: middle;
     font-family: sans-serif;
@@ -236,12 +236,6 @@ body {
     right: 0;
 }
 
-/* hide unused elements */
-
-footer {
-    display: none;
-}
-
-.leaderboard-table th a {
-    display: none;
+.leaderboard-table th:first-child {
+    text-align: center;
 }

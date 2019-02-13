@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<!--
+  #%L
+  Codenjoy - it's a dojo-like platform from developers to developers.
+  %%
+  Copyright (C) 2018 - 2019 Codenjoy
+  %%
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as
+  published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  
+  You should have received a copy of the GNU General Public
+  License along with this program.  If not, see
+  <http://www.gnu.org/licenses/gpl-3.0.html>.
+  #L%
+  -->
+
+<!-- saved from url=(0047)privacyPolicy -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css">svg:not(:root).svg-inline--fa {
+  overflow: visible;
+}
+
+.svg-inline--fa {
+  display: inline-block;
+  font-size: inherit;
+  height: 1em;
+  overflow: visible;
+  vertical-align: -0.125em;
+}
+.svg-inline--fa.fa-lg {
+  vertical-align: -0.225em;
+}
+.svg-inline--fa.fa-w-1 {
+  width: 0.0625em;
+}
+.svg-inline--fa.fa-w-2 {
+  width: 0.125em;
+}
+.svg-inline--fa.fa-w-3 {
+  width: 0.1875em;
+}
+.svg-inline--fa.fa-w-4 {
+  width: 0.25em;
+}
+.svg-inline--fa.fa-w-5 {
+  width: 0.3125em;
+}
+.svg-inline--fa.fa-w-6 {
+  width: 0.375em;
+}
+.svg-inline--fa.fa-w-7 {
+  width: 0.4375em;
+}
+.svg-inline--fa.fa-w-8 {
+  width: 0.5em;
+}
+.svg-inline--fa.fa-w-9 {
+  width: 0.5625em;
+}
+.svg-inline--fa.fa-w-10 {
+  width: 0.625em;
+}
+.svg-inline--fa.fa-w-11 {
+  width: 0.6875em;
+}
+.svg-inline--fa.fa-w-12 {
+  width: 0.75em;
+}
+.svg-inline--fa.fa-w-13 {
+  width: 0.8125em;
+}
+.svg-inline--fa.fa-w-14 {
+  width: 0.875em;
+}
+.svg-inline--fa.fa-w-15 {
+  width: 0.9375em;
+}
+.svg-inline--fa.fa-w-16 {
+  width: 1em;
+}
+.svg-inline--fa.fa-w-17 {
+  width: 1.0625em;
+}
+.svg-inline--fa.fa-w-18 {
+  width: 1.125em;
+}
+.svg-inline--fa.fa-w-19 {
+  width: 1.1875em;
+}
+.svg-inline--fa.fa-w-20 {
+  width: 1.25em;
+}
+.svg-inline--fa.fa-pull-left {
+  margin-right: 0.3em;
+  width: auto;
+}
+.svg-inline--fa.fa-pull-right {
+  margin-left: 0.3em;
+  width: auto;
+}
+.svg-inline--fa.fa-border {
+  height: 1.5em;
+}
+.svg-inline--fa.fa-li {
+  width: 2em;
+}
+.svg-inline--fa.fa-fw {
+  width: 1.25em;
+}
+
+.fa-layers svg.svg-inline--fa {
+  bottom: 0;
+  left: 0;
+  margin: auto;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.fa-layers {
+  display: inline-block;
+  height: 1em;
+  position: relative;
+  text-align: center;
+  vertical-align: -0.125em;
+  width: 1em;
+}
+.fa-layers svg.svg-inline--fa {
+  -webkit-transform-origin: center center;
+          transform-origin: center center;
+}
+
+.fa-layers-counter, .fa-layers-text {
+  display: inline-block;
+  position: absolute;
+  text-align: center;
+}
+
+.fa-layers-text {
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+  -webkit-transform-origin: center center;
+          transform-origin: center center;
+}
+
+.fa-layers-counter {
+  background-color: #ff253a;
+  border-radius: 1em;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  color: #fff;
+  height: 1.5em;
+  line-height: 1;
+  max-width: 5em;
+  min-width: 1.5em;
+  overflow: hidden;
+  padding: 0.25em;
+  right: 0;
+  text-overflow: ellipsis;
+  top: 0;
+  -webkit-transform: scale(0.25);
+          transform: scale(0.25);
+  -webkit-transform-origin: top right;
+          transform-origin: top right;
+}
+
+.fa-layers-bottom-right {
+  bottom: 0;
+  right: 0;
+  top: auto;
+  -webkit-transform: scale(0.25);
+          transform: scale(0.25);
+  -webkit-transform-origin: bottom right;
+          transform-origin: bottom right;
+}
+
+.fa-layers-bottom-left {
+  bottom: 0;
+  left: 0;
+  right: auto;
+  top: auto;
+  -webkit-transform: scale(0.25);
+          transform: scale(0.25);
+  -webkit-transform-origin: bottom left;
+          transform-origin: bottom left;
+}
+
+.fa-layers-top-right {
+  right: 0;
+  top: 0;
+  -webkit-transform: scale(0.25);
+          transform: scale(0.25);
+  -webkit-transform-origin: top right;
+          transform-origin: top right;
+}
+
+.fa-layers-top-left {
+  left: 0;
+  right: auto;
+  top: 0;
+  -webkit-transform: scale(0.25);
+          transform: scale(0.25);
+  -webkit-transform-origin: top left;
+          transform-origin: top left;
+}
+
+.fa-lg {
+  font-size: 1.3333333333em;
+  line-height: 0.75em;
+  vertical-align: -0.0667em;
+}
+
+.fa-xs {
+  font-size: 0.75em;
+}
+
+.fa-sm {
+  font-size: 0.875em;
+}
+
+.fa-1x {
+  font-size: 1em;
+}
+
+.fa-2x {
+  font-size: 2em;
+}
+
+.fa-3x {
+  font-size: 3em;
+}
+
+.fa-4x {
+  font-size: 4em;
+}
+
+.fa-5x {
+  font-size: 5em;
+}
+
+.fa-6x {
+  font-size: 6em;
+}
+
+.fa-7x {
+  font-size: 7em;
+}
+
+.fa-8x {
+  font-size: 8em;
+}
+
+.fa-9x {
+  font-size: 9em;
+}
+
+.fa-10x {
+  font-size: 10em;
+}
+
+.fa-fw {
+  text-align: center;
+  width: 1.25em;
+}
+
+.fa-ul {
+  list-style-type: none;
+  margin-left: 2.5em;
+  padding-left: 0;
+}
+.fa-ul > li {
+  position: relative;
+}
+
+.fa-li {
+  left: -2em;
+  position: absolute;
+  text-align: center;
+  width: 2em;
+  line-height: inherit;
+}
+
+.fa-border {
+  border: solid 0.08em #eee;
+  border-radius: 0.1em;
+  padding: 0.2em 0.25em 0.15em;
+}
+
+.fa-pull-left {
+  float: left;
+}
+
+.fa-pull-right {
+  float: right;
+}
+
+.fa.fa-pull-left,
+.fas.fa-pull-left,
+.far.fa-pull-left,
+.fal.fa-pull-left,
+.fab.fa-pull-left {
+  margin-right: 0.3em;
+}
+.fa.fa-pull-right,
+.fas.fa-pull-right,
+.far.fa-pull-right,
+.fal.fa-pull-right,
+.fab.fa-pull-right {
+  margin-left: 0.3em;
+}
+
+.fa-spin {
+  -webkit-animation: fa-spin 2s infinite linear;
+          animation: fa-spin 2s infinite linear;
+}
+
+.fa-pulse {
+  -webkit-animation: fa-spin 1s infinite steps(8);
+          animation: fa-spin 1s infinite steps(8);
+}
+
+@-webkit-keyframes fa-spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+
+@keyframes fa-spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+.fa-rotate-90 {
+  -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=1)";
+  -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+}
+
+.fa-rotate-180 {
+  -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=2)";
+  -webkit-transform: rotate(180deg);
+          transform: rotate(180deg);
+}
+
+.fa-rotate-270 {
+  -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)";
+  -webkit-transform: rotate(270deg);
+          transform: rotate(270deg);
+}
+
+.fa-flip-horizontal {
+  -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=0, mirror=1)";
+  -webkit-transform: scale(-1, 1);
+          transform: scale(-1, 1);
+}
+
+.fa-flip-vertical {
+  -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=2, mirror=1)";
+  -webkit-transform: scale(1, -1);
+          transform: scale(1, -1);
+}
+
+.fa-flip-horizontal.fa-flip-vertical {
+  -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=2, mirror=1)";
+  -webkit-transform: scale(-1, -1);
+          transform: scale(-1, -1);
+}
+
+:root .fa-rotate-90,
+:root .fa-rotate-180,
+:root .fa-rotate-270,
+:root .fa-flip-horizontal,
+:root .fa-flip-vertical {
+  -webkit-filter: none;
+          filter: none;
+}
+
+.fa-stack {
+  display: inline-block;
+  height: 2em;
+  position: relative;
+  width: 2.5em;
+}
+
+.fa-stack-1x,
+.fa-stack-2x {
+  bottom: 0;
+  left: 0;
+  margin: auto;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.svg-inline--fa.fa-stack-1x {
+  height: 1em;
+  width: 1.25em;
+}
+.svg-inline--fa.fa-stack-2x {
+  height: 2em;
+  width: 2.5em;
+}
+
+.fa-inverse {
+  color: #fff;
+}
+
+.sr-only {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.sr-only-focusable:active, .sr-only-focusable:focus {
+  clip: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  position: static;
+  width: auto;
+}</style><link rel="shortcut icon" href="favicon.ico"><meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no"><title>EPAM Bot Challenge</title><meta name="description" content="Створи розумного Бота на Java або JavaScript та Вигравай один із трьох призів: PlayStation 4 Slim 1tb + 3 гри + PSPlus 3 місяці, PlayStation Classic + 20 ігр; Джойстик DualShock 4 Limited Edition"><link rel="manifest" href="manifest.json"><meta property="og:title" content="EPAM Bot Challenge"><meta property="og:description" content="Створи розумного Бота на Java або JavaScript та Вигравай один із трьох призів: PlayStation 4 Slim 1tb + 3 гри + PSPlus 3 місяці, PlayStation Classic + 20 ігр; Джойстик DualShock 4 Limited Edition"><meta property="og:type" content="website"><link href="./data/1.98f3fd39.chunk.css" rel="stylesheet"><link href="./data/main.d667d9ae.chunk.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"><div style="position: relative; overflow: hidden; width: 100%; height: 100vh;"><div style="position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; overflow: scroll; margin-right: -17px; margin-bottom: -17px;"><div class="styles_layoutWrapper__3Ob9W"><div class="styles_layout__2frMr"><header><div class="styles_container__qK7hk"><a class="styles_logoContainer__26HQq" href="home.html"><img class="styles_logo__csDKA" src="data:image/png;base64,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aI9aKikpAUnoHL1UHh4A9tLA+ay1BdUNw4EAUh5WniaBZITur/Lvf/+70rp1a544cYKSJDEhIYHDhg2jJEn09PTkyZMnOWzYMHbp0oUHDx6kJEk8d+5ceb/wnSRdTCCjoHpCcr427aysLHndunXKrFmzlPfee09JSEiQFUUxKEdMTIwSGhrKPXv2sFGjRuzYsSN9fX158OBBenl5MSEhgc2bN6/sVagbckm2NkX9G1H290hueBh5mRSqXrPuV9rkyZOVJ554guvXr6ednR0vX75MFxcXRkVFsUuXLnz88ce5fft2SpLE9PR0SpKk3flc3kNIrUnfhKpnssPa9O7evStPnz5dsbe3vz9S1YZOnToxKSmpjAyyLMtDhgzh6NGjmZCQwEOHDvHIkSPs378/o6KiOH369Mo674bCJaqODWoNqr6CckhOrM18agWqneD77kNeeOEFpU+fPty1axclSWJKSgq7du3KDh06cOHChfTz8+OxY8coSRLPnz/PBg0acMOGDZU9lGKSH1H1fFoVuRZo4sok5Xv37smDBw9WbG1tOXPmTKamplKWZRYUFHDz5s0MDg6mvb09v/rqqzLy3Lp1S542bZri6elJOzs7urm5MSoqSklMTFS8vb35008/VUWpdH80+k7YTflsXtY8m1rLo1bR/PpkkvKyZcsUFxcXZmZm0svLi08//TQvXbrEH3/8kb169WJYWBi3bt1KSZKYkZFBSZK4fft2Y3/tBSRfo2pYWJE8Q2mgc/7uu+8qdnZ2jI+P544dO9i5c2dKksSAgAC+8sorvHr1KocMGUI3NzdmZmYalKGkpETWXTwvKiqST548WR2l0ob/kax0krkaz8SOZAbJ/5k67YcGyR3aisrKypJtbW25YMECbty4kba2tnR1daWTkxOdnZ2ZkJDAkSNHslu3bty/fz8lSWJqampVH0YaycnU69yTDCG5x1CcwsJC2dXVlbNmzeLnn39OGxsb9uzZk7Nnz+b48ePp5OTEDh068MqVK/T39+ekSZOq+morN1y/fl3etm2bsnr1aiU+Pl4pLCzUvyeB6p4BUz6T1zRpLzBlug8VkrN0KyoyMlJxcHBgbGwsjx49yldeeYWvv/46z549y2XLllGSJH722WecNGkS27RpQ/0HceLECTkiIkIJDAxkYGAgp06dqpSjfBlUzzZ9jKpHinJdqWzZ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" alt=""><span>EPAM Bot Challenge</span></a><ul><li><a class="styles_navMenu__1whFE" href="home.html">Головна</a></li><li><a class="styles_navMenu__1whFE" href="/codenjoy-contest/board/game/snakebattle">Трансляція</a></li><li><a class="styles_navMenu__1whFE" href="rules.html">Правила гри</a></li><li><a class="styles_navMenu__1whFE" href="registration.html"><img class="styles_avatar__2nxnv" src="./data/icon_ava_default.249d8bf6.svg" alt="">Авторизація</a></li></ul></div></header><div class="styles_content__1m6dC"><div class="container"><div class="content"><div class="title">ПОЛІТИКА КОНФІДЕНЦІЙНОСТІ ТА ЗГОДА НА ОБРОБКУ ДАНИХ<br>в зв'язку з проведенням конкурсу “EPAM Bot Challenge”,<br>який організовано ТОВ «ЕПАМ СИСТЕМЗ»</div><div class="subTitle">§1 Загальні положення</div><ol><li>1. Ця Політика конфіденційності та згода на обробку даних (далі «Політика») затверджено ТОВ «ЕПАМ СИСТЕМЗ», зареєстрованим за адресою г. Київ, вул. Фізкультури 28, 03150, тел. +38 044 390-54-57, факс +38 044 390-08-61, що є Організатором проведення конкурсу (далі - «Організатор»), для цілей проведення конкурсу EPAM Bot Challenge (далі – «Конкурс»), з метою інформування Учасників конкурсу (далі – як «Учасники»), зокрема, в частині збору та використання їх персональних даних.</li><li>2. Ця Політика визначає умови, процедури та цілі обробки персональних даних Учасників, включаючи їх збирання, використання, реєстрацію, накопичення, зберігання, адаптування, зміну, поновлення, поширення (розповсюдження, передачу), знеособлення, знищення, у тому числі з використанням інформаційних (автоматизованих) систем, а також умови захисту персональних даних Учасників.</li><li>Політикою встановлюються способи, у межах яких Учасник може переглядати, оновлювати та вимагати видалення персональних даних відповідно до чинного законодавства.</li></ol><div class="subTitle">§2 Обов’язки щодо персональних даних</div><ol><li>1. Організатор зобов’язаний належно забезпечувати конфіденційність отриманих від Учасника персональних даних шляхом дотримання всіх застосовних норм законодавства про захист персональних даних, зокрема, положень Закону України «Про захист персональних даних».</li><li>2. Організатор за такої можливості зобов’язується вживати технічних та організаційних заходів з метою захисту персональних даних від несанкціонованого або випадкового доступу, знищення, зміни, блокування, копіювання, розповсюдження та інших незаконних дій третіх осіб, включаючи захист усіх засобів спілкування з Учасником. Вся інформація, надана Учасником, зберігається на серверах Організатора або інших носіях інформації з метою забезпечення належного рівня безпеки.</li><li>3. У разі, якщо Учасник дізнається, що його дані з облікового запису на платформі <a href="http://epam-bot-challenge.com.ua/">http://epam-bot-challenge.com.ua</a> було вкрадено або що вони перебувають у власності третіх осіб при відсутності законних підстав, він повинен негайно повідомити Організатора, для того щоб Організатор міг вжити необхідних кроків.</li></ol><div class="subTitle">§3 Збір персональних даних</div><ol><li>1. Організатор має право просити надання інформації про Учасника для цілей використання Учасником платформи <a href="http://epam-bot-challenge.com.ua/">http://epam-bot-challenge.com.ua</a>, організації та проведення Конкурсу, включаючи перевірку інформації, пов’язаної з Учасником, допуск до участі і подальшої участі у Конкурсі, отримання Учасником призу в разі його присудження, та в інших цілях відповідно до згоди, наданої Учасником шляхом згоди з Політикою, і це може включати в себе персональні дані, зокрема адреси, адреси електронної пошти, IP-адресу, дані cookies, номер телефону, інформацію про посаду, місце проживання (в т.ч. місто), спеціалізацію, ідентифікаційні дані (ID) у соціальних мережах, ім’я, прізвище, по-батькові Учасника, дані паспорту громадянина України та реєстраційний номер облікової картки платника податків з Державного реєстру фізичних осіб-платників податків (включаючи їх копії), зображень Учасника у вигляді фотографій чи аудіо-відео записів, інтерв'ю, пароль на платформі <a href="http://epam-bot-challenge.com.ua/">http://epam-bot-challenge.com.ua</a>, а також інші дані (надалі – «Дані»).</li><li>2. Надання Даних, зазначених в пункті 1 цього розділу вище, є добровільним, але водночас є необхідною умовою для використання Учасником платформи <a href="http://epam-bot-challenge.com.ua/">http://epam-bot-challenge.com.ua</a>, організації та проведення Конкурсу, включаючи перевірку інформації, пов’язаної з Учасником, допуск до участі і подальшу участь в Конкурсі, отримання Учасником призу в разі його присудження.</li><li>3. У разі, якщо Учасник починає листування з Організатором або використовує листування для будь-яких цілей контактів з Організатором, Учасник погоджується, що Організатор має право зберігати запис кореспонденції такого типу.</li></ol><div class="subTitle">§4 Згода Учасника</div><ol><li>1. Погоджуючись з Політикою, Учасник надає Організатору, як володільцю персональних даних, безумовну добровільну та інформовану згоду на обробку своїх Даних на умовах, описаних в даній Політиці, включаючи збирання, використання, реєстрацію, накопичення, зберігання, адаптування, зміну, поновлення, поширення (розповсюдження, передачу третім особам (в том числі іноземним суб'єктам відносин, пов'язаних з персональними даними), зазначеним у справжній згоди), знеособлення, знищення, внесення Даних до баз даних Організатора та загальних баз даних Організатора та організації, які входять в групу компаній EPAM, в яку також входить Організатор, у тому числі з використанням інформаційних (автоматизованих) систем, в тому числі, але не обмежуючись:<ol><li>1.1. використання імені, прізвища, зображення в інтерв'ю або інших матеріалів про Учасника;</li><li>1.2. використання Даних (в т.ч. імені і зображення Учасника) шляхом публікації в засобах масової інформації, будь-яких друкованих, аудіо- та відеоматеріалах, в т.ч. у газетах, на веб-сайтах, постерах та білбордах, у соціальних мережах, форумах та інших медіа та інформаційних носіях, промо-матеріалах, маркетингових матеріалах тощо (розсилки, ліфлети, тощо);</li><li>1.3. використання зображень Учасника в зазначених вище та наступних формах:</li><li>1.3.1. запис та відтворення за допомогою будь-яких відомих технологій, розповсюдження у будь-якій формі;</li><li>1.3.2. відтворення шляхом запису зображень, розміщених у будь-який спосіб та на будь-яких носіях;</li><li>1.3.3. публічна демонстрація, презентація, реконструкція, транслювання та ре-транслювання, також як публічний доступ будь-якій особі у спосіб та час, за її власним вибором;</li><li>1.3.4. телевізійні та радіо-трансляції;</li><li>1.3.5. публікація імені Учасника (вказаного при реєстрації на Конкурс) в турнірній таблиці Конкурсу й анонсах результатів Конкурсу в соціальних мережах; без будь-яких обмежень за територією, часом та способом використання Даних, і таке використання жодним чином не відшкодовуватиметься Організатором та/або будь-якою третьою особою, зазначеної в цій Політиці (надалі – «обробка Даних»).</li></ol></li><li>2. Метою обробки, в т.ч. збирання, Даних є:<ol><li>2.1. забезпечення можливості використання Учасником платформи <a href="http://epam-bot-challenge.com.ua/">http://epam-bot-challenge.com.ua</a>, організація та проведення Конкурсу, включаючи перевірку інформації, пов’язаної з Учасником, допуск до участі і подальшу участь у Конкурсі, в тому числі забезпечення можливості отримання Учасником призу в разі його присудження;</li><li>2.2. рекламна/маркетингова мета, в т.ч. проведення промоції Конкурсу, надсилання Учаснику інформації, різноманітних матеріалів, повідомлень (в т.ч. рекламного характеру) тощо, для підтримання контакту з Учасником у маркетингових цілях;</li><li>2.3. здійснення комунікації з Учасниками для розгляду питання укладення з Учасниками трудового або цивільно-правового договору за допомогою: розсилок, особистої комунікації з боку Організатора, таргетированной реклами в пошукових мережах і соціальних мережах, подання пропозиції та інформації про роботу, внесення в бази даних потенційних контрагентів та кандидатів Організатора та організації, які входять в групу компаній EPAM, в яку також входить Організатор.</li></ol></li><li>3. Розпорядниками персональних даних є особи, які за дорученням Організатора обробляють персональні дані Учасника, а саме уповноважені здійснювати збирання, реєстрацію, накопичення, зберігання, адаптування, зміну, поновлення, використання і поширення (розповсюдження, передачу), знеособлення, знищення персональних даних, у тому числі з використанням інформаційних (автоматизованих) систем. Учасник дає згоду на доручення обробки персональних даних Учасника Організатором розпорядникам з метою, зазначеною в цієї згоді без необхідності повідомлення і / або отримання додаткової згоди в кожному випадку такого доручення. З метою виконання зазначених вище повноважень розпорядники мають право отримувати персональні дані Учасника з будь-яких законних джерел, в тому числі від Учасника і від третіх осіб, а також обробляти Дані, в тому числі персональні дані, які становить особливий ризик для прав і свобод суб'єктів персональних даних, на що Учасник дає повну та безумовну згоду.</li><li>4. Учасник погоджується, що Дані, отримані Організатором, можуть бути надані працівникам та представникам Організатора з метою здійснення повноважень Організатора, належного проведення конкурсу та контролю представниками, призначеними Організатором, технічних і основних питань, організаціям, які входять в групу компаній EPAM, в яку також входить Організатор, з метою внутрішньокорпоративного обліку в рамках групи компаній EPAM, в т.ч. обліку потенційних контрагентів та кандидатів в загальних базах даних Організатора та організації, які входять в групу компаній EPAM, а також третім особам, які надають Організатору послуги/виконують роботи з метою просування, організації та проведення Конкурсу.</li><li>Учасник надає свою згоду на те, що у разі об’єднання Організатора з іншою компанією у процесі реорганізації або злиття, продажу, придбання, ліквідації або у будь-якому іншому процесі, Дані Учасників можуть бути передані разом з Організатором або як його частина або можуть буди продані як частина активів Організатора.</li><li>5. Обробка, в т.ч. зберігання, Даних Учасника здійснюється Організатором і третіми особами, зазначеними в цій Політиці, з моменту отримання та протягом усього терміну організації та проведення Конкурсу, а також після завершення Конкурсу до моменту відкликання Учасником цієї згоди, якщо відсутні інші законні підстави для обробки персональних даних.</li><li>6. Ця згода може бути відкликана Учасником в будь-який час шляхом письмового повідомлення про відкликання, спрямованого рекомендованим листом на адресу (г. Київ, вул. Фізкультури 28, 03150) або адресу електронної пошти (OrgBotChallengeUA@epam.com) Організатора. Відкликання даної згоди вступає в силу з дати отримання відповідного повідомлення Організатором. Відкликання згоди тягне припинення обробки персональних даних, якщо відсутні інші підстави обробки персональних даних. У разі відкликання згоди на обробку Даних Учасник не допускається до подальшої участі у Конкурсі.</li><li>7. Учасник, погоджуючись з Політикою погоджується та підтверджує, що він повідомлений та знає про джерела збирання, місцезнаходження Даних, мету їх обробки, місцезнаходження володільця Даних, про осіб, яким передаються Дані, (розпорядників, третіх осіб), а також про механізм автоматизованої обробки його персональних даних та знає свої права, як суб’єкта персональних даних відповідно до законодавства України.</li><li>8. Учасник має право у будь-який час зв’язатися з Організатором з метою отримання копії своїх персональних даних, які зберігаються Організатором та відповідного виправлення будь-яких неточностей. Учасник має право вимагати, щоб його персональні дані були вилучені, виправлені, змінені або доповнені. Для того, щоб зв’язатися з Організатором, Учасник повинен надіслати повідомлення на адресу: OrgBotChallengeUA@epam.com.</li></ol><div class="subTitle">§5 Обробка персональних даних</div><ol><li>1. Усі особи, що мають доступ до персональних даних, зобов’язані дотримуватись, за виключенням випадків, передбачених чинним законодавством, умови цієї Політики та будуть відбиратись із належною увагою критерію довіри.</li><li>2. Учасник надає свою згоду на те, що Організатор має право та обов’язок розкривати персональні дані, якщо відповідне рішення було винесено на підставі положень законодавства або вимагається з боку державних органів, витребовується правоохоронним органом або судом, або вимагається для захисту персональних даних.</li></ol><div class="subTitle">§6 Внесення Змін до Політики</div><ol><li>Дійсною є найпізніша редакція цієї Політики. Цю Політику може бути змінено (в т.ч.вдосконалено, замінено) у будь-якій формі та в будь-який час, про що Учаснику буде надіслано повідомлення на адресу електронної пошти Учасника, відому Організатору, не пізніше дня публікації змін. Учасник зобов'язується регулярно знайомитися із текстом цієї Політики, щоб бути в курсі змін. Будь-які зміни цієї Політики набувають чинності по витікання 5 робочих днів з моменту їх публікації на веб-сайті: <a href="http://epam-bot-challenge.com.ua/">http://epam-bot-challenge.com.ua</a>. Учасник є згодним зі змінами в Політику, якщо в письмовій формі не повідомив Організатора про зворотне. В разі якщо Учасник не згоден зі зміненами в Політику, Учасник зобов'язується повідомити про це Організатора у письмовій формі на адресу (г. Київ, вул. Фізкультури 28, 03150) або адресу електронної пошти (OrgBotChallengeUA@epam.com) Організатора. Незгода Учасника зі змінами в Політику, які зачіпають обсяг згоди Учасника на обробку персональних даних, тягне припинення обробки персональних даних Учасника в частині таких змін, якщо відсутні інші підстави обробки персональних даних. У разі незгоди Учасника зі змінами в Політику Учасник не допускається до подальшої участі у Конкурсі.</li></ol><div class="subTitle">§7 Зв’язок з Організатором</div><ol><li>1. У випадку виникнення у Учасника питань, коментарів, скарг або відгуків щодо цієї Політики, вони підлягають надсиланню Організатору на електронну пошту: OrgBotChallengeUA@epam.com.</li><li>2. Організатор може відхилити розгляд таких заяв, зокрема тих, виконання яких вимагатиме непропорційних технічних зусиль або загрожує конфіденційності персональних даних інших Учасників.</li></ol></div></div></div><div class="styles_footer__1D37B"><ul class="styles_navigation__goE5-"><li><a href="privacyRules.html">Правила і положення</a></li><li><a class="active" aria-current="page" href="privacyPolicy.html">Політика конфіденційності</a></li></ul><ul class="styles_navigation__goE5-"><li><a href="mailto:OrgBotChallengeUA@epam.com">Зв'язатися з нами<svg aria-hidden="true" data-prefix="far" data-icon="envelope" class="svg-inline--fa fa-envelope fa-w-16 styles_navigationIcon__2mrqG" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="color: rgb(255, 255, 255);"><path fill="currentColor" d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"></path></svg></a></li><li><div class="styles_share__3ME_7"><a href="https://github.com/codenjoyme/codenjoy" target="_blank">GitHub<svg aria-hidden="true" data-prefix="fas" data-icon="share-alt" class="svg-inline--fa fa-share-alt fa-w-14 styles_navigationIcon__2mrqG" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" style="color: rgb(255, 255, 255);"><path fill="currentColor" d="M352 320c-22.608 0-43.387 7.819-59.79 20.895l-102.486-64.054a96.551 96.551 0 0 0 0-41.683l102.486-64.054C308.613 184.181 329.392 192 352 192c53.019 0 96-42.981 96-96S405.019 0 352 0s-96 42.981-96 96c0 7.158.79 14.13 2.276 20.841L155.79 180.895C139.387 167.819 118.608 160 96 160c-53.019 0-96 42.981-96 96s42.981 96 96 96c22.608 0 43.387-7.819 59.79-20.895l102.486 64.054A96.301 96.301 0 0 0 256 416c0 53.019 42.981 96 96 96s96-42.981 96-96-42.981-96-96-96z"></path></svg></a></div></li><li><a href="https://join.slack.com/t/epam-bot-challenge/shared_invite/enQtNTI0ODMxMzI4MDM1LTg4MDlkMDc0NjI2NWI3OTRjMTIzYzdiYTE1MjgwZTI4ZTJkODhiZjM4OTJiNTY3YzZiZTAwZmU4NTYxZTljZDA" rel="noopener noreferrer" target="_blank">Долучайся до чату<svg aria-hidden="true" data-prefix="far" data-icon="comments" class="svg-inline--fa fa-comments fa-w-18 styles_navigationIcon__2mrqG" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" style="color: rgb(255, 255, 255);"><path fill="currentColor" d="M532 386.2c27.5-27.1 44-61.1 44-98.2 0-80-76.5-146.1-176.2-157.9C368.3 72.5 294.3 32 208 32 93.1 32 0 103.6 0 192c0 37 16.5 71 44 98.2-15.3 30.7-37.3 54.5-37.7 54.9-6.3 6.7-8.1 16.5-4.4 25 3.6 8.5 12 14 21.2 14 53.5 0 96.7-20.2 125.2-38.8 9.2 2.1 18.7 3.7 28.4 4.9C208.1 407.6 281.8 448 368 448c20.8 0 40.8-2.4 59.8-6.8C456.3 459.7 499.4 480 553 480c9.2 0 17.5-5.5 21.2-14 3.6-8.5 1.9-18.3-4.4-25-.4-.3-22.5-24.1-37.8-54.8zm-392.8-92.3L122.1 305c-14.1 9.1-28.5 16.3-43.1 21.4 2.7-4.7 5.4-9.7 8-14.8l15.5-31.1L77.7 256C64.2 242.6 48 220.7 48 192c0-60.7 73.3-112 160-112s160 51.3 160 112-73.3 112-160 112c-16.5 0-33-1.9-49-5.6l-19.8-4.5zM498.3 352l-24.7 24.4 15.5 31.1c2.6 5.1 5.3 10.1 8 14.8-14.6-5.1-29-12.3-43.1-21.4l-17.1-11.1-19.9 4.6c-16 3.7-32.5 5.6-49 5.6-54 0-102.2-20.1-131.3-49.7C338 339.5 416 272.9 416 192c0-3.4-.4-6.7-.7-10C479.7 196.5 528 238.8 528 288c0 28.7-16.2 50.6-29.7 64z"></path></svg></a></li></ul></div></div></div></div><div style="position: absolute; height: 6px; transition: opacity 200ms ease 0s; opacity: 0; right: 2px; bottom: 2px; left: 2px; border-radius: 3px;"><div style="position: relative; display: block; height: 100%; cursor: pointer; border-radius: inherit; background-color: rgba(0, 0, 0, 0.2); width: 0px;"></div></div><div style="position: absolute; width: 6px; transition: opacity 200ms ease 0s; opacity: 0; right: 2px; bottom: 2px; top: 2px; border-radius: 3px;"><div style="position: relative; display: block; width: 100%; cursor: pointer; border-radius: inherit; background-color: rgba(0, 0, 0, 0.2); height: 69px; transform: translateY(0px);"></div></div></div></div></body></html>
