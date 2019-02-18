@@ -56,7 +56,7 @@
         <exclude.quadro>true</exclude.quadro>
         <exclude.lunolet>true</exclude.lunolet>
         <exclude.tetris>true</exclude.tetris>
-        <!--exclude.icancode>true</exclude.icancode-->
+        <exclude.sokoban>true</exclude.sokoban>
     </properties>
 
     <repositories>
@@ -573,24 +573,24 @@
                 </dependency>
             </dependencies>
         </profile>
-        <!--profile>
-            <id>icancode</id>
+        <profile>
+            <id>sokoban</id>
             <activation>
                 <property>
                     <name>allGames</name>
                 </property>
             </activation>
             <properties>
-                <exclude.icancode>false</exclude.icancode>
+                <exclude.sokoban>false</exclude.sokoban>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
-                    <artifactId>icancode-engine</artifactId>
+                    <artifactId>sokoban-engine</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
-        </profile-->
+        </profile>
     </profiles>
 
     <build>
@@ -1310,27 +1310,27 @@
                             </artifactItems>
                         </configuration>
                     </execution>
-                    <!--execution>
-                        <id>unpack-icancode</id>
+                    <execution>
+                        <id>unpack-sokoban</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
                         <configuration>
-                            <skip>${exclude.icancode}</skip>
+                            <skip>${exclude.sokoban}</skip>
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>icancode-engine</artifactId>
+                                    <artifactId>sokoban-engine</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/${project.build.finalName}</outputDirectory>
-                                    <includes>resources/**/*,WEB-INF/classes/com/codenjoy/dojo/server/*</includes>
+                                    <includes>resources/**/*,WEB-INF/classes/config/*</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
-                    </execution-->
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
