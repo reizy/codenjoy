@@ -36,14 +36,17 @@ public class RoomsAliaser {
 
     public RoomsAliaser() {
         rooms = new DualLinkedHashBidiMap();
-        rooms.put("battlecity1", "Haifa");
-        rooms.put("battlecity2", "Jerusalem");
-        rooms.put("battlecity3", "Co-studying");
-        rooms.put("battlecity4", "Semi Final");
-        rooms.put("battlecity5", "Final");
+        rooms.put("battlecity-1", "Haifa");
+        rooms.put("battlecity-2", "Jerusalem");
+        rooms.put("battlecity-3", "Co-studying");
+        rooms.put("battlecity-4", "Semi Final");
+        rooms.put("battlecity-5", "Final");
     }
 
     public String getAlias(String gameName) {
+        if (!rooms.containsKey(gameName)) {
+            return gameName;
+        }
         return rooms.get(gameName);
     }
 
@@ -52,6 +55,9 @@ public class RoomsAliaser {
     }
 
     public String getGameName(String alias) {
+        if (!rooms.containsValue(alias)) {
+            return alias;
+        }
         return rooms.getKey(alias);
     }
 
