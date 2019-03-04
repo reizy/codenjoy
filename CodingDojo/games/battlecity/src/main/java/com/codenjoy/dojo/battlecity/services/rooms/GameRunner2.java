@@ -28,6 +28,6 @@ public class GameRunner2 extends GameRunner {
 
     @Override
     public String name() {
-        return "battlecity2";
+        return "battlecity-2";
     }
 }

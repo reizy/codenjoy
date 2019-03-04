@@ -32,7 +32,7 @@ public class GameRunner4 extends GameRunner {
 
     @Override
     public String name() {
-        return "battlecity4";
+        return "battlecity-4";
     }
 
     public GameRunner4() {
