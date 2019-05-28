@@ -31,6 +31,7 @@ game.enableLeadersTable = false;
 game.enableChat = false;
 game.enableInfo = false;
 game.enableHotkeys = true;
+game.enableForkMe = false;
 game.enableAdvertisement = false;
 game.showBody = false;
 game.debug = false;
