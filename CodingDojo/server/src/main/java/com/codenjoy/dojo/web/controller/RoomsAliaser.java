@@ -22,20 +22,31 @@ package com.codenjoy.dojo.web.controller;
  * #L%
  */
 
+import com.codenjoy.dojo.services.GameService;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualLinkedHashBidiMap;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Set;
 
 @Component
 public class RoomsAliaser {
 
+    @Autowired private GameService gameService;
+
     private BidiMap<String, String> rooms;
 
-    public RoomsAliaser() {
+    @PostConstruct
+    public void init() {
         rooms = new DualLinkedHashBidiMap();
+
+        gameService.getGameNames()
+                .forEach(gameName -> rooms.put(gameName, gameName));
+
+        // TODO move to admin settings
         rooms.put("battlecity-1", "Haifa");
         rooms.put("battlecity-2", "Jerusalem");
         rooms.put("battlecity-3", "Co-studying");
