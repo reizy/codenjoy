@@ -97,25 +97,25 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public Player register(String name, String ip, String gameName) {
+    public Player register(String id, String ip, String gameName) {
         lock.writeLock().lock();
         try {
-            log.debug("Registered user {} in game {}", name, gameName);
+            log.debug("Registered user {} in game {}", id, gameName);
 
             if (!isRegOpened) {
                 return NullPlayer.INSTANCE;
             }
 
-            registerAIIfNeeded(name, gameName);
+            registerAIIfNeeded(id, gameName);
 
             // TODO test me
-            PlayerSave save = saver.loadGame(name);
+            PlayerSave save = saver.loadGame(id);
             if (save != PlayerSave.NULL && gameName.equals(save.getGameName())) {
                 save.setCallbackUrl(ip);
             } else {
-                save = new PlayerSave(name, ip, gameName, 0, null);
+                save = new PlayerSave(id, ip, gameName, 0, null);
             }
-            Player player = register(new PlayerSave(name, ip, gameName, save.getScore(), save.getSave()));
+            Player player = register(new PlayerSave(id, ip, gameName, save.getScore(), save.getSave()));
 
             return player;
         } finally {
@@ -124,18 +124,18 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public void reloadAI(String name) {
+    public void reloadAI(String id) {
         lock.writeLock().lock();
         try {
-            Player player = getPlayer(name);
-            registerAI(name, player.getGameType());
+            Player player = getPlayer(id);
+            registerAI(id, player.getGameType());
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    private void registerAIIfNeeded(String forPlayer, String gameName) {
-        if (isAI(forPlayer)) return;
+    private void registerAIIfNeeded(String id, String gameName) {
+        if (isAI(id)) return;
         if (!isAINeeded) return;
 
         GameType gameType = gameService.getGame(gameName);
@@ -149,18 +149,18 @@ public class PlayerServiceImpl implements PlayerService {
         }
     }
 
-    private String gerCodeForAI(String aiName) {
-        return Hash.getCode(aiName, aiName);
+    private String gerCodeForAI(String id) {
+        return Hash.getCode(id, id);
     }
 
-    private void registerAI(String playerName, GameType gameType) {
-        String code = isAI(playerName) ?
-                gerCodeForAI(playerName) :
-                registration.getCodeById(playerName);
+    private void registerAI(String id, GameType gameType) {
+        String code = isAI(id) ?
+                gerCodeForAI(id) :
+                registration.getCodeById(id);
 
-        Closeable ai = createAI(playerName, code, gameType);
+        Closeable ai = createAI(id, code, gameType);
         if (ai != null) {
-            Player player = getPlayer(PlayerSave.get(playerName,
+            Player player = getPlayer(PlayerSave.get(id,
                     "127.0.0.1", gameType.name(), 0, null), gameType);
             player.setAI(ai);
         }
@@ -194,11 +194,11 @@ public class PlayerServiceImpl implements PlayerService {
         return player;
     }
 
-    private boolean isAI(String name) {
-        return name.endsWith(WebSocketRunner.BOT_EMAIL_SUFFIX);
+    private boolean isAI(String id) {
+        return id.endsWith(WebSocketRunner.BOT_EMAIL_SUFFIX);
     }
 
-    private Closeable createAI(String aiName, String code, GameType gameType) {
+    private Closeable createAI(String id, String code, GameType gameType) {
         Class<? extends Solver> ai = gameType.getAI();
         if (ai == null) {
             return null;
@@ -223,23 +223,23 @@ public class PlayerServiceImpl implements PlayerService {
                     .in(gameType.getBoard())
                     .newInstance();
 
-            WebSocketRunner runner = runAI(aiName, code, solver, board);
+            WebSocketRunner runner = runAI(id, code, solver, board);
             return runner;
         } catch (Exception e) {
             return null;
         }
     }
 
-    protected WebSocketRunner runAI(String aiName, String code, Solver solver, ClientBoard board) {
-        return WebSocketRunner.runAI(aiName, code, solver, board);
+    protected WebSocketRunner runAI(String id, String code, Solver solver, ClientBoard board) {
+        return WebSocketRunner.runAI(id, code, solver, board);
     }
 
     private Player getPlayer(PlayerSave playerSave, GameType gameType) {
-        String name = playerSave.getName();
+        String id = playerSave.getName();
         String gameName = playerSave.getGameName();
         String callbackUrl = playerSave.getCallbackUrl();
 
-        Player player = getPlayer(name);
+        Player player = getPlayer(id);
 
         boolean newPlayer = (player instanceof NullPlayer) || !gameName.equals(player.getGameName());
         if (newPlayer) {
@@ -248,7 +248,7 @@ public class PlayerServiceImpl implements PlayerService {
             PlayerScores playerScores = gameType.getPlayerScores(playerSave.getScore());
             InformationCollector listener = new InformationCollector(playerScores);
 
-            player = new Player(name, callbackUrl,
+            player = new Player(id, callbackUrl,
                     gameType, playerScores, listener);
             player.setEventListener(listener);
 
@@ -259,7 +259,7 @@ public class PlayerServiceImpl implements PlayerService {
 
             player.setReadableName(registration.getNameById(player.getName()));
 
-            log.debug("Player {} starting new game {}", name, playerGame.getGame());
+            log.debug("Player {} starting new game {}", id, playerGame.getGame());
         } else {
           // do nothing
         }
@@ -389,10 +389,10 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public void remove(String name) {
+    public void remove(String id) {
         lock.writeLock().lock();
         try {
-            Player player = getPlayer(name);
+            Player player = getPlayer(id);
 
             log.debug("Unregistered user {} from game {}", player.getName(), player.getGameName());
 
@@ -492,27 +492,27 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public boolean contains(String name) {
+    public boolean contains(String id) {
         lock.readLock().lock();
         try {
-            return getPlayer(name) != NullPlayer.INSTANCE;
+            return getPlayer(id) != NullPlayer.INSTANCE;
         } finally {
             lock.readLock().unlock();
         }
     }
 
     @Override
-    public Player get(String name) {
+    public Player get(String id) {
         lock.readLock().lock();
         try {
-            return getPlayer(name);
+            return getPlayer(id);
         } finally {
             lock.readLock().unlock();
         }
     }
 
-    private Player getPlayer(String name) {
-        return playerGames.get(name).getPlayer();
+    private Player getPlayer(String id) {
+        return playerGames.get(id).getPlayer();
     }
 
     @Override
@@ -526,10 +526,10 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public Joystick getJoystick(String name) {
+    public Joystick getJoystick(String id) {
         lock.writeLock().lock();
         try {
-            return playerGames.get(name).getGame().getJoystick();
+            return playerGames.get(id).getGame().getJoystick();
         } finally {
             lock.writeLock().unlock();
         }

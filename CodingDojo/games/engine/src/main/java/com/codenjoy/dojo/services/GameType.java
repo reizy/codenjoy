@@ -99,10 +99,10 @@ public interface GameType extends Tickable {
     /**
      * Метод для создания игрового пользователя внутри игры
      * @param listener Через этот интерфейс фреймворк будет слушать какие ивенты возникают в твоей игре
-     * @param playerName Имейл игровка зарегавшегося на сервере
+     * @param id id игрока зарегавшегося на сервере
      * @return Игрок
      */
-    GamePlayer createPlayer(EventListener listener, String playerName);
+    GamePlayer createPlayer(EventListener listener, String id);
 
     /**
      * @return нормальный Random, но ты можешь переопределить его, например, для тестовых целей

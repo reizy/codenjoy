@@ -359,70 +359,68 @@ public class ValidatorTest {
 
     @Test
     public void validateCheckPlayerCode() {
-        when(registration.checkUser(anyString(), anyString())).thenAnswer(inv -> inv.getArgument(0));
+        when(registration.checkUser(anyString(), anyString())).thenAnswer(inv -> inv.getArgument(0) != null);
 
-        shouldReturn("email@gmail.com",
-                () -> validator.checkPlayerCode("email@gmail.com", "12345678901234567890"));
+        shouldOk(() -> validator.checkPlayerCode("email@gmail.com", "12345678901234567890"));
 
-        shouldReturn("codePlayerId",
-                () -> validator.checkPlayerCode("codePlayerId", "12345678901234567890"));
+        shouldOk(() -> validator.checkPlayerCode("codePlayerId", "12345678901234567890"));
 
-        shouldReturn("Player name/id is invalid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@aaa.aaa'",
+        shouldError("Player name/id is invalid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@aaa.aaa'",
                 () -> validator.checkPlayerCode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@aaa.aaa", "12345678901234567890"));
 
-        shouldReturn("Player name/id is invalid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+        shouldError("Player name/id is invalid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
                 () -> validator.checkPlayerCode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "12345678901234567890"));
 
-        shouldReturn("Player code is invalid: '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'",
+        shouldError("Player code is invalid: '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'",
                 () -> validator.checkPlayerCode("codePlayerId", "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
 
-        shouldReturn("Player name/id is invalid: 'email#&*^#gmail%#&^*com'",
+        shouldError("Player name/id is invalid: 'email#&*^#gmail%#&^*com'",
                 () -> validator.checkPlayerCode("email#&*^#gmail%#&^*com", "12345678901234567890"));
 
-        shouldReturn("Player code is invalid: '12dehgfsgfsdlfidfj90'",
+        shouldError("Player code is invalid: '12dehgfsgfsdlfidfj90'",
                 () -> validator.checkPlayerCode("email@gmail.com", "12dehgfsgfsdlfidfj90"));
 
-        shouldReturn("Player name/id is invalid: 'null'",
+        shouldError("Player name/id is invalid: 'null'",
                 () -> validator.checkPlayerCode(null, "12345678901234567890"));
 
-        shouldReturn("Player code is invalid: 'null'",
+        shouldError("Player code is invalid: 'null'",
                 () -> validator.checkPlayerCode("email@gmail.com", null));
     }
 
     @Test
     public void validateCheckPlayerName() {
-        shouldOk(() -> validator.checkPlayerName("email@gmail.com", CANT_BE_NULL));
+        shouldOk(() -> validator.checkPlayerId("email@gmail.com", CANT_BE_NULL));
 
-        shouldOk(() -> validator.checkPlayerName("codePlayerId", CANT_BE_NULL));
+        shouldOk(() -> validator.checkPlayerId("codePlayerId", CANT_BE_NULL));
 
         shouldError("Player name/id is invalid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@aaa.aaa'",
-                () -> validator.checkPlayerName("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@aaa.aaa", CANT_BE_NULL));
+                () -> validator.checkPlayerId("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@aaa.aaa", CANT_BE_NULL));
 
         shouldError("Player name/id is invalid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
-                () -> validator.checkPlayerName("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", CANT_BE_NULL));
+                () -> validator.checkPlayerId("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", CANT_BE_NULL));
 
         shouldError("Player name/id is invalid: 'email#&*^#gmail%#&^*com'",
-                () -> validator.checkPlayerName("email#&*^#gmail%#&^*com", CANT_BE_NULL));
+                () -> validator.checkPlayerId("email#&*^#gmail%#&^*com", CANT_BE_NULL));
 
         shouldError("Player name/id is invalid: 'null'",
-                () -> validator.checkPlayerName(null, CANT_BE_NULL));
+                () -> validator.checkPlayerId(null, CANT_BE_NULL));
 
         shouldError("Player name/id is invalid: 'NuLL'",
-                () -> validator.checkPlayerName("NuLL", CANT_BE_NULL));
+                () -> validator.checkPlayerId("NuLL", CANT_BE_NULL));
 
         shouldError("Player name/id is invalid: ''",
-                () -> validator.checkPlayerName("", CANT_BE_NULL));
+                () -> validator.checkPlayerId("", CANT_BE_NULL));
 
         shouldError("Player name/id is invalid: 'null'",
-                () -> validator.checkPlayerName(null, CANT_BE_NULL));
+                () -> validator.checkPlayerId(null, CANT_BE_NULL));
 
-        shouldOk(() -> validator.checkPlayerName(null, CAN_BE_NULL));
+        shouldOk(() -> validator.checkPlayerId(null, CAN_BE_NULL));
 
-        shouldOk(() -> validator.checkPlayerName("null", CAN_BE_NULL));
+        shouldOk(() -> validator.checkPlayerId("null", CAN_BE_NULL));
 
-        shouldOk(() -> validator.checkPlayerName("", CAN_BE_NULL));
+        shouldOk(() -> validator.checkPlayerId("", CAN_BE_NULL));
 
-        shouldOk(() -> validator.checkPlayerName("nULL", CAN_BE_NULL));
+        shouldOk(() -> validator.checkPlayerId("nULL", CAN_BE_NULL));
     }
 
     @Test
@@ -559,18 +557,6 @@ public class ValidatorTest {
             if (StringUtils.isNotEmpty(expected)) {
                 fail();
             }
-        } catch (Exception e) {
-            assertEquals(expected, e.getMessage());
-        }
-    }
-
-    private void shouldReturn(String expected, Callable toRun) {
-        try {
-            Object result = null;
-            if (toRun != null) {
-                result = toRun.call();
-            }
-            assertEquals(expected, result);
         } catch (Exception e) {
             assertEquals(expected, e.getMessage());
         }

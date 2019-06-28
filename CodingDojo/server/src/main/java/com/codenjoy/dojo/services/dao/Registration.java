@@ -140,23 +140,14 @@ public class Registration {
         }
     }
 
-    public String checkUser(String id, String code) {
+    public boolean checkUser(String id, String code) {
         String stored = getIdByCode(code);
 
         if (stored == null) {
-            return null;
+            return false;
         }
 
-        if (stored.equals(id)) {
-            return id;
-        }
-
-        return null;
-    }
-
-    // TODO test me
-    public String checkUserByPassword(String id, String password) {
-        return checkUser(id, Hash.getCode(id, password));
+        return stored.equals(id);
     }
 
     public String getIdByCode(String code) {

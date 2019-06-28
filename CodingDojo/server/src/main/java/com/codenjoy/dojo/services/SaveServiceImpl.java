@@ -51,14 +51,14 @@ public class SaveServiceImpl implements SaveService {
 
     @Override
     public void loadAll() {
-        for (String playerName : saver.getSavedList()) {
-            load(playerName);
+        for (String id : saver.getSavedList()) {
+            load(id);
         }
     }
 
     @Override
-    public long save(String name) {
-        PlayerGame playerGame = playerGames.get(name);
+    public long save(String id) {
+        PlayerGame playerGame = playerGames.get(id);
         if (playerGame != NullPlayerGame.INSTANCE) {
             long now = System.currentTimeMillis();
             saveGame(playerGame, now);
@@ -74,17 +74,17 @@ public class SaveServiceImpl implements SaveService {
     }
 
     @Override
-    public boolean load(String name) {
-        PlayerSave save = saver.loadGame(name);
+    public boolean load(String id) {
+        PlayerSave save = saver.loadGame(id);
         if (save == PlayerSave.NULL) { // TODO test me
-            save = saver.loadGame(Hash.getEmail(name, config.getEmailHash()));
+            save = saver.loadGame(Hash.getEmail(id, config.getEmailHash()));
             if (save == PlayerSave.NULL) {
                 return false;
             }
         }
 
-        if (playerService.contains(name)) { // TODO test me
-            playerService.remove(name);
+        if (playerService.contains(id)) { // TODO test me
+            playerService.remove(id);
         }
         playerService.register(save);
 
@@ -92,10 +92,10 @@ public class SaveServiceImpl implements SaveService {
     }
 
     @Override
-    public void load(String name, String gameName, String save) {
-        PlayerSave playerSave = new PlayerSave(name, "127.0.0.1", gameName, 0, save);
-        if (playerService.contains(name)) { // TODO test me
-            playerService.remove(name);
+    public void load(String id, String gameName, String save) {
+        PlayerSave playerSave = new PlayerSave(id, "127.0.0.1", gameName, 0, save);
+        if (playerService.contains(id)) { // TODO test me
+            playerService.remove(id);
         }
         playerService.register(playerSave);
     }
@@ -148,14 +148,14 @@ public class SaveServiceImpl implements SaveService {
     }
 
     @Override
-    public void removeSave(String name) {
-        saver.delete(name);
+    public void removeSave(String id) {
+        saver.delete(id);
     }
 
     @Override
     public void removeAllSaves() {
-        for (String playerName : saver.getSavedList()) {
-            saver.delete(playerName);
+        for (String id : saver.getSavedList()) {
+            saver.delete(id);
         }
     }
 

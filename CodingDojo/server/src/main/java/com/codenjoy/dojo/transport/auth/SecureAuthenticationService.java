@@ -64,7 +64,9 @@ public class SecureAuthenticationService implements AuthenticationService {
 
         String result = null;
         try {
-            result = registration.checkUser(user, code);
+            if (registration.checkUser(user, code)) {
+                result = user;
+            }
         } catch (Exception e) {
             log.error(String.format("Error during check user on authenticate " +
                     "for user %s with code %s", user, code), e);

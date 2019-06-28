@@ -82,9 +82,9 @@ public class PlayerGames implements Iterable<PlayerGame>, Tickable {
         alone.forEach(gp -> spreader.play(gp.getGame(), gp.getGameType(), gp.getGame().getSave()));
     }
 
-    public PlayerGame get(String playerName) {
+    public PlayerGame get(String id) {
         return playerGames.stream()
-                .filter(pg -> pg.getPlayer().getName().equals(playerName))
+                .filter(pg -> pg.getPlayer().getName().equals(id))
                 .findFirst()
                 .orElse(NullPlayerGame.INSTANCE);
     }
@@ -268,8 +268,8 @@ public class PlayerGames implements Iterable<PlayerGame>, Tickable {
                 .collect(toList());
     }
 
-    public void changeLevel(String playerName, int level) {
-        PlayerGame playerGame = get(playerName);
+    public void changeLevel(String id, int level) {
+        PlayerGame playerGame = get(id);
         Game game = playerGame.getGame();
         JSONObject save = game.getSave();
         LevelProgress progress = new LevelProgress(save);
@@ -279,11 +279,11 @@ public class PlayerGames implements Iterable<PlayerGame>, Tickable {
         }
     }
 
-    public void setLevel(String playerName, JSONObject save) {
+    public void setLevel(String id, JSONObject save) {
         if (save == null) {
             return;
         }
-        PlayerGame playerGame = get(playerName);
+        PlayerGame playerGame = get(id);
         Game game = playerGame.getGame();
         reload(game, save);
     }

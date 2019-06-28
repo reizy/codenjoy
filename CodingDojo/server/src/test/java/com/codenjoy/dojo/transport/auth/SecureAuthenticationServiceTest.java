@@ -48,48 +48,48 @@ public class SecureAuthenticationServiceTest {
 
     @Test
     public void user_registered() {
-        shouldCheckUserIs("userid");
-        assertAuth("userid",
+        shouldCheckUserIs(true);
+        assertAuth("user@email.com",
                 "57823465983456583485", "user@email.com");
 
     }
 
     @Test
     public void user_notRegistered() {
-        shouldCheckUserIs(null);
+        shouldCheckUserIs(false);
         assertAuth(null,
                 "57823465983456583485", "user@email.com");
     }
 
     @Test
     public void ai_withValidName_andValidCode() {
-        shouldCheckUserIs(null);
+        shouldCheckUserIs(false);
         assertAuth("some-text-super-ai@codenjoy.com",
                 "12345678901234567890", "some-text-super-ai@codenjoy.com");
     }
 
     @Test
     public void ai_withInvalidName_andValidCode() {
-        shouldCheckUserIs(null);
+        shouldCheckUserIs(false);
         assertAuth(null,
                 "12345678901234567890", "user@email.com");
     }
 
     @Test
     public void ai_withValidName_andInvalidCode_ignoreCode() {
-        shouldCheckUserIs(null);
+        shouldCheckUserIs(false);
         assertAuth("some-text-super-ai@codenjoy.com",
                 "11111111111111111110", "some-text-super-ai@codenjoy.com");
     }
 
     @Test
     public void ai_withInvalidName_andInvalidCode_ignoreCode() {
-        shouldCheckUserIs(null);
+        shouldCheckUserIs(false);
         assertAuth(null,
                 "11111111111111111110", "user@email.com");
     }
 
-    private void shouldCheckUserIs(String exists) {
+    private void shouldCheckUserIs(boolean exists) {
         when(registration.checkUser(anyString(), anyString())).thenReturn(exists);
     }
 

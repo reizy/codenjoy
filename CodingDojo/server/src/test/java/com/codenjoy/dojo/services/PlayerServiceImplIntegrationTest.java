@@ -93,12 +93,12 @@ public class PlayerServiceImplIntegrationTest {
             }
 
             @Override
-            protected WebSocketRunner runAI(String aiName, String code, Solver solver, ClientBoard board) {
+            protected WebSocketRunner runAI(String id, String code, Solver solver, ClientBoard board) {
                 WebSocketRunner runner = mock(WebSocketRunner.class);
                 doAnswer(inv -> {
                     return null; // for debug
                 }).when(runner).close();
-                runners.put(aiName, runner);
+                runners.put(id, runner);
                 return runner;
             }
 

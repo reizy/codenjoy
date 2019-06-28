@@ -475,8 +475,8 @@ public class PlayerServiceImplTest {
         assertEquals(NullPlayer.class, player.getClass());
     }
 
-    private Player createPlayer(String userName) {
-        Player player = playerService.register(userName, getCallbackUrl(userName), userName + "game");
+    private Player createPlayer(String id) {
+        Player player = playerService.register(id, getCallbackUrl(id), id + "game");
         players.add(player);
 
         if (player != NullPlayer.INSTANCE) {
@@ -486,8 +486,8 @@ public class PlayerServiceImplTest {
         return player;
     }
 
-    private String getCallbackUrl(String userName) {
-        return "http://" + userName + ":1234";
+    private String getCallbackUrl(String id) {
+        return "http://" + id + ":1234";
     }
 
     private String getBoardFor(Player vasya) {

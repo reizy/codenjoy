@@ -79,7 +79,7 @@ public class RegistrationService {
         String email = player.getEmail();
         String name = player.getReadableName();
         String gameName = player.getGameName();
-        validator.checkPlayerName(id, CANT_BE_NULL);
+        validator.checkPlayerId(id, CANT_BE_NULL);
         validator.checkEmail(email, CANT_BE_NULL);
         validator.checkGameName(gameName, CANT_BE_NULL);
 
@@ -179,7 +179,7 @@ public class RegistrationService {
             email = registration.getEmailById(id);
             name = registration.getNameById(id);
             if (!model.containsAttribute("bad_email")) {
-                validator.checkPlayerName(email, CAN_BE_NULL);
+                validator.checkPlayerId(email, CAN_BE_NULL);
             }
         }
 
@@ -210,7 +210,7 @@ public class RegistrationService {
     }
 
     public String getBoardUrl(String code, String playerName, String gameName) {
-        validator.checkPlayerName(playerName, CAN_BE_NULL);
+        validator.checkPlayerId(playerName, CAN_BE_NULL);
         validator.checkCode(code, CAN_BE_NULL);
 
         return "board/player/" + playerName + "?code=" + code + viewDelegationService.buildBoardParam(gameName);

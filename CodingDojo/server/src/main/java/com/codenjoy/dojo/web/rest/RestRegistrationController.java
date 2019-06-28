@@ -55,22 +55,22 @@ public class RestRegistrationController {
 
 //    @RequestMapping(value = "/player/{player}/check/{code}", method = RequestMethod.GET)
 //    @ResponseBody
-    public boolean checkUserLogin(@PathVariable("player") String emailOrId,
+    public boolean checkUserLogin(@PathVariable("player") String id,
                                   @PathVariable("code") String code)
     {
-        validator.checkPlayerName(emailOrId, Validator.CANT_BE_NULL);
+        validator.checkPlayerId(id, Validator.CANT_BE_NULL);
         validator.checkCode(code, Validator.CANT_BE_NULL);
 
-        return registration.checkUser(emailOrId, code) != null;
+        return registration.checkUser(id, code);
     }
 
     // TODO test me
 //    @RequestMapping(value = "/player/{player}/remove/{code}", method = RequestMethod.GET)
 //    @ResponseBody
-    public synchronized boolean removeUser(@PathVariable("player") String emailOrId,
+    public synchronized boolean removeUser(@PathVariable("player") String id,
                               @PathVariable("code") String code)
     {
-        String id = validator.checkPlayerCode(emailOrId, code);
+        validator.checkPlayerCode(id, code);
 
         // оставляем только актуальные на сейчас очки, мало ли захочет залогиниться назад
         // TODO как-то тут не очень оставлять последние очки, иначе пользователь потеряет их, что тоже не ок
@@ -158,7 +158,7 @@ public class RestRegistrationController {
 //    @RequestMapping(value = "/player/{player}/exists", method = RequestMethod.GET)
 //    @ResponseBody
     public boolean isPlayerExists(@PathVariable("player") String emailOrId) {
-        validator.checkPlayerName(emailOrId, Validator.CANT_BE_NULL);
+        validator.checkPlayerId(emailOrId, Validator.CANT_BE_NULL);
 
         String id = registration.checkUser(emailOrId);
         return (id != null) && playerService.contains(id);

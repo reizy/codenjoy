@@ -92,7 +92,7 @@ public class GameRunner extends AbstractGameType implements GameType {
     }
 
     @Override
-    public GamePlayer createPlayer(EventListener listener, String playerName) {
+    public GamePlayer createPlayer(EventListener listener, String id) {
         return new Player(listener, getDice().next(Integer.MAX_VALUE), gameSettings);
     }
 

@@ -102,11 +102,11 @@ public class RestBoardController {
     }
 
     @RequestMapping(value = "/player/{player}/{code}/level/{level}", method = RequestMethod.GET)
-    public synchronized boolean changeLevel(@PathVariable("player") String emailOrId,
+    public synchronized boolean changeLevel(@PathVariable("player") String id,
                                 @PathVariable("code") String code,
                                 @PathVariable("level") int level)
     {
-        String id = validator.checkPlayerCode(emailOrId, code);
+        validator.checkPlayerCode(id, code);
 
         playerGames.changeLevel(id, level);
 
@@ -120,9 +120,9 @@ public class RestBoardController {
         List<Player> players = playerService.getAll();
         List<List<String>> groups = playerGamesView.getGroups();
         for (List<String> group : groups) {
-            String playerId = group.get(0);
+            String id = group.get(0);
             Player player = players.stream()
-                    .filter(p -> p.getName().equals(playerId))
+                    .filter(p -> p.getName().equals(id))
                     .findFirst()
                     .orElse(NullPlayer.INSTANCE);
 
@@ -166,8 +166,8 @@ public class RestBoardController {
 
     // TODO test me
 //    @RequestMapping(value = "/player/{player}/{code}/reset", method = RequestMethod.GET)
-    public synchronized boolean reset(@PathVariable("player") String emailOrId, @PathVariable("code") String code){
-        String id = validator.checkPlayerCode(emailOrId, code);
+    public synchronized boolean reset(@PathVariable("player") String id, @PathVariable("code") String code){
+        validator.checkPlayerCode(id, code);
 
         if (!playerService.contains(id)) {
             return false;
@@ -190,17 +190,17 @@ public class RestBoardController {
     // TODO test me
     @RequestMapping(value = "/player/{player}/{code}/wantsToPlay/{gameName}", method = RequestMethod.GET)
     public synchronized PPlayerWantsToPlay playerWantsToPlay(
-            @PathVariable("player") String emailOrId,
+            @PathVariable("player") String id,
             @PathVariable("code") String code,
             @PathVariable("gameName") String gameName)
     {
-        validator.checkPlayerName(emailOrId, CAN_BE_NULL);
+        validator.checkPlayerId(id, CAN_BE_NULL);
         validator.checkCode(code, CAN_BE_NULL);
         validator.checkGameName(gameName, CANT_BE_NULL);
 
         String context = getContext();
         GameTypeInfo gameType = getGameType(gameName);
-        boolean registered = registration.checkUser(emailOrId, code) != null;
+        boolean registered = registration.checkUser(id, code);
         List<String> sprites = getSpritesForGame(gameName);
         String alphabet = getSpritesAlphabet();
         List<PlayerInfo> players = registrationController.getGamePlayers(gameName);
@@ -214,7 +214,7 @@ public class RestBoardController {
     public List<BoardLog> changeLevel(@PathVariable("player") String emailOrId,
                                             @PathVariable("time") Long time)
     {
-        validator.checkPlayerName(emailOrId, CANT_BE_NULL);
+        validator.checkPlayerId(emailOrId, CANT_BE_NULL);
 
         String id = registration.checkUser(emailOrId);
 

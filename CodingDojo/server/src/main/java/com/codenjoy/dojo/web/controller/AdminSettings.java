@@ -24,77 +24,21 @@ package com.codenjoy.dojo.web.controller;
 
 
 import com.codenjoy.dojo.services.PlayerInfo;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
+@Getter
+@Setter
 public class AdminSettings {
 
     private List<PlayerInfo> players;
-
     private List<Object> parameters;
-
     private String gameName;
-
     private String generateNameMask;
     private String generateCount;
-
     private String timerPeriod;
-
     private String progress;
 
-    public void setGameName(String gameName) {
-        this.gameName = gameName;
-    }
-
-    public List<PlayerInfo> getPlayers() {
-        return players;
-    }
-
-    public void setPlayers(List<PlayerInfo> players) {
-        this.players = players;
-    }
-
-    public void setParameters(List<Object> parameters) {
-        this.parameters = parameters;
-    }
-
-    public List<Object> getParameters() {
-        return parameters;
-    }
-
-    public String getGameName() {
-        return gameName;
-    }
-
-    public String getGenerateNameMask() {
-        return generateNameMask;
-    }
-
-    public void setGenerateNameMask(String generateNameMask) {
-        this.generateNameMask = generateNameMask;
-    }
-
-    public String getGenerateCount() {
-        return generateCount;
-    }
-
-    public void setGenerateCount(String generateCount) {
-        this.generateCount = generateCount;
-    }
-
-    public String getTimerPeriod() {
-        return timerPeriod;
-    }
-
-    public void setTimerPeriod(String timerPeriod) {
-        this.timerPeriod = timerPeriod;
-    }
-
-    public String getProgress() {
-        return progress;
-    }
-
-    public void setProgress(String progress) {
-        this.progress = progress;
-    }
 }

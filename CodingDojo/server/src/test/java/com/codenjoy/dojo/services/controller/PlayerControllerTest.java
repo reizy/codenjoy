@@ -140,7 +140,7 @@ public class PlayerControllerTest {
         playerController.registerPlayerTransport(player, joystick);
 
         // SecureAuthenticationService спросит Registration а можно ли этому юзеру что-то делать?
-        when(registration.checkUser(USER_NAME, CODE)).thenReturn(USER_NAME);
+        when(registration.checkUser(USER_NAME, CODE)).thenReturn(true);
 
         client = new WebSocketRunnerMock(serverAddress, USER_NAME, CODE);
     }

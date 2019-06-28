@@ -46,7 +46,7 @@ public class WebSocketClient implements Closeable {
         UrlParser parser = new UrlParser(url);
         try {
             uri = getUri(parser.protocol, parser.server,
-                    parser.context, parser.userName, parser.code);
+                    parser.context, parser.id, parser.code);
 
             client = createClient();
             client.start();
