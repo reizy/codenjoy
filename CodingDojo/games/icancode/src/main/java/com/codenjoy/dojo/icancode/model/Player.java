@@ -24,11 +24,13 @@ package com.codenjoy.dojo.icancode.model;
 
 
 import com.codenjoy.dojo.icancode.model.interfaces.IField;
+import com.codenjoy.dojo.icancode.services.Levels;
 import com.codenjoy.dojo.services.EventListener;
 import com.codenjoy.dojo.services.Point;
-import com.codenjoy.dojo.services.PointImpl;
 import com.codenjoy.dojo.services.hero.HeroData;
 import com.codenjoy.dojo.services.multiplayer.GamePlayer;
+import com.codenjoy.dojo.services.printer.Printer;
+import com.codenjoy.dojo.services.printer.layeredview.LayeredViewPrinter;
 import com.codenjoy.dojo.services.printer.layeredview.PrinterData;
 import org.json.JSONObject;
 
@@ -36,9 +38,19 @@ public class Player extends GamePlayer<Hero, IField> {
 
     Hero hero;
     private IField field;
+    private Printer<PrinterData> printer;
 
     public Player(EventListener listener) {
         super(listener);
+        setupPrinter();
+    }
+
+    private void setupPrinter() {
+        printer = new LayeredViewPrinter(
+                () -> field.layeredReader(),
+                () -> this,
+                Levels.size(),
+                Levels.COUNT_LAYERS);
     }
 
     public Hero getHero() {
@@ -81,17 +93,18 @@ public class Player extends GamePlayer<Hero, IField> {
     }
 
     // TODO test me
-    public Point getHeroOffset(PrinterData data) {
-        Point point = getHero().getPosition().relative(data.getOffset());
-        // TODO думаю стоит проинвертировать y тут #323
-        point.setY(data.getViewSize() - 1 - point.getY());
-        return point;
+    public Point getHeroOffset(Point offset) {
+        return getHero().getPosition().relative(offset);
+    }
+
+    public Printer<PrinterData> getPrinter() {
+        return printer;
     }
 
     public class ICanCodeHeroData implements HeroData {
         @Override
         public Point getCoordinate() {
-            return new PointImpl(Player.this.getHero().getPosition());
+            return Player.this.getHero().getPosition().copy();
         }
 
         @Override
@@ -110,6 +123,5 @@ public class Player extends GamePlayer<Hero, IField> {
             result.put("hello", "world"); // TODO remove me :)
             return result;
         }
-
-    };
+    }
 }
