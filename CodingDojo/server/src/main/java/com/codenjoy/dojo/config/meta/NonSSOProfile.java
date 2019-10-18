@@ -31,11 +31,11 @@ import java.lang.annotation.Target;
 
 /**
  * @author Igor_Petrov@epam.com
- * Created at 4/1/2019
+ * Created at 3/29/2019
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Profile(NonSSOProfile.NAME)
 public @interface NonSSOProfile {
-    String NAME = "!sso";
+    String NAME = "!" + SSOProfile.NAME;
 }

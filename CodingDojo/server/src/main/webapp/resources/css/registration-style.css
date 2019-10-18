@@ -1,6 +1,6 @@
 /*-
  * #%L
- * iCanCode - it's a dojo-like platform from developers to developers.
+ * Codenjoy - it's a dojo-like platform from developers to developers.
  * %%
  * Copyright (C) 2018 Codenjoy
  * %%
@@ -126,7 +126,8 @@ a:visited {
     height: 50px;
     background-color: #323132;
     border: 1px solid #323132;
-    padding: 0 15px;
+    padding-left: 15px;
+    padding-right: 47px;
     color: #fff;
     font-family: sans-serif;
 }
@@ -283,6 +284,14 @@ footer {
 
 .icancode-title {
     text-transform: none;
+}
+
+@media screen and (max-width: 940px) {
+    .navbar-toggle .icon-bar {
+        width: 24px;
+        height: 3px;
+        background: white;
+    }
 }
 
 .logout-link {
