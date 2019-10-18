@@ -1,6 +1,6 @@
 /*-
  * #%L
- * iCanCode - it's a dojo-like platform from developers to developers.
+ * Codenjoy - it's a dojo-like platform from developers to developers.
  * %%
  * Copyright (C) 2018 Codenjoy
  * %%
@@ -61,8 +61,8 @@ if (gameName == 'JavaScript') {
 } else if (gameName == 'Befunge') {
     game.enableBefunge = true;
     game.sprites = 'robot';
-} else { // if (gameName == 'iCanCode Contest') { by default
-    gameName = 'Java';
+} else {
+    gameName = 'Contest';
     game.enableBefunge = false;
     game.sprites = 'robot';
     game.onlyLeaderBoard = true;

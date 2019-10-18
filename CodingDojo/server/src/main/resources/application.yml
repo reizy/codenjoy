@@ -13,18 +13,29 @@ mvc:
   screen-servlet-path: /screen-ws/*
   control-servlet-path: /ws/*
 
-
 game:
   save.auto: true
   ai: true
+  semifinal:
+    enabled: false
+    timeout: 900
+    limit:
+      percentage: true
+      value: 50
+    board:
+      reset: true
+      shuffle: true
+
 board.save.ticks: 1
-log.debug: false
+
 registration:
-    nickname:
-      allowed: false
-    password:
-      min-length: 8
-      autogen-length: 8
+  opened: true
+  nickname:
+    allowed: false
+  password:
+    min-length: 8
+    autogen-length: 8
+
 page:
   main:
     url: ''
@@ -33,21 +44,26 @@ page:
   admin:
     url: ''
   help.language: ''
+
 email:
   verification: false
   password: ''
   name: info@codenjoy.com
   hash: secureSoul
+
 donate.code:
+
 database:
   url: ''
   name: ''
   user: ''
   password: ''
+
 admin:
   login: admin@codenjoyme.com
   password: admin
 
+log.debug: false
 app:
   logging:
     - com.epam.dojo

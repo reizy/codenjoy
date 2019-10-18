@@ -51,6 +51,7 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 @Component("playerService")
 @Slf4j
@@ -58,7 +59,6 @@ public class PlayerServiceImpl implements PlayerService {
     
     private ReadWriteLock lock = new ReentrantReadWriteLock(true);
     private Map<Player, String> cacheBoards = new HashMap<>();
-    private boolean isRegOpened = true;
 
     @Autowired protected PlayerGames playerGames;
     @Autowired private PlayerGamesView playerGamesView;
@@ -76,6 +76,8 @@ public class PlayerServiceImpl implements PlayerService {
     @Autowired protected GameSaver saver;
     @Autowired protected ActionLogger actionLogger;
     @Autowired protected Registration registration;
+    @Autowired protected ConfigProperties config;
+    @Autowired protected Semifinal semifinal;
 
     @Value("${game.ai}")
     protected boolean isAINeeded;
@@ -102,7 +104,7 @@ public class PlayerServiceImpl implements PlayerService {
         try {
             log.debug("Registered user {} in game {}", name, gameName);
 
-            if (!isRegOpened) {
+            if (!config.isRegistrationOpened()) {
                 return NullPlayer.INSTANCE;
             }
 
@@ -158,10 +160,16 @@ public class PlayerServiceImpl implements PlayerService {
                 gerCodeForAI(playerName) :
                 registration.getCodeById(playerName);
 
-        Closeable ai = createAI(playerName, code, gameType);
+        setupPlayerAI(() -> getPlayer(PlayerSave.get(playerName,
+                            "127.0.0.1", gameType.name(), 0, null), gameType),
+                playerName, code, gameType);
+    }
+
+    private void setupPlayerAI(Supplier<Player> getPlayer, String aiName, String code, GameType gameType) {
+        Closeable ai = createAI(aiName, code, gameType);
         if (ai != null) {
-            Player player = getPlayer(PlayerSave.get(playerName,
-                    "127.0.0.1", gameType.name(), 0, null), gameType);
+            Player player = getPlayer.get();
+            player.setReadableName(StringUtils.capitalize(gameType.name()) + " SuperAI");
             player.setAI(ai);
         }
     }
@@ -187,8 +195,8 @@ public class PlayerServiceImpl implements PlayerService {
         Player player = getPlayer(playerSave, gameType);
 
         if (isAI(name)) {
-            Closeable runner = createAI(name, gerCodeForAI(name), gameType);
-            player.setAI(runner);
+            setupPlayerAI(() -> player,
+                    name, gerCodeForAI(name), gameType);
         }
 
         return player;
@@ -291,6 +299,9 @@ public class PlayerServiceImpl implements PlayerService {
             if (playerGames.isEmpty()) {
                 return;
             }
+
+            semifinal.tick();
+
         } catch (Error e) {
             e.printStackTrace();
             log.error("PlayerService.tick() throws", e);
@@ -537,30 +548,26 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Override
     public void closeRegistration() {
-        isRegOpened = false;
+        config.setRegistrationOpened(false);
     }
 
     @Override
     public boolean isRegistrationOpened() {
-        return isRegOpened;
+        return config.isRegistrationOpened();
     }
 
     @Override
     public void openRegistration() {
-        isRegOpened = true;
+        config.setRegistrationOpened(true);
     }
 
     @Override
     public void cleanAllScores() {
         lock.writeLock().lock();
         try {
-            for (PlayerGame playerGame : playerGames) {
-                Game game = playerGame.getGame();
-                Player player = playerGame.getPlayer();
+            semifinal.clean();
 
-                player.clearScore();
-                game.clearScore();
-            }
+            playerGames.forEach(PlayerGame::clearScore);
         } finally {
             lock.writeLock().unlock();
         }

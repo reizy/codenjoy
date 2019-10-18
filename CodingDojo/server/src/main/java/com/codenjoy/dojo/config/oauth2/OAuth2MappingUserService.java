@@ -10,12 +10,12 @@ package com.codenjoy.dojo.config.oauth2;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -67,7 +67,7 @@ public class OAuth2MappingUserService extends DefaultOAuth2UserService {
 
     private OAuth2User populateIdentityToken(OAuth2UserRequest userRequest, User user) {
         String idToken = (String) userRequest.getAdditionalParameters()
-            .get(OidcParameterNames.ID_TOKEN);
+                .get(OidcParameterNames.ID_TOKEN);
         return user.setIdToken(idToken);
     }
 
@@ -78,8 +78,8 @@ public class OAuth2MappingUserService extends DefaultOAuth2UserService {
         String readableName = extractUserName(attributes, email);
 
         GameAuthorities authorities = appProperties.isSsoAdmin(email)
-            ? GameAuthorities.ADMIN
-            : GameAuthorities.USER;
+                ? GameAuthorities.ADMIN
+                : GameAuthorities.USER;
 
         User newlyRegisteredUser = registration.register(email, readableName, authorities.roles());
 

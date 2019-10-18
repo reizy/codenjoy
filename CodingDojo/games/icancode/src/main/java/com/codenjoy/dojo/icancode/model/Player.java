@@ -2,7 +2,7 @@ package com.codenjoy.dojo.icancode.model;
 
 /*-
  * #%L
- * iCanCode - it's a dojo-like platform from developers to developers.
+ * Codenjoy - it's a dojo-like platform from developers to developers.
  * %%
  * Copyright (C) 2018 Codenjoy
  * %%
@@ -49,7 +49,6 @@ public class Player extends GamePlayer<Hero, IField> {
         printer = new LayeredViewPrinter(
                 () -> field.layeredReader(),
                 () -> this,
-                Levels.size(),
                 Levels.COUNT_LAYERS);
     }
 

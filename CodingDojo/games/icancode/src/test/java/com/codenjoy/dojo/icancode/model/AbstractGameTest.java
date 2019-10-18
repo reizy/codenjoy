@@ -2,7 +2,7 @@ package com.codenjoy.dojo.icancode.model;
 
 /*-
  * #%L
- * iCanCode - it's a dojo-like platform from developers to developers.
+ * Codenjoy - it's a dojo-like platform from developers to developers.
  * %%
  * Copyright (C) 2016 - 2018 EPAM
  * %%
@@ -93,7 +93,6 @@ public class AbstractGameTest {
         printer = new LayeredViewPrinter(
                 () -> game.layeredReader(),
                 () -> player,
-                Levels.size(),
                 COUNT_LAYERS);
     }
 
