@@ -1,6 +1,6 @@
 /*-
  * #%L
- * iCanCode - it's a dojo-like platform from developers to developers.
+ * Codenjoy - it's a dojo-like platform from developers to developers.
  * %%
  * Copyright (C) 2018 Codenjoy
  * %%
@@ -109,8 +109,6 @@ ul {
   font-weight: 300;
 }
 
-.dojo-title { margin-right: 15px; }
-
 .icancode-title { text-transform: none; }
 
 .nav-item {
@@ -150,7 +148,12 @@ ul {
   height: 550px;
   background-color: #323132;
   border: 1px solid #5c5b5d;
-  padding-left: 20px;
+  padding-left: 0px;
+}
+
+#ide-content {
+  padding-left: 25px;
+  padding-right: 5px;
 }
 
 .board-title {
@@ -226,13 +229,9 @@ textarea:focus {
 }
 
 .editor {
-  position: absolute;
-  right: 0;
-  left: 20px;
   height: 480px;
-  top: 15px;
+  top: 5px;
   box-sizing: border-box;
-  padding: 30px;
   background-color: #323132;
   border: none;
   font-size: 14px !important;
@@ -944,7 +943,7 @@ canvas {
 @media screen and (max-width: 1330px) {
   .button {
     width: auto;
-    padding: 0 15px;
+    padding: 0 10px;
   }
   
   .leader-item {
@@ -973,6 +972,11 @@ canvas {
 @media screen and (max-width: 1215px) {
   .bottom-panel {
     padding-left: 0;
+  }
+
+  #ide-content {
+    padding-left:  5px;
+    padding-right: 5px;
   }
   
   .game {
@@ -1005,4 +1009,94 @@ canvas {
     display: none;
   }
   
+}
+
+@media screen and (max-width: 940px) {
+  .bottom-panel {
+    position: inherit;
+  }
+
+  .editor-block {
+    height: auto;
+  }
+
+  .footer-list {
+    text-align: center;
+  }
+
+  .wrapper {
+    min-width: auto;
+  }
+
+  .modal-footer {
+    padding: 0 10px;
+  }
+
+  .game {
+    position: initial;
+    width: 100% !important;
+    padding: 0;
+  }
+
+  .player-canvas {
+    height: auto;
+  }
+
+  .modal-window {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: left;
+    width: 90%;
+    margin: auto;
+    background-color: #464547;
+    color: #fff;
+    box-sizing: border-box;
+    z-index: 1000;
+  }
+
+  .button.modal-button {
+    font-size: 14px;
+  }
+  .console, .console.close {
+    position: initial;
+    margin: 0;
+    width: 100%;
+  }
+
+  .main-block.console-open,
+  .main-block.console-close {
+    padding: 0;
+  }
+
+  .open-panel {
+    display: none;
+  }
+
+  .console {
+    height: auto;
+  }
+
+  .console-wrapper {
+    padding: 7px 2px 0px 9px;
+    height: 330px;
+  }
+
+  .navbar-toggle .icon-bar {
+    width: 24px;
+    height: 3px;
+    background: white;
+  }
+}
+
+@media screen and (max-width: 360px) {
+  .button {
+    font-size: 9px;
+    padding: 0 4px;
+  }
+}
+
+@media screen and (max-width: 320px) {
+  .autocomplete {
+    display: none;
+  }
 }

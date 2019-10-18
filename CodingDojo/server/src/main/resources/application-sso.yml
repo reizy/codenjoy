@@ -1,24 +1,21 @@
 auth-server:
-  location: http://localhost:9999/auth
+  location: ${OAUTH2_AUTH_SERVER_URL}
 
 spring:
   security:
     oauth2:
       client:
         registration:
-          codebattle-oidc:
-            client-id: codebattle
-            client-secret: jmOnxA6lqmeUYTDbVcBmndFJNYQ0W9vc
+          dojo:
+            client-id: ${OAUTH2_CLIENT_ID}
+            client-secret: ${OAUTH2_CLIENT_SECRET}
             client-authentication-method: basic
             authorization-grant-type: authorization_code
             redirect-uri-template: "{baseUrl}/login/oauth2/code/{registrationId}"
-            #            scope: read, openid
-            scope: read
-            client-name: codebattle
+            scope: ${OAUTH2_SCOPES:openid profile email}
+            client-name: ${CLIENT_NAME}
         provider:
-          codebattle-oidc:
-            authorization-uri: ${auth-server.location}/oauth/authorize
-            token-uri: ${auth-server.location}/oauth/token
-            jwk-set-uri: ${auth-server.location}/oauth/client_info
-            user-info-uri: ${auth-server.location}/user/me
-            user-name-attribute: name
+          dojo:
+            authorization-uri: ${auth-server.location}${OAUTH2_AUTH_URI}
+            token-uri: ${auth-server.location}${OAUTH2_TOKEN_URI}
+            jwk-set-uri: ${auth-server.location}${OAUTH2_JWKS_URI}

@@ -23,6 +23,7 @@ package com.codenjoy.dojo.services;
  */
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Getter
+@Setter
 public class ConfigProperties {
 
     @Value("${email.verification}")
@@ -61,14 +63,9 @@ public class ConfigProperties {
     @Value("${server.ip}")
     private String serverIp;
 
-    @Value("${page.registration.nickname}")
-    private boolean isNickNameAllowed;
+    @Value("${registration.password.autogen-length}")
+    private int autoGenPasswordLen;
 
-    public boolean isEmailVerificationNeeded() {
-        return isEmailVerificationNeeded;
-    }
-
-    public boolean isNickNameAllowed() {
-        return isNickNameAllowed;
-    }
+    @Value("${registration.opened}")
+    private boolean isRegistrationOpened;
 }

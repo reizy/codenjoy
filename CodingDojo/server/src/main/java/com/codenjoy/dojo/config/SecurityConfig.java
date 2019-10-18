@@ -22,31 +22,36 @@ package com.codenjoy.dojo.config;
  * #L%
  */
 
-import com.codenjoy.dojo.config.meta.NonSSOProfile;
+import com.codenjoy.dojo.config.meta.DefaultAuth;
+import com.codenjoy.dojo.config.meta.OAuth2Profile;
 import com.codenjoy.dojo.config.meta.SSOProfile;
 import com.codenjoy.dojo.config.oauth2.OAuth2MappingUserService;
 import com.codenjoy.dojo.web.controller.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.UserAuthenticationConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
-import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.security.oauth2.provider.token.store.jwk.JwkTokenStore;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -80,10 +85,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             MVCConf.RESOURCES_URI,
             ErrorController.URI,
             GameDataController.URI + "/**",
+
+            // all players board
+            BoardController.URI + "/game/**",
+            "/rest/player/null/null/wantsToPlay/**",
+            "/screen-ws/**",
     };
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        securityHeaders(http);
+    }
+
+    private static HttpSecurity securityHeaders(HttpSecurity http) throws Exception {
         // @formatter:off
         http.cors()
                 .and()
@@ -94,8 +108,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     .and()
                         .contentSecurityPolicy(
                                 "default-src 'self';" +
-                                "script-src 'self' 'unsafe-eval' 'unsafe-inline' http://www.google-analytics.com;" +
-                                "img-src 'self' data: http://www.google-analytics.com;" +
+                                "script-src 'self' 'unsafe-eval' 'unsafe-inline';" +
+                                "img-src 'self' data:;" +
                                 "connect-src 'self' ws: wss: http: https:;" +
                                 "font-src 'self';" +
                                 "style-src 'self' 'unsafe-inline';")
@@ -103,6 +117,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                     .csrf().disable();
         // @formatter:on
+        return http;
     }
 
     @Bean
@@ -116,7 +131,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return new BCryptPasswordEncoder();
     }
 
-    @NonSSOProfile
+    @DefaultAuth
     @Configuration
     @Order(BEFORE_DEFAULT_SEC_CONFIG_PRECEDENCE)
     @Slf4j
@@ -130,17 +145,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         @Autowired
         private AuthenticationSuccessHandler authenticationSuccessHandler;
 
+        @Autowired
+        private LogoutSuccessHandler logoutSuccessHandler;
+
         @Override
         protected void configure(HttpSecurity http) throws Exception {
             // @formatter:off
-            http
-                    .authorizeRequests()
-                        .antMatchers(UNAUTHORIZED_URIS)
-                            .permitAll()
-
-                        .anyRequest()
-                            .hasRole("USER")
-
+            securityHeaders(http)
+                        .authorizeRequests()
+                            .antMatchers(UNAUTHORIZED_URIS)
+                                .permitAll()
+                            .anyRequest()
+                                .hasRole("USER")
                     .and()
                         .formLogin()
                             .loginPage(LoginController.URI)
@@ -155,21 +171,23 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         .logout()
                             .logoutUrl(LOGOUT_PROCESSING_URI)
                             .logoutRequestMatcher(new AntPathRequestMatcher(LOGOUT_PROCESSING_URI))
-                            .invalidateHttpSession(true)
-                    .and()
-                    .csrf().disable();
+                            .logoutSuccessHandler(logoutSuccessHandler)
+                            .invalidateHttpSession(true);
             // @formatter:on
         }
     }
 
-    @SSOProfile
+    @OAuth2Profile
     @Configuration
     @Order(BEFORE_DEFAULT_SEC_CONFIG_PRECEDENCE)
     @Slf4j
-    public static class SSOUserSecurityConf extends WebSecurityConfigurerAdapter {
+    public static class OAuth2UserSecurityConf extends WebSecurityConfigurerAdapter {
 
         @Autowired
         private OAuth2MappingUserService oAuth2MappingUserService;
+
+        @Autowired
+        private LogoutSuccessHandler logoutSuccessHandler;
 
         @PostConstruct
         void info() {
@@ -179,14 +197,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         @Override
         protected void configure(HttpSecurity http) throws Exception {
             // @formatter:off
-            http
-                    .authorizeRequests()
-                    .antMatchers(UNAUTHORIZED_URIS)
-                            .permitAll()
-
-                        .anyRequest()
-                            .hasRole("USER")
-
+            securityHeaders(http)
+                        .authorizeRequests()
+                            .antMatchers(UNAUTHORIZED_URIS)
+                                .permitAll()
+                            .anyRequest()
+                                .hasRole("USER")
                     .and()
                         .oauth2Login()
                             .userInfoEndpoint()
@@ -196,40 +212,78 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         .logout()
                             .logoutUrl(LOGOUT_PROCESSING_URI)
                             .logoutRequestMatcher(new AntPathRequestMatcher(LOGOUT_PROCESSING_URI))
-                            .invalidateHttpSession(true)
-                    .and()
-                    .csrf().disable();
+                            .logoutSuccessHandler(logoutSuccessHandler)
+                            .invalidateHttpSession(true);
             // @formatter:on
         }
     }
 
     @SSOProfile
     @Configuration
+    @EnableResourceServer
+    @Order(BEFORE_DEFAULT_SEC_CONFIG_PRECEDENCE)
+    @Slf4j
     public static class ResourceServerSSOConf extends ResourceServerConfigurerAdapter {
+
+        @Autowired
+        private UserAuthenticationConverter oAuth2UserAuthenticationConverter;
+
+        @Autowired
+        private OAuth2ClientProperties clientProperties;
+
+        @Autowired
+        private LogoutSuccessHandler logoutSuccessHandler;
+
+        @Value("${mvc.control-servlet-path}")
+        private String controlWsURI;
+
+        @PostConstruct
+        void info() {
+            log.warn("Running server with SSO authorization");
+        }
 
         @Override
         public void configure(ResourceServerSecurityConfigurer config) {
-            config.tokenServices(tokenServices());
+            config
+                    .stateless(true)
+                    .resourceId(clientProperties.getRegistration().get("dojo").getClientName());
+        }
+
+        @Override
+        public void configure(HttpSecurity http) throws Exception {
+            // @formatter:off
+            securityHeaders(http)
+                        .sessionManagement()
+                            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    .and()
+                        .authorizeRequests()
+                            .antMatchers(LoginController.ADMIN_URI,
+                                         RegistrationController.URI + "*",
+                                         LOGIN_PROCESSING_URI,
+                                         ADMIN_LOGIN_PROCESSING_URI,
+                                         MVCConf.RESOURCES_URI,
+                                         controlWsURI + "*")
+                                .permitAll()
+                            .anyRequest()
+                                .hasRole("USER")
+                    .and()
+                        .logout()
+                            .logoutUrl(LOGOUT_PROCESSING_URI)
+                            .logoutRequestMatcher(new AntPathRequestMatcher(LOGOUT_PROCESSING_URI))
+                            .logoutSuccessHandler(logoutSuccessHandler)
+                            .invalidateHttpSession(true);
+            // @formatter:on
         }
 
         @Bean
         public TokenStore tokenStore() {
-            return new JwtTokenStore(accessTokenConverter());
-        }
+            JwtAccessTokenConverter accessTokenConverter = new JwtAccessTokenConverter();
+            DefaultAccessTokenConverter tokenConverter = new DefaultAccessTokenConverter();
+            tokenConverter.setUserTokenConverter(oAuth2UserAuthenticationConverter);
+            accessTokenConverter.setAccessTokenConverter(tokenConverter);
 
-        @Bean
-        public JwtAccessTokenConverter accessTokenConverter() {
-            JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
-            converter.setSigningKey("123");
-            return converter;
-        }
-
-        @Bean
-        @Primary
-        public DefaultTokenServices tokenServices() {
-            DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
-            defaultTokenServices.setTokenStore(tokenStore());
-            return defaultTokenServices;
+            return new JwkTokenStore(clientProperties.getProvider().get("dojo").getJwkSetUri(),
+                    accessTokenConverter);
         }
     }
 
@@ -237,14 +291,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Order(PRE_BEFORE_DEFAULT_SEC_CONFIG_PRECEDENCE)
     public static class AdminSecurityConf extends WebSecurityConfigurerAdapter {
 
+        @Autowired
+        private LogoutSuccessHandler logoutSuccessHandler;
+
         @Override
         protected void configure(HttpSecurity http) throws Exception {
             // @formatter:off
-            http
-                    .antMatcher(AdminController.URI + "*")
-                        .authorizeRequests()
-                            .anyRequest()
-                                .hasRole("ADMIN")
+            securityHeaders(http)
+                        .antMatcher(AdminController.URI + "*")
+                            .authorizeRequests()
+                                .anyRequest()
+                                    .hasRole("ADMIN")
                     .and()
                         .formLogin()
                             .loginPage(LoginController.ADMIN_URI)
@@ -257,6 +314,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         .logout()
                             .logoutUrl(LOGOUT_PROCESSING_URI)
                             .logoutRequestMatcher(new AntPathRequestMatcher(LOGOUT_PROCESSING_URI))
+                            .logoutSuccessHandler(logoutSuccessHandler)
                             .invalidateHttpSession(true)
                     .and()
                         .exceptionHandling()
@@ -277,7 +335,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         @Override
         protected void configure(HttpSecurity http) throws Exception {
             // @formatter:off
-            http
+            securityHeaders(http)
                     .antMatcher(controlWsURI + "*")
                         .authorizeRequests()
                             .anyRequest().permitAll();
