@@ -69,6 +69,31 @@
         </tr>
     </table>
 
+    <form:form modelAttribute="adminSettings" action="admin" method="POST">
+        <table class="admin-table" id="activeGames">
+            <tr>
+                <td style="width:300px;">
+                    <b>Active games for participants</b>
+                </td>
+            </tr>
+            <c:forEach items="${games}" var="game" varStatus="status">
+                <tr>
+                    <td>
+                        <form:checkbox id="enable-games-${game}" path="games[${status.index}]"/>
+                        <label class="check-label" for="enable-games-${game}"></label>
+                        <span>${game}</span>
+                    </td>
+                </tr>
+            </c:forEach>
+        </table>
+        <tr>
+            <td>
+                <input type="hidden" name="gameName" value="${gameName}"/>
+                <input type="submit" value="Save"/>
+            </td>
+        </tr>
+    </form:form>
+
     <table class="admin-table" id="pauseGame">
         <tr>
             <td>
@@ -155,8 +180,53 @@
         </tr>
     </table>
 
+    <form:form modelAttribute="adminSettings" action="admin" method="POST">
+        <table class="admin-table" id="semifinal">
+            <tr colspan="2">
+                <td><b>Semifinal settings</b></td>
+            </tr>
+            <tr>
+                <td>Enable semifinal</td>
+                <td><form:checkbox path="semifinal.enabled"/></td>
+            <tr>
+            <tr>
+                <td>Ticks timeout</td>
+                <td><form:input path="semifinal.timeout"/></td>
+            </tr>
+            <tr>
+                <td>Current tick</td>
+                <td>${semifinalTick}</td>
+            <tr>
+            </tr>
+                <td>Рercent/Count</td>
+                <td><form:checkbox path="semifinal.percentage"/></td>
+            </tr>
+            <tr>
+                <td>Finalists limit</td>
+                <td><form:input path="semifinal.limit"/></td>
+            </tr>
+            <tr>
+                <td>Reset board</td>
+                <td><form:checkbox path="semifinal.resetBoard"/></td>
+            </tr>
+            <tr>
+                <td>Shuffle board</td>
+                <td><form:checkbox path="semifinal.shuffleBoard"/></td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="hidden" name="gameName" value="${gameName}"/>
+                    <input type="submit" value="Save"/>
+                </td>
+            </tr>
+        </table>
+    </form:form>
+
     <table class="admin-table" id="cleanGame">
         <tr>
+            <tr colspan="2">
+                <td><b>Clean</b></td>
+            </tr>
             <td>
                 <a href="${ctx}/admin?cleanAll&gameName=${gameName}">Clean all scores</a>.
             </td>
@@ -202,21 +272,28 @@
             <td>
                 <input id="show-data1" type="checkbox">
                 <label class="check-label" for="show-data1"></label>
-                <span>Show tech skills on registration</span>
+                <span>Show city on registration</span>
             </td>
         </tr>
         <tr>
             <td>
                 <input id="show-data2" type="checkbox">
                 <label class="check-label" for="show-data2"></label>
-                <span>Show experience on registration</span>
+                <span>Show tech skills on registration</span>
             </td>
         </tr>
         <tr>
             <td>
                 <input id="show-data3" type="checkbox">
                 <label class="check-label" for="show-data3"></label>
-                <span>Show company on registration</span>
+                <span>Show company / position on registration</span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="show-data4" type="checkbox">
+                <label class="check-label" for="show-data4"></label>
+                <span>Show experience on registration</span>
             </td>
         </tr>
         <tr>
@@ -238,6 +315,9 @@
 
     <form:form modelAttribute="adminSettings" action="admin" method="POST">
         <table class="admin-table" id="createNewUsers">
+            <tr colspan="2">
+                <td><b>Create new users</b></td>
+            </tr>
             <tr>
                 <td>NameMask</td>
                 <td>Count</td>

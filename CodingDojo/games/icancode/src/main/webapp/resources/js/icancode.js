@@ -1,6 +1,6 @@
 /*-
  * #%L
- * iCanCode - it's a dojo-like platform from developers to developers.
+ * Codenjoy - it's a dojo-like platform from developers to developers.
  * %%
  * Copyright (C) 2018 Codenjoy
  * %%
@@ -52,7 +52,7 @@ if (typeof game == 'undefined') {
 }
 
 var gameName = localStorage.getItem('gameType'); // check KEYS constants in register.js
-if (gameName == 'Training') {
+if (gameName == 'JavaScript') {
     game.enableBefunge = false;
     game.sprites = 'robot';
 } else if (gameName == 'eKids') {
@@ -61,12 +61,13 @@ if (gameName == 'Training') {
 } else if (gameName == 'Befunge') {
     game.enableBefunge = true;
     game.sprites = 'robot';
-} else { // if (gameName == 'iCanCode Contest') { by default
+} else {
     gameName = 'Contest';
     game.enableBefunge = false;
     game.sprites = 'robot';
     game.onlyLeaderBoard = true;
 }
+game.isDrawByOrder = (game.sprites == 'ekids');
 game.enableDonate = false;
 game.enableJoystick = false;
 game.enablePlayerInfo = false;
@@ -83,6 +84,10 @@ game.debug = false;
 // ========================== leaderboard page ==========================
 
 var initHelpLink = function() {
+    if (gameName == 'eKids') {
+        $('#help-link').hide();
+        return; // TODO написать нормально мануал и убрать это
+    }
     var pageName = gameName.split(' ').join('-').toLowerCase();
     $('#help-link').attr('href', '/codenjoy-contest/resources/icancode/landing-' + pageName + '.html')
 }

@@ -54,6 +54,8 @@ import java.util.function.Predicate;
 
 import com.codenjoy.dojo.services.security.GameAuthoritiesConstants;
 
+import static java.util.stream.Collectors.toList;
+
 @Controller
 @RequestMapping(AdminController.URI)
 @Secured(GameAuthoritiesConstants.ROLE_ADMIN)
@@ -74,7 +76,9 @@ public class AdminController {
     private final AutoSaver autoSaver;
     private final DebugService debugService;
     private final Registration registration;
+    private final RoomsAliaser rooms;
     private final ViewDelegationService viewDelegationService;
+    private final Semifinal semifinal;
 
     @RequestMapping(params = "save", method = RequestMethod.GET)
     public String savePlayerGame(@RequestParam("save") String id, HttpServletRequest request) {
@@ -259,6 +263,15 @@ public class AdminController {
             playerService.updateAll(settings.getPlayers());
         }
 
+        if (settings.getSemifinal() != null) {
+            try {
+                semifinal.settings().apply(settings.getSemifinal());
+                semifinal.clean();
+            } catch (Exception e) {
+                // do nothing
+            }
+        }
+
         if (settings.getTimerPeriod() != null) {
             try {
                 timerService.changePeriod(Integer.parseInt(settings.getTimerPeriod()));
@@ -270,6 +283,22 @@ public class AdminController {
         if (settings.getProgress() != null) {
             playerService.loadSaveForAll(settings.getGameName(),
                     settings.getProgress());
+        }
+
+        if (settings.getGames() != null) {
+            List<Parameter> games = (List)settings.getGames();
+            List<String> toRemove = new LinkedList<>();
+            List<String> allGames = gameService.getGameNames();
+            if (games.size() != allGames.size()) {
+                throw new IllegalStateException("Список игр к активации не полный");
+            }
+            for (int i = 0; i < allGames.size(); i++) {
+                if (games.get(i) == null) {
+                    toRemove.add(allGames.get(i));
+                }
+            }
+
+            rooms.enableGames(toRemove);
         }
 
         List<Exception> errors = new LinkedList<>();
@@ -373,13 +402,23 @@ public class AdminController {
 
         AdminSettings settings = new AdminSettings();
 
+        settings.setSemifinal(semifinal.settings().clone());
+
         settings.setParameters(new LinkedList<>());
         for (Parameter p : parameters) {
             settings.getParameters().add(p.getValue());
         }
 
+        Set<String> enabled = rooms.gameNames();
+        List<Object> games = gameService.getGameNames()
+                                .stream()
+                                .map(name -> enabled.contains(name))
+                                .collect(toList());
+        settings.setGames(games);
+
         model.addAttribute("adminSettings", settings);
         model.addAttribute("settings", parameters);
+        model.addAttribute("semifinalTick", semifinal.getTime());
         model.addAttribute(GAME_NAME_FORM_KEY, gameName);
         model.addAttribute("gameVersion", game.getVersion());
         model.addAttribute("generateNameMask", "demo%@codenjoy.com");
