@@ -204,7 +204,7 @@ export function* registerResendTask() {
             { rawResponse: true },
         );
 
-        yield call(toast.success, 'Код успішно надісланий на Ваш телефон!', {
+        yield call(toast.success, 'The code was successfully sent to your phone!', {
             position: toast.POSITION.TOP_RIGHT,
         });
         yield put(registerResendSuccess());

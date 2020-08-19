@@ -33,7 +33,7 @@ class RegisterConfirmForm extends Component {
         const errorMsg = _.get(registerErrors, 'errorMsg');
         return (
             <div className={ formWrap }>
-                <h1 className={ title }>Новий Гравець</h1>
+                <h1 className={ title }>New Player</h1>
                 { errorMsg && (
                     <div className={ systemError }>
                         <img src={ errorImg } alt='' />
@@ -49,7 +49,7 @@ class RegisterConfirmForm extends Component {
                             <div className={ backgroundSection }>
                                 <Field
                                     name='code'
-                                    placeholder='SMS-код'
+                                    placeholder='SMS-code'
                                     component={ CustomInputComponent }
                                     errors={ _.get(
                                         registerErrors,
@@ -57,14 +57,14 @@ class RegisterConfirmForm extends Component {
                                     ) }
                                 />
                             </div>
-                            <div className={ `${checkBoxLabel} ${registerConfirmResend}` }><span onClick={ this.handleResend }>Надіслати ще раз</span></div>
+                            <div className={ `${checkBoxLabel} ${registerConfirmResend}` }><span onClick={ this.handleResend }>Submit again</span></div>
                             <div className={ backgroundSection }>
                                 <button
                                     disabled={ isLoading }
                                     className={ submit }
                                     type='submit'
                                 >
-                                    Зареєструватися
+                                    Register
                                 </button>
                             </div>
                         </Form>

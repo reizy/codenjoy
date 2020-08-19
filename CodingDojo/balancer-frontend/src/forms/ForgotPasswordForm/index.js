@@ -34,7 +34,7 @@ class ForgotPasswordForm extends Component {
         const errorMsg = _.get(error, 'errorMsg');
         return (
             <div className={ formWrap }>
-                <h1 className={ title }>Увійти</h1>
+                <h1 className={ title }>Login</h1>
                 { errorMsg&& (
                     <div className={ systemError }>
                         {errorMsg}
@@ -50,7 +50,7 @@ class ForgotPasswordForm extends Component {
                             <div className={ backgroundSection }>
                                 <Field
                                     name='email'
-                                    placeholder='Електронна пошта'
+                                    placeholder='Email'
                                     type='email'
                                     errors={ errorMsg }
                                     component={ CustomInputComponent }
@@ -61,7 +61,7 @@ class ForgotPasswordForm extends Component {
                                     <div className={ fpInput }>
                                         <Field
                                             name='phone'
-                                            placeholder='Телефон'
+                                            placeholder='Phone number'
                                             type='phone'
                                             errors={ errorMsg }
                                             component={ CustomInputComponent }
@@ -72,7 +72,7 @@ class ForgotPasswordForm extends Component {
                                 { isResetValidate && (
                                     <Field
                                         name='code'
-                                        placeholder='SMS-код'
+                                        placeholder='SMS-code'
                                         component={ CustomInputComponent }
                                     />
                                 ) }
@@ -81,7 +81,7 @@ class ForgotPasswordForm extends Component {
                                     className={ submit }
                                     type='submit'
                                 >
-                                    { isResetValidate ? 'Надіслати пароль' : 'Продовжити' }
+                                    { isResetValidate ? 'Send password' : 'Continue' }
                                 </button>
                             </div>
                         </Form>

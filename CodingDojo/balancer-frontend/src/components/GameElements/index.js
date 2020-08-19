@@ -34,125 +34,124 @@ const ELEMENTS = [
     {
         image:       bomberman,
         title:       `BOMBERMAN ('☺')`,
-        description: `Ваш Бомбермен.`,
+        description: `Your Bomberman.`,
     },
     {
         image:       bomb_bomberman,
         title:       `BOMB_BOMBERMAN ('☻')`,
-        description: `Ваш Бомбермен, якщо він сидить на бомбі.`,
+        description: `Your Bomberman, if he's sitting on a bomb.`,
     },
     {
         image:       dead_bomberman,
         title:       `DEAD_BOMBERMAN ('Ѡ')`,
-        description: `Йойкс! Ваш Бомбермен помер. Нехвилюйтеся, він з'явиться
-десь на полі і з новим Раудндом ви зможете їм керувати, але цілком ймовірно за
-це ви отримаєте штрафні бали.`,
+        description: `oops, your Bomberman is dead (don't worry, he will appear
+somewhere in next Round) you're getting penalty points for each death.`,
     },
     {
         image:       other_bomberman,
         title:       `OTHER_BOMBERMAN ('♥')`,
-        description: `Бомбермен суперника.`,
+        description: `Other Bomberman.`,
     },
     {
         image:       other_bomb_bomberman,
         title:       `OTHER_BOMB_BOMBERMAN ('♠')`,
-        description: `Бомбермен суперника, який сидить на бомбі.`
+        description: `Other Bomberman, if he's sitting on a bomb.`
     },
     {
         image:       other_dead_bomberman,
         title:       `OTHER_DEAD_BOMBERMAN ('♣')`,
-        description: `Так виглядає мертвий Бомбермен суперника.
-Якщо це ви його підірвали - ви отримаєте бонусні бали.`
+        description: `This is what a dead Bomberman opponent looks like.
+If you blow it up - you get bonus points.`
     },
     {
         image:       bomb_timer_5,
         title:       `BOMB_TIMER_5 ('5')`,
-        description: `Після того як Бомбермен поставить бомбу таймер
-почне працювати (всього 5 тіків/секунд). Скоріше за все ви не побачите
-не цей символ, а BOMB_BOMBERMAN('☻'), але пам'ятайте - 5 секунд і вибух.
-Тре тікати швидко.`
+        description: `After Bomberman puts the bomb timer
+will start working (only 5 ticks / seconds). Most likely you will
+not see this character (only BOMB_BOMBERMAN ('☻')),
+but remember - 5 seconds and an explosion will occur. You need to run fast.`
     },
     {
         image:       bomb_timer_4,
         title:       `BOMB_TIMER_4 ('4')`,
-        description: `Ця бомба вибухне через 4 тіків.`
+        description: `This bomb will explode in 4 ticks.`
     },
     {
         image:       bomb_timer_3,
         title:       `BOMB_TIMER_3 ('3')`,
-        description: `Ця бомба вибухне через 3 тіки.`
+        description: `This bomb will explode in 3 ticks.`
     },
     {
         image:       bomb_timer_2,
         title:       `BOMB_TIMER_2 ('2')`,
-        description: `Ця бомба вибухне через 2 тіки.`
+        description: `This bomb will explode in 2 ticks.`
     },
     {
         image:       bomb_timer_1,
         title:       `BOMB_TIMER_1 ('1')`,
-        description: `Ця бомба вибухне через 1 тік.`
+        description: `This bomb will explode in 1 tick.`
     },
     {
         image:       boom,
         title:       `BOOM ('҉')`,
-        description: `Бам! Це те, як бомба вибухає. При цьому
-все, що може бути зруйновано – зруйнується разом із вашим Бомберменом,
-якщо заздалегідь не заховатися.`
+        description: `Bam! This is how the bomb explodes. With
+everything that can be destroyed will be destroyed together with
+your Bomberman, if you do not hide in advance.`
     },
     {
         image:       wall,
         title:       `WALL ('☼')`,
-        description: `Неруйнівні стіни - їм вибухи бомб не страшні.`
+        description: `Non-destructive walls - they are not afraid of bomb explosions.`
     },
     {
         image:       destroyable_wall,
         title:       `DESTROYABLE_WALL ('#')`,
-        description: `А ця стінка може бути зруйнована.`
+        description: `And this wall can be destroyed.`
     },
     {
         image:       destroyed_wall,
         title:       `DESTROYED_WALL ('H')`,
-        description: `Це як зруйнована стіна виглядає, вона пропаде
-в наступну секунду. Якщо це ви зробили - отримаєте бонусні бали.`
+        description: `This is what a ruined wall looks like, it will disappear
+the next second. If you do this - you will receive bonus points.`
     },
     {
         image:       meat_chopper,
         title:       `MEAT_CHOPPER ('&')`,
-        description: `Цей малий бігає по полю в довільному порядку.
-Якщо він доторкнеться до Бомбермена - той помре, краще б вам знищити
-цей шматок .... м'яса, за це ви отримаєте бонусні бали. Інакше тікайте!`
+        description: `This little one runs across the field in random order.
+If your Bomberman touches it, he will die. It would be better for you to destroy
+this piece of meat, for which you will receive bonus points. Otherwise run away!`
     },
     {
         image:       dead_meat_chopper,
         title:       `DEAD_MEAT_CHOPPER ('x')`,
-        description: `Це мітчопер, який вибухнув. Якщо це ви зробили -
-отримаєте бонусні бали.`
+        description: `It's a mitchoper that exploded. If you did -
+get bonus points.`
     },
     {
         image:       bomb_blast_radius_increase,
         title:       `BOMB_BLAST_RADIUS_INCREASE ('+')`,
-        description: `Збільшує радіус* вибуху бомби. Діє лише для нових бомб.`
+        description: `Increases the radius* of the bomb explosion. Valid only for new bombs.`
     },
     {
         image:       bomb_count_increase,
         title:       `BOMB_COUNT_INCREASE ('c')`,
-        description: `Збільшує кількість* доступних гравцю бомб.`
+        description: `Increases the number* of bombs available to the player.`
     },
     {
         image:       bomb_immune,
         title:       `BOMB_IMMUNE ('i')`,
-        description: `Дає імунітет до вибухів бомб (навіть чужих).`
+        description: `Gives immunity to bomb explosions (any bombs, yours and others').`
     },
     {
         image:       bomb_remote_control,
         title:       `BOMB_REMOTE_CONTROL ('r')`,
-        description: `Дистанційне керування детонатором. Бомба вибухає
-при повторній дії ACT команди. В наявності є декілька* детонаторів.`
+        description: `Remote control of the detonator. The bomb explodes
+when the ACT command is repeated. There are several* detonators.`
     },
     {
         image:       none,
         title:       `NONE ('')`,
-        description: `Вільна секція, куди ви можете направити свого Бомбермена.`
+        description: `Free section where you can send your Bomberman.`
     }
 ];
 

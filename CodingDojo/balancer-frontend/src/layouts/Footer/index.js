@@ -18,20 +18,20 @@ export class Footer extends PureComponent {
             <div className={ Styles.footer }>
                 <ul className={ Styles.navigation }>
                     <li>
-                        <NavLink to={ book.privacyRules }>
-                            Правила і положення
-                        </NavLink>
+                        {/*<NavLink to={ book.privacyRules }>
+                            Rules and regulations
+                        </NavLink>*/}
                     </li>
                     <li>
-                        <NavLink to={ book.privacyPolicy }>
-                            Політика конфіденційності
-                        </NavLink>
+                        {/*<NavLink to={ book.privacyPolicy }>
+                            Privacy policy
+                        </NavLink>*/}
                     </li>
                 </ul>
                 <ul className={ classnames(Styles.navigation) }>
                     <li>
                         <a href={ 'mailto:' + orgEmail }>
-                            Зв'язатися з нами
+                            Contact us
                             <FontAwesomeIcon
                                 className={ Styles.navigationIcon }
                                 icon={ [ 'far', 'envelope' ] }
@@ -45,7 +45,7 @@ export class Footer extends PureComponent {
                                 className={ Styles.facebookShare }
                                 url={ process.env.REACT_APP_EVENT_LINK }
                             >
-                                Поділитися
+                                Share
                                 <FontAwesomeIcon
                                     className={ Styles.navigationIcon }
                                     icon={ [ 'fas', 'share-alt' ] }
@@ -56,7 +56,7 @@ export class Footer extends PureComponent {
                     </li>
                     <li>
                         <a href={ joinSlackUrl } rel='noopener noreferrer' target='_blank'>
-                            Долучайся до чату
+                            Join the chat
                             <FontAwesomeIcon
                                 className={ Styles.navigationIcon }
                                 icon={ [ 'far', 'comments' ] }

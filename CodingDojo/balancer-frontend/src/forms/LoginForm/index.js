@@ -33,7 +33,7 @@ class LoginForm extends Component {
         const error = _.get(loginErrors, 'errorMsg');
         return (
             <div className={ formWrap }>
-                <h1 className={ title }>Увійти</h1>
+                <h1 className={ title }>Login</h1>
                 { error && (
                     <div className={ systemError }>
                         <img src={ errorImg } alt='' />
@@ -50,14 +50,14 @@ class LoginForm extends Component {
                             <div className={ backgroundSection }>
                                 <Field
                                     name='email'
-                                    placeholder='Електронна пошта'
+                                    placeholder='Email'
                                     type='email'
                                     errors={ error }
                                     component={ CustomInputComponent }
                                 />
                                 <Field
                                     name='password'
-                                    placeholder='Пароль'
+                                    placeholder='Password'
                                     type='password'
                                     errors={ error }
                                     component={ CustomInputComponent }
@@ -67,14 +67,14 @@ class LoginForm extends Component {
                                     className={ submit }
                                     type='submit'
                                 >
-                                    Увійти
+                                    Login
                                 </button>
                             </div>
                         </Form>
                     ) }
                 </Formik>
                 <NavLink to={ book.forgotPassword }>
-                    <div className={ `${checkBoxLabel} ${forgotPasswordLink}` }><span>Забув пароль?</span></div>
+                    <div className={ `${checkBoxLabel} ${forgotPasswordLink}` }><span>Forgot password?</span></div>
                 </NavLink>
             </div>
         );

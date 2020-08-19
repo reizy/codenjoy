@@ -8,15 +8,13 @@ const UnavailableContainer = () => (
     <div className='container'>
         <div className='content'>
             <div className={ Styles.unavailableContainer }>
-                <h2 className='title'>Дорогі гравці!</h2>
+                <h2 className='title'>Dear players!</h2>
                 <p>
-                    На разі ми готуємося до проведення Фіналу між гравцями, які
-                    встигли до цього часу пройти відбір і зайняли гідне місце
-                    серед фіналістів.
+                    At the moment, we are preparing for the Final between the players.
                 </p>
                 <p>
-                    Про те, коли і в якому форматі пройде Фінал, ми
-                    проінформуємо фіналістів найближчим часом.{ ' ' }
+                    We will inform the finalists in the near future about
+                    when and in what format the Final will take place.{ ' ' }
                 </p>
             </div>
         </div>

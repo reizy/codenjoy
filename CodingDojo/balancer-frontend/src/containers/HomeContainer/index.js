@@ -25,97 +25,96 @@ const registerEndDate = process.env.REACT_APP_EVENT_REGISTER_END_DATE;
 const HomeContainer = () => (
     <div className='container'>
         <div className={ Styles.homeTitle }>
-            <div className={ Styles.mainText }>Створи розумного бота</div>
-            <div className={ Styles.subText }>Змагайся з іншими учасниками</div>
-            <div className={ Styles.subText }>Вигравай один із трьох призів</div>
+            <div className={ Styles.mainText }>Deveevelop a smart bot</div>
+            <div className={ Styles.subText }>Compete with other participants</div>
+            <div className={ Styles.subText }>Win prizes</div>
             <div className={ Styles.prizeList }>
                 <img className={ Styles.prizeImage } src={ First } alt='PS4'
-                     title='Iгрова консоль PlayStation 4 Pro 1TB'/>
+                     title='Game console PlayStation 4 Pro 1TB'/>
                 <img className={ Styles.prizeImage } src={ Second } alt='SegaMegaDriveMini'
-                     title='Iгрова консоль Sega Mega Drive Mini'/>
+                     title='Game console Sega Mega Drive Mini'/>
                 <img className={ Styles.prizeImage } src={ Third } alt='HobbyWorldFallout'
-                     title='Настільна гра Hobby World Fallout'/>
+                     title='Board game Hobby World Fallout'/>
             </div>
             <Link to={ book.rules } className={ Styles.acceptButton }>
-                Виклик прийнято
+                Challenge accepted
             </Link>
         </div>
         <div className='content'>
-            <div className='title'>Як взяти участь</div>
+            <div className='title'>How to participate</div>
             <div className={ Styles.guideContainer }>
                 <div className={ Styles.guideStep }>
                     <div className={ Styles.steps }>
-                        <img src={ stepCreateHeader } alt='Створи' />
+                        <img src={ stepCreateHeader } alt='Develop' />
                     </div>
-                    <div className={ Styles.stepTitle }>СТВОРИ</div>
+                    <div className={ Styles.stepTitle }>DEVELOP</div>
                     <div className={ Styles.stepDescription }>
                         <div>
-                            Завантаж проект гри
+                            Download the game project
                         </div>
                         <br />
                         <div>
-                            Cтвори логіку для переміщення свого Бота
+                            Create logic to move your Bot
                         </div>
                     </div>
                 </div>
                 <div className={ Styles.guideStep }>
                     <div className={ Styles.steps }>
-                        <img src={ stepBattleHeader } alt='Змагайся' />
+                        <img src={ stepBattleHeader } alt='Fight' />
                     </div>
-                    <div className={ Styles.stepTitle }>ЗМАГАЙСЯ</div>
+                    <div className={ Styles.stepTitle }>FIGHT</div>
                     <div className={ Styles.stepDescription }>
                         <div>
-                            Змагайся з іншими учасниками
+                            Compete with other participants
                         </div>
                         <br />
                         <div>
-                            Вдосконалюй свого Бота кожен день
+                            Improve your Bot every day
                         </div>
                         <br />
                         <div>
-                            Більше модифікацій - більше шансів!
+                            More modifications - more chances!
                         </div>
                     </div>
                 </div>
                 <div className={ Styles.guideStep }>
                     <div className={ Styles.steps }>
-                        <img src={ StepWinHeader } alt='Вигравай' />
+                        <img src={ StepWinHeader } alt='Win' />
                     </div>
-                    <div className={ Styles.stepTitle }>ВИГРАВАЙ</div>
+                    <div className={ Styles.stepTitle }>WIN</div>
                     <div className={ Styles.stepDescription }>
                         <div>
-                            Посідай одне з трьох призових місць і отримай:
+                            Take one of the three prizes and win:
                         </div>
                         <br/>
                         <ol>
-                            <li>місце - ігрова консоль PlayStation 4 Pro 1TB</li>
-                            <li>місце - ігрова консоль Sega Mega Drive Mini</li>
-                            <li>місце - настільна гра Hobby World Fallout</li>
+                            <li>place - Game console PlayStation 4 Pro 1TB</li>
+                            <li>place - Game console Sega Mega Drive Mini</li>
+                            <li>place - Board game Hobby World Fallout</li>
                         </ol>
                     </div>
                 </div>
             </div>
             <div className='title'>Правила гри</div>
             <p>
-                Завантажуйте проект гри. Створіть логіку для переміщення свого Бота.
-                Отримуйте найбільшу кількість балів, щоб увійти до числа
-                Фіналістів.
+                Download the game project. Create logic to move your Bot.
+                Get the most points to be among the Finalists.
             </p>
             <p>
-                Конкурс триватиме кожного дня з { startDate } до { registerEndDate }&nbsp;
-                за виключенням вихідних, починаться з { dayTimeStart } години
-                i закінчується { dayTimeEnd } годиною.
-                Кожного дня визначаються { finalistsCount } Фіналістів.
+                The competition will be every day from { startDate } till { registerEndDate }&nbsp;
+                except weekends, starting at { dayTimeStart } o'clock
+                and ending at { dayTimeEnd } o'clock.
+                { finalistsCount } finalists are determined each day.
             </p>
             <p>
-                Беріть участь у Фіналі { endDate }. Займайте одне з трьох призових
-                місць і отримайте драйвовий подарунок!
+                Participate in the Final on { endDate }. Take one of the three prizes
+                seats and get a drive gift!
             </p>
             <p>
-                Детальні правила і проект гри для створення Бота шукайте
+                Look for detailed rules and game design to create a bot
                 &nbsp;
                 <Link to={ book.rules }>
-                    за посиланням <img src={ Icon } alt='Правила Конкурсу' />
+                    by the link <img src={ Icon } alt='Contest Rules' />
                 </Link>
             </p>
         </div>

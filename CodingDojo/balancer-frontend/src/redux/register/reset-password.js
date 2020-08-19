@@ -62,7 +62,7 @@ export function* resetPasswordSaga({payload}) {
             { rawResponse: true },
         );
 
-        yield call(toast.success, 'Код підтвердження успішно надісланий на Ваш телефон!', {
+        yield call(toast.success, 'The verification code has been successfully sent to your phone!', {
             position: toast.POSITION.TOP_RIGHT,
         });
         yield put(resetPasswordSuccess());
@@ -82,7 +82,7 @@ export function* resetPasswordValidateSaga({payload}) {
             payload,
             { rawResponse: true },
         );
-        yield call(toast.success, 'Новий пароль успішно надісланий на Ваш телефон!', {
+        yield call(toast.success, 'New password successfully sent to your phone!', {
             position: toast.POSITION.TOP_RIGHT,
         });
         yield delay(2000);

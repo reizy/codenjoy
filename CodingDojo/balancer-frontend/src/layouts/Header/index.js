@@ -25,25 +25,25 @@ class HeaderComponent extends PureComponent {
                     <ul>
                         <li>
                             <NavLink className={ Styles.navMenu } activeClassName={ Styles.activeMenu } to={ book.home }>
-                                Головна
+                                Home
                             </NavLink>
                         </li>
                         <li>
                             <NavLink className={ Styles.navMenu } activeClassName={ Styles.activeMenu } to={ book.board }>
-                                Трансляція
+                                Leaderboard
                             </NavLink>
                         </li>
                         <li>
                             <NavLink className={ Styles.navMenu } activeClassName={ Styles.activeMenu } to={ book.rules }>
-                                Правила гри
+                                Game rules
                             </NavLink>
                         </li>
 
                         { email && (
                             <li>
                                 <div className={ classnames(Styles.navMenu, Styles.logout) } onClick={ () => logout() }>
-                                    <img className={ Styles.avatar } src={ avaDefault } alt='Вийти' />
-                                    Вийти
+                                    <img className={ Styles.avatar } src={ avaDefault } alt='Log out' />
+                                    Log out
                                 </div>
                             </li>
                         ) }
@@ -54,7 +54,7 @@ class HeaderComponent extends PureComponent {
                                     activeClassName={ Styles.activeMenu }
                                     to={ book.register }
                                 >
-                                    Реєстрація
+                                    Registration
                                 </NavLink>
                             </li>
                         ) }
@@ -63,7 +63,7 @@ class HeaderComponent extends PureComponent {
                             <li>
                                 <NavLink className={ Styles.navMenu } activeClassName={ Styles.activeMenu } to={ book.login }>
                                     <img className={ Styles.avatar } src={ avaDefault } alt='' />
-                                    Авторизація
+                                    Log in
                                 </NavLink>
                             </li>
                         ) }

@@ -15,18 +15,18 @@ import Styles from './styles.module.css';
 export default class ActionsPanel extends Component {
     _getTitle() {
         if (this.props.isExiting) {
-            return 'Відбувається вихід з кімнати...';
+            return 'Leaving the room...';
         } else if (this.props.isJoining) {
-            return 'Відбувається підключення до кімнати...';
+            return 'Connecting to the room...';
         } else if (this.props.isRoomExited) {
-            return 'Вихід з кімнати здійснено!';
+            return 'Leaving the room is done';
         } else if (this.props.isRoomJoined) {
-            return 'Підключення до кімнати здійснено';
+            return 'Connected to the room';
         } else if (this.props.ownIndex === -1) {
-            return 'У Вас відсутня ігрова кімната';
+            return 'You do not have a game room';
         }
 
-        return 'Ви знаходитеся в ігровій кімнаті';
+        return 'You are in the game room';
     }
 
     _getLampStyle() {
@@ -49,7 +49,7 @@ export default class ActionsPanel extends Component {
         return (
             !!rating.length && (
                 <FontAwesomeIcon
-                    title='Показати лідерів'
+                    title='Show leaders'
                     onClick={ () => {
                         setParticipant(_.first(rating));
                         scrollToPosition(0);
@@ -72,7 +72,7 @@ export default class ActionsPanel extends Component {
         return (
             ownIndex !== -1 && (
                 <FontAwesomeIcon
-                    title='До моєї позиції'
+                    title='To my position'
                     onClick={ () => {
                         setParticipant(rating[ ownIndex ]);
                         scrollToPosition(ownIndex);
@@ -106,14 +106,14 @@ export default class ActionsPanel extends Component {
 
         return (
             <div className={ Styles.participantHeader }>
-                Учасник
+                Participant
                 { this._renderToMyPositionButton() }
                 { this._renderToTopButton() }
                 <FontAwesomeIcon
                     title={
                         watchPosition
-                            ? 'Слідкувати за позицією'
-                            : 'Вільно переглядати рейтинг'
+                            ? 'Follow the position'
+                            : 'Free to view'
                     }
                     onClick={ () => {
                         setWatchPosition(!watchPosition);

@@ -1,6 +1,6 @@
 export function getError(err) {
   return new Promise(resolve => {
-    if (!err) { return resolve('Щось пішло не так'); }
+    if (!err) { return resolve('Something went wrong'); }
     if (typeof err === 'string') {
       return resolve(err);
     } else if (err.text) {
@@ -13,7 +13,7 @@ export function getError(err) {
       return resolve(err.message);
     }
 
-    return resolve('Щось пішло не так');
+    return resolve('Something went wrong');
   })
 }
 

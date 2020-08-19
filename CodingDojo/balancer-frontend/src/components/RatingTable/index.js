@@ -123,7 +123,7 @@ class RatingTableHandler extends Component {
                                 ) }
                             />
                             <Column
-                                label='Учасник'
+                                label='Participant'
                                 className={ Styles.ratingColumn }
                                 headerRenderer={ () => (
                                     <ActionsPanel
@@ -151,7 +151,7 @@ class RatingTableHandler extends Component {
                                 width={ 400 }
                             />
                             <Column
-                                label='Бали'
+                                label='Scores'
                                 className={ Styles.ratingColumn }
                                 dataKey='score'
                                 flexGrow={ 0 }

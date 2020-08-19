@@ -20,17 +20,17 @@ class BattleFrameHandler extends Component {
                 <div className={ Styles.ratioSquare }>
                     { id && server ? (
                         <iframe
-                            title='Ігрове поле'
+                            title='Game field'
                             scrolling='no'
                             className={ Styles.ratioInner }
                             src={ getIFrameLink(server, id) }
                         />
-                    ) : 
+                    ) :
                         battleCompleted && (
                             <img
                                 className={ Styles.ratioInner }
                                 src={ battleComplete }
-                                alt=' Битва закінчена'
+                                alt='Battle is over'
                             />
                         )
                     }

@@ -104,7 +104,7 @@ class LoginForm extends Component {
         const errorMsg = _.get(registerErrors, 'errorMsg')
         return (
             <div className={ formWrap }>
-                <h1 className={ title }>Новий гравець</h1>
+                <h1 className={ title }>New Player</h1>
                 { errorMsg&& (
                     <div className={ systemError }>
                         <img src={ errorImg } alt='' />
@@ -141,12 +141,12 @@ class LoginForm extends Component {
                             <div className={ backgroundSection }>
                                 <Field
                                     name='firstName'
-                                    placeholder='Ім`я*'
+                                    placeholder='First name*'
                                     component={ CustomInputComponent }
                                 />
                                 <Field
                                     name='lastName'
-                                    placeholder='Прізвище*'
+                                    placeholder='Last name*'
                                     component={ CustomInputComponent }
                                 />
                                 <Field
@@ -156,13 +156,13 @@ class LoginForm extends Component {
                                         registerErrors,
                                         'errorMsg',
                                     ) }
-                                    placeholder='Електронна пошта*'
+                                    placeholder='Email*'
                                     component={ CustomInputComponent }
                                 />
                                   <Field
                                       type='phone'
                                       name='phone'
-                                      placeholder='Номер телефону*'
+                                      placeholder='Phone number*'
                                       component={ PhoneInput }
                                       errors={ _.get(
                                           registerErrors,
@@ -172,23 +172,23 @@ class LoginForm extends Component {
                                 <Field
                                     type='password'
                                     name='password'
-                                    placeholder='Пароль*'
+                                    placeholder='Password*'
                                     component={ CustomInputComponent }
                                 />
                                 <Field
                                     type='password'
                                     name='passwordConfirm'
-                                    placeholder='Повторіть Пароль*'
+                                    placeholder='Password again*'
                                     component={ CustomInputComponent }
                                 />
                                 <Field
                                     name='city'
-                                    placeholder='Місто*'
+                                    placeholder='City*'
                                     component={ CustomInputComponent }
                                 />
                                 <Field
                                     component={ CustomSelectComponent }
-                                    placeholder='Спеціалізація*'
+                                    placeholder='Skills*'
                                     name='skills'
                                     options={ options }
                                 />
@@ -196,7 +196,7 @@ class LoginForm extends Component {
                                     OTHER_VALUE && (
                                     <Field
                                         name='others'
-                                        placeholder='Інше*'
+                                        placeholder='Other*'
                                         component={ CustomInputComponent }
                                     />
                                 ) }
@@ -212,9 +212,9 @@ class LoginForm extends Component {
                                             setVisiblePrivacyModal(true)
                                         }
                                     >
-                                        Погоджуюсь с політикою конфіденційності
+                                        I agree to the privacy policy
                                         <div style={{ textDecoration: 'underline' }}>
-                                            (будь ласка, клікніть на посилання для подробиць)
+                                            (please click on the link for details)
                                         </div>
                                     </div>
                                 }
@@ -228,7 +228,7 @@ class LoginForm extends Component {
                                     <div
                                         className={ checkBoxText }
                                     >
-                                        Я хочу отримувати листи про можливість віддаленої роботи: вакансії, новини статті, заходи та іншу інформацію, пов'язану з інноваційною програмою для IT-спеціалістів та розробників, які хочуть працювати віддалено
+                                        I want to receive letters about the possibility of remote work: vacancies, news articles, events and other information related to the innovative program for IT professionals and developers who want to work remotely
                                     </div>
                                 }
                                 type='checkbox'
@@ -248,7 +248,7 @@ class LoginForm extends Component {
                                     className={ submit }
                                     type='submit'
                                 >
-                                    Продовжити
+                                    Continue
                                 </button>
                             </div>
                         </Form>

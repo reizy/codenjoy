@@ -22,7 +22,7 @@ class DaysPanelHandler extends Component {
             const startOfDayDate = moment(date).startOf('day');
             const isDayExcluded = excludedDays.includes(day);
             if (isDayExcluded) {
-                disabledTitle = 'Вихідний день'
+                disabledTitle = 'Day off'
             }
             const disabled = startOfDayDate.isAfter(currentDate) || isDayExcluded;
 
@@ -58,7 +58,7 @@ class DaysPanelHandler extends Component {
 
         return (
             <div className={ Styles.dayPanel }>
-                <div className={ Styles.dayName }>День №</div>
+                <div className={ Styles.dayName }>Day #</div>
                 { daysRangeConfig.map(({ label, disabled, day: configDay, disabledTitle }) => (
                     <button
                         title={ disabledTitle || configDay }
