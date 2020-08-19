@@ -25,7 +25,7 @@ const registerEndDate = process.env.REACT_APP_EVENT_REGISTER_END_DATE;
 const HomeContainer = () => (
     <div className='container'>
         <div className={ Styles.homeTitle }>
-            <div className={ Styles.mainText }>Deveevelop a smart bot</div>
+            <div className={ Styles.mainText }>Develop a smart bot</div>
             <div className={ Styles.subText }>Compete with other participants</div>
             <div className={ Styles.subText }>Win prizes</div>
             <div className={ Styles.prizeList }>
