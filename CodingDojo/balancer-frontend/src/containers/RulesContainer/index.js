@@ -86,68 +86,68 @@ class RulesContainer extends Component {
 
         return (
             <div className='container'>
-                <div className={ mask }>Bot Challenge - як грати?</div>
+                <div className={ mask }>Bot Challenge - how to play?</div>
                 <div className='content'>
-                    <h2 className='title'>У чому суть гри?</h2>
+                    <h2 className='title'>What is the gist of the game?</h2>
                     <p>
-                        Потрібно написати свого Бота для героя, який обіграє інших
-                        Ботів за сумою балів. Всі грають на одному полі. Герой може
-                        пересуватися по відкритим клітинкам в усі чотири
-                        сторони.
+                        You should write your bot for the hero who will beat the
+                        other bots by the score it gets. All bots play on the
+                        same field of play. The hero can move by idle cells to
+                        all four directions.
                     </p>
                     <p>
-                        Герой може також поставити бомбу. Бомба вибухне через 5
-                        тіків (секунд). Вибуховою хвилею бомби можна зачепити
-                        мешканців поля. Всі, хто був зачеплений - зникає.
-                        Підірватися можна і на своїй, і на чужій бомбі.
+                        The hero can plant a bomb. The bomb will explode in 5
+                        ticks (seconds). The blast wave can affect inhabitants
+                        of the field. All affected by the blast wave disappear.
+                        You can decline by both your and someone else's bomb.
                     </p>
                     <p>
-                        На своєму шляху герой може зустріти Мітчопера - червону
-                        повітряну кульку, що знищує на своєму шляху всіх
-                        Бомберменів.
+                        On her/his way, the hero can meet a meatchopper –
+                        red air-ballon that destroys all bombermen on its way.
                     </p>
                     <p>
-                        Бомберменові перешкождатимуть в пересуванні також і стіни
-                        - їх є два типи: такі, що можна зруйнувати; і незруйновані.
+                        The walls also prevent Bomberman from moving -
+                        there are two types: those that can be destroyed; and intact.
                     </p>
                     <p>
-                        Кожен зруйнований об'єкт на полі (Бомбермен, Мітчопер
-                        та стіни які руйнуються) після руйнування відновлюється в
-                        іншому місці. Якщо постраждав Бомбермен, йому
-                        зараховуються штрафні бали{ this._gets('yourHeroesDeathPenalty') }.
+                        Each destroyed object on the field (bomberman, meatchopper,
+                        destroyed walls) is restored in an instant in the other place.
+                        If the bomberman is damaged, the penalty points are
+                        allocated to him{ this._gets('yourHeroesDeathPenalty') }.
                     </p>
                     <p>
-                        Бомбермен, від бомби якого сталися руйнування на мапі
-                        отримає бонусні бали: за зруйновану стінку{ this._gets('killWallScore') },
-                        за Мітчопера{ this._gets('killMeatChopperScore') },
-                        за іншого Бомбермена{ this._gets('killOtherHeroScore') }. Бали сумуються.
+                        The bomberman whose bomb destroyed something on the
+                        map receives bonus points as follows:
+                        for the destroyed walls{ this._gets('killWallScore') },
+                        for the meatchopper{ this._gets('killMeatChopperScore') },
+                        for the enemy bomberman{ this._gets('killOtherHeroScore') }.
+                        All points are summed up.
                     </p>
 
                     <div className='subTitle' id='client'>
-                        Завантажте Клієнт гри для створення Бота
+                        Download the Game Client to create a Bot
                     </div>
                     <p>
                         { clientLink }
-                        { !loggedIn && '(посилання стануть доступні після входу на сайт)' }
+                        { !loggedIn && '(links will be available after logging in to the site)' }
                     </p>
                     <p>
-                        Пам'ятайте: у процесі написання Бота вам необхідно
-                        піклуватись про логіку переміщень вашого Бота -
-                        допоміжні речі вже зроблені за вас. Але ви можете
-                        вдосконалювати логіку Клієнта на власний розсуд.
+                        Remember: in the process of writing a Bot, you need to take care
+                        of the logic of your Bot's movements - auxiliary things have
+                        already been done for you. But you can improve the Client's logic
+                        at your own discretion.
                     </p>
                     <p>
-                        Зареєструйтеся за допомогою форми реєстрації Нового
-                        Гравця. Запам'ятайте вказані дані (адресу електронної пошти
-                        і пароль) - вони знадобляться вам у майбутньому для
-                        авторизації на сайті.
+                        Register using the New Player registration form. Remember the
+                        specified data (e-mail address and password) - you will need
+                        them in the future for authorization on the site.
                     </p>
                     <p>
-                        Далі необхідно приєднатися з коду Клієнта до сервера.
+                        Then, you need to connect from the Client code to the server.
                     </p>
 
                     <div className='subTitle' id='client-url'>
-                        Адреса для підключення до гри на сервері
+                        Address to connect the game on the server
                     </div>
 
                     { loggedIn ? (
@@ -158,29 +158,30 @@ class RulesContainer extends Component {
                                     <img
                                         className={ Styles.copyConnection }
                                         src={ Icon }
-                                        alt='Скопіювати адрес'
+                                        alt='Copy URL'
                                     />
                                 </CopyToClipboard>
                             </div>
                             <p>
-                                Тут 'user' - id гравця, a 'code' - ваш security token,
-                                його ви зможете отримати тут після реєстрації/логіна.
+                                Here 'user' is your player id and 'code'
+                                is your security token, you can get it
+                                from browser address bar after registration/login.
                             </p>
                         </>
                     ) : (
                         <div className={ highligte }>
                             <Link to={ book.login }>
-                                Потрібно увійти в систему для отримання посилання
+                                You must be logged in to get the link
                             </Link>
                         </div>
                     ) }
                     <div style={{ marginLeft:'50px' }}>
                         <p>
-                            <b>[Опціонально]</b> Якщо є бажання підключитись до гри, коли
-                            сервер недоступний (вихідні, свята або не робочий час) -
-                            можно <a className='content' style={{ display:'initial' }}
-                            href='https://drive.google.com/uc?export=download&id=174aZrssLxql1_bGsKyAIENUXUv4Qjw9K'>завантажити сервер</a> і
-                            запустити його командою (попередньо на ваш комп'ютер потрібно встановити java додаток).
+                            <b>[Optional]</b> If you want to connect to the game when
+                            the server is unavailable (weekends, holidays or
+                            non-working hours) - you can <a className='content' style={{ display:'initial' }}
+                            href='https://drive.google.com/uc?export=download&id=174aZrssLxql1_bGsKyAIENUXUv4Qjw9K'>download server</a> і
+                            run it with a command (you must first install a java application on your computer).
                         </p>
                         <div className={ highligte } style={{whiteSpace:"pre"}} >
                             { "# windows\n" +
@@ -196,440 +197,435 @@ class RulesContainer extends Component {
                               "          --settings=\"{'boardSize':11,'bombPower':7}\"" }
                         </div>
                         <p>
-                            Як бачиш - є можливicть змінювати хост/порт, кількість мілісекунд на один тік (timeout),
-                            налаштування<b><a href='#settings'>*</a></b> гри (у вигляді json), налаштування
-                            логування (log, logTime, showPlayers), конфiгурацiю псевдо-генератора випадкових
-                            чисел (random) та кiлькостi участникiв (waitFor), що мають пiдключитися за для старту сервера.
-                            Після цього можно використати лінк для підключення
+                            As you can see - it is possible to change the host / port, the number of milliseconds per tick (timeout),
+                            game settings<b><a href='#settings'>*</a></b> (in the form of json),
+                            log settings (log, logTime, showPlayers), configuration of pseudo-generator
+                            of random numbers (random) and number of participants (waitFor)
+                            to connect to start the server. You can then use the link to connect
                             <br/>
                             <a className='content' style={{ display:'initial' }} href={ localhostConnectionUrl }>{ localhostConnectionUrl }</a>
                             <br/>
-                            Також є можливість підключатись декількома клiєнтами - вси бомбери зберуться на одному полі.
+                            It is also possible to connect with several clients - all bombers will gather in one field.
                         </p>
                         <p>
-                            <b style={{ color:'#ffffff' }}>Увага!</b> Локальний сервер буде вдосконалюватись - слідкуйте за поновленнями на цій сторінці.
-                            Наразі наявна версія <a className='content' style={{ display:'initial' }}>'Жоржина' (v3)</a>.
+                            <b style={{ color:'#ffffff' }}>Warning!</b> The local server will be upgraded -
+                            stay tuned for updates on this page.
+                            A version <a className='content' style={{ display:'initial' }}>'Dahlia' (v3)</a> is currently available.
                         </p>
                     </div>
                     <p>
-                        Після підключення клієнт буде регулярно (кожну секунду)
-                        отримувати рядок символів із закодованим станом поля.
-                        Формат такий.
+                        After connection, the client will regularly (every second)
+                        receive a line of characters with the encoded state of the
+                        field. The format:
                         <br />
                     </p>
                     <p className={ highligte }>
                         { '^board=(.*)$' }
                     </p>
                     <p>
-                        За допомогою цього regexp можна отримати рядок дошки.
+                        With the help of regexp you can obtain a board line.
                     </p>
 
                     <div className='subTitle' id='board'>
-                        Приклад рядка від сервера
+                        Example of the line from the server
                     </div>
                     <div className={ highligte }>
                         <pre className={ boardExample }>{ BOARD_EXAMPLE }</pre>
                     </div>
                     <p>
-                        Довжина рядка дорівнює площі поля. Якщо вставити символ
-                        розриву рядків кожні sqrt(length(string)) символів, то
-                        вийде читабельним зображення поля.
+                        The line length is equal to the field square. If to insert a
+                        wrapping character (carriage return) every sqrt(length(string))
+                        characters, you obtain the readable image of the field.
                     </p>
                     <div className={ highligte }>
                         <pre className={ boardExample }>{ BOARD_EXAMPLE_2 }</pre>
                     </div>
                     <p>
-                        Перший символ рядка відповідає осередку розташованої в
-                        лівому верхньому кутку і має координату [0,22]. У цьому
-                        прикладі – позиція Бомбермена (символ '☺') - [1, 17].
-                        Лівий нижній кут має координату [0, 0].
+                        The first character of the line corresponds to a cell
+                        located on the left-top corner and has the [0,22] coordinate.
+                        The following example shows the position of the
+                        bomberman (the '☺' character) - [1, 17].
+                        Left-bottom corner has the [0, 0] coordinate.
                     </p>
 
                     <div className='subTitle' id='elements'>
-                        Розшифрування символів
+                        Interpretation of characters
                     </div>
                     <p className="game-field-img-container">
-                        <img className="responsive-img" src={ BoardSample } alt='Ігрове поле'/>
+                        <img className="responsive-img" src={ BoardSample } alt='Game field'/>
                     </p>
                     <GameElements
                         settings={ settings }
                     />
 
                     <div className='subTitle' id='commands'>
-                        Керування ботом
+                        How to control the Bot
                     </div>
                     <p>
-                        Гра покрокова, кожну секунду сервер відправляє вашому
-                        клієнту (Боту) стан оновленого поля на поточний момент і
-                        чекає на відповідь команди героя. За наступну секунду
-                        гравець повинен встигнути дати команду герою. Якщо не
-                        встиг - герой стоїть на місці.
+                        The game is turn-based, every second the server sends to your client
+                        (bot) the state of the updated field at the moment and expects a
+                        response of the team to the hero. Within the next second, the
+                        player should give a command to the hero. If the player lost
+                        his/her chance, the hero remains in place.
                     </p>
                     <p>
-                        Команд декілька: UP, DOWN, LEFT, RIGHT - призводять до
-                        руху героя в заданому напрямку на 1 клітинку; ACT -
-                        залишити бомбу на місці героя. Команди руху можна
-                        комбінувати з командою ACT, розділяючи їх через кому.
-                        Порядок (LEFT, ACT) або (ACT, LEFT) - має значення, або
-                        рухаємося вліво і там ставимо бомбу, або ставимо бомбу, а
-                        потім біжимо вліво. Якщо гравець буде використовувати
-                        тільки одну команду ACT, то бомба буде встановлена під
-                        героєм без його переміщення на полі.
+                        The commands (UP, DOWN, LEFT, RIGHT) move the hero to the given
+                        direction in one cell; ACT – leave a bomb on hero’s position.
+                        You can combine movement commands with the ACT command by separating
+                        them by a comma. The order (LEFT, ACT) or (ACT, LEFT) matters:
+                        either we move to the left and plant a bomb there or we plant
+                        a bomb and run away to the left. If a player uses the ACT command
+                        only, the bomb will be planted under the hero without her/his move
+                        on the field.
                     </p>
                     <p>
-                        Ваше завдання - написати вебсокет клієнта, який підключиться
-                        до сервера. Потім змусити героя слухатися команди. Головна
-                        мета - вести осмислену гру і перемогти, набравши
-                        найбільшу кількість балів в поточному Iгровому дні.
+                        Your task is to write a client’s WebSocket which will connect to the
+                        server. Then you should “force” the hero to listen to the
+                        commands. This is the way the gamer will prepare herself/himself
+                        to the main game. The main goal is to play meaningfully and win
+                        in the current Game Day.
                     </p>
 
                     <div className='subTitle' id='match'>
-                        Раунди/матчі
+                        Rounds/matches
                     </div>
                     <ul>
                         <li>
-                            Матч складається з декількох{ this._gets('roundsPerMatch') } Раундів.
+                            The match consists of several{ this._gets('roundsPerMatch') } Rounds.
                         </li>
                         <li>
-                            Кожний Матч починається в новій Кімнаті після того, як в ній
-                            збереться достатня кількість{ this._gets('playersPerRoom') } Учасників.
+                            Each Match begins in a new Room after a sufficient
+                            number of{ this._gets('playersPerRoom') } Participants.
                         </li>
                         <li>
-                            Бомбермен очікуватиме початку наступного Раунду на полі в новому,
-                            завчасно відомому для всіх Участників, місці у неактивному стані.
+                            Bomberman will be waiting for the start of the next Round on the
+                            field in a new, pre-known to all Participants, place in an inactive state.
                         </li>
                         <li>
-                            Кожний Матч починається зі зворотного відліку
-                            в певну кількість{ this._gets('timeBeforeStartRound') } тіків (секунд),
-                            після чого всі Бомбермени стають активними - починають виконувати команди Участників.
+                            Each Match starts with a countdown to a
+                            certain number{ this._gets('timeBeforeStartRound') } of ticks (seconds),
+                            after which all Bombermen become active - begin to perform the teams of the Participants.
                         </li>
                         <li>
-                            Кожний Раунд Матчу проходить з певним складом Участників.
+                            Each Round of the Match takes place with a certain composition of Participants.
                         </li>
                         <li>
-                            Учасник, який закінчив останній Раунд Матчу, одразу попадає
-                            до нової кімнати, де після того, як збереться достатня кількість
-                            Участників почнеться новий Матч у новому складі Участників.
+                            The Participant who has completed the last Round of the Match
+                            immediately enters the new room, where after a sufficient number
+                            of Participants gather, a new Match will begin in the new composition
+                            of the Participants.
                         </li>
                         <li>
-                            Раунд триває певну{ this._gets('timePerRound') } кількість
-                            тіків (секунд) і закінчується перемогою Бомбермена:
+                            The round lasts a certain number{ this._gets('timePerRound') } of ticks
+                            (seconds) and ends with the victory of Bomberman:
                             <ul>
                                 <li>
-                                    Якщо до кінця Раунду залишились живими більше ніж 1 Бомбермен -
-                                    перемагає той, який зробив найбільше руйнувань (при цьому
-                                    підраховується загальна кількість балів отриманих від початку раунду);
+                                    If more than 1 Bomberman survived by the end of the Round,
+                                    the winner is the one who has suffered the most damage
+                                    (the total number of points received since the beginning
+                                    of the round is counted);
                                 </li>
                                 <li>
-                                    Якщо ж на полі живим лишився тільки один Бомбермен -
-                                    він і перемагає.
+                                    If only one Bomberman survives on the field, he wins.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Переможець Раунду отримує бонусні бали{ this._gets('winRoundScore') } додатково до тих балів,
-                            які отримані під час Раунду за руйнування об'єктів на полі
-                            (Бомбермени, Мітчопери та стіни які руйнуються).
+                            The winner of the Round receives bonus points{ this._gets('winRoundScore') } in addition to
+                            those points obtained during the Round for the destruction
+                            of objects in the field (Bombermen, Mitchhoppers and collapsing walls).
                             <ul>
                                 <li>
-                                    Але не раніше, ніж мине певна
-                                    кількість{ this._gets('minTicksForWin') } тіків (секунд) Раунду.
+                                    But not before a certain number of ticks{ this._gets('minTicksForWin') }
+                                    (seconds) of the Round have passed.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Бомбермен, який примусово покинув Раунд / Матч отримує
-                            штрафні бали{ this._gets('yourHeroesDeathPenalty') }.
+                            A Bomberman who is forced to leave the Round / Match
+                            receives penalty points{ this._gets('yourHeroesDeathPenalty') }.
                         </li>
                     </ul>
 
                     <div className='subTitle' id='exceptions'>
-                        Особливі випадки
+                        Special cases
                     </div>
                     <ul>
                         <li>
-                            Поле має форму квадрату
-                            з певною довжиною{ this._gets('boardSize') }.
+                            The field has the shape of a square with
+                            a certain length{ this._gets('boardSize') }.
                         </li>
                         <li>
-                            Бомби:
+                            Bombs:
                             <ul>
                                 <li>
-                                    В Бомбермена по замовчуванню є
-                                    певна кількість{ this._gets('bombsCount') } бомб.
+                                    Bomberman has a certain number of
+                                    bombs by default{ this._gets('bombsCount') } бомб.
                                 </li>
                                 <li>
-                                    Бомба залишена на полі підірветься через 5 тіків (секунд).
+                                    A bomb left on the field will explode in 5 ticks (seconds).
                                 </li>
                                 <li>
-                                    Бомба розривається в усі боки на певну
-                                    кількість клітинок{ this._gets('bombPower') } допоки
-                                    не зустріне перешкоду - будь-який елемент.
+                                    The bomb explodes in all directions on a
+                                    certain number of cells{ this._gets('bombPower') } until
+                                    it encounters an obstacle - any element.
                                 </li>
                                 <li>
-                                    Бомбермен, який підірвався на своїй або чужій бомбі гине і
-                                    отримує штрафні бали{ this._gets('yourHeroesDeathPenalty') }.
+                                    A bomberman who explodes on his own or someone
+                                    else's bomb dies and gets penalty points{ this._gets('yourHeroesDeathPenalty') }.
                                 </li>
                                 <li>
-                                    Бомбермен, бомба якого підірвала іншого Бомбермена отрумує
-                                    бонусні бали{ this._gets('killOtherHeroScore') }.
+                                    The Bomberman whose bomb blew up another Bomberman
+                                    will earn bonus points{ this._gets('killOtherHeroScore') }.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Мітчопери:
+                            Mitchopers:
                             <ul>
                                 <li>
-                                    На полі звичайно знаходиться певна кількість{ this._gets('meetChoppersCount') } Мітчоперів.
+                                    There are usually a number{ this._gets('meetChoppersCount') } of Mitchopers on the field.
                                 </li>
                                 <li>
-                                    Бомбермен, бомба якого підірвала Мітчопера отрумує
-                                    бонусні бали{ this._gets('killMeatChopperScore') }.
+                                    Bomberman, whose bomb was detonated by Mitchoper,
+                                    will earn bonus points{ this._gets('killMeatChopperScore') }.
                                 </li>
                                 <li>
-                                    Щойно підірваний Мітчопер одразу ж з'являється на полі в новому місці.
+                                    The newly blown-up Mitchoper immediately appears on the field in a new location.
                                 </li>
                                 <li>
-                                    Бомбермен, який зустрівся із Мітчопером гине і отримує
-                                    штрафні бали{ this._gets('yourHeroesDeathPenalty') }.
+                                    Bomberman, who met with Mitchoper, dies and
+                                    receives penalty points{ this._gets('yourHeroesDeathPenalty') }.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Стіни, що руйнуються:
+                            Destroy walls:
                             <ul>
                                 <li>
-                                    На полі звичайно знаходиться певна
-                                    кількість{ this._gets('destroyWallCount') } стін що руйнуються.
+                                    The field usually has a certain
+                                    number{ this._gets('destroyWallCount') } of collapsing walls.
                                 </li>
                                 <li>
-                                    Бомбермен, бомба якого підірвала стінку що руйнується
-                                    отрумує бонусні бали{ this._gets('killWallScore') }.
+                                    Bomberman, whose bomb blew up a collapsing wall,
+                                    picks up bonus points{ this._gets('killWallScore') }.
                                 </li>
                                 <li>
-                                    Щойно підірвана стіна одразу ж з'являється на полі в новому місці.
+                                    A newly blown up wall immediately appears on the field in a new place.
                                 </li>
                                 <li>
-                                    Під час руйнування стінки може з'явитись Перк.
+                                    Perk may appear during the destruction of the wall.
                                 </li>
                                 <li>
-                                    Перк, піднятий Бомберменом модифікує поведінку деяких ігрових
-                                    аспектів (див. розділ 'Модифікатори (Перки)').
+                                    Perk raised by Bomberman modifies the behavior
+                                    of some game aspects (see section 'Modifiers (Perks)').
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            На полі також присутні стіни, що не руйнуються -
-                            немає ніякої можливості їх зруйнувати.
+                            There are also walls that do not collapse -
+                            there is no way to destroy them.
                         </li>
                     </ul>
 
                     <div className='subTitle' id='perks'>
-                        Модифікатори (Перки)
+                        Modifiers (Perks)
                     </div>
                     <ul>
                         <li>
-                            Перки випадають на місці знищенної стіни з
-                            певною{ this._gets('perksDropRatio') } верогідністю у %.
+                            perks fall in place of the destroyed wall
+                            with a probability of %{ this._gets('perksDropRatio') }.
                         </li>
                         <li>
-                            Дія перку зникає через деякий час:
+                            The effect of the perk disappears after a while:
                             <ul>
                                 <li>
-                                    BOMB_<wbr/>BLAST_<wbr/>RADIUS_<wbr/>INCREASE певна кількість{ this._gets('perksBombBlastRadiusIncreaseEffectTimeout') } тіків (секунд).
-                                    Але якщо було взято декілька перків підряд - загальний час роботи сумується.
+                                    BOMB_<wbr/>BLAST_<wbr/>RADIUS_<wbr/>INCREASE a certain number{ this._gets('perksBombBlastRadiusIncreaseEffectTimeout') } of ticks (seconds).
+                                    But if several perks were taken in a row - the total working time is added up.
                                 </li>
                                 <li>
-                                    BOMB_COUNT_INCREASE певна кількість{ this._gets('perksBombCountEffectTimeout') } тіків (секунд).
+                                    BOMB_COUNT_INCREASE a certain number{ this._gets('perksBombCountEffectTimeout') } of ticks (seconds).
                                 </li>
                                 <li>
-                                    BOMB_IMMUNE певна кількість{ this._gets('perksBombImmuneEffectTimeout') } тіків (секунд).
+                                    BOMB_IMMUNE a certain number{ this._gets('perksBombImmuneEffectTimeout') } of ticks (seconds).
                                 </li>
                                 <li>
-                                    BOMB_REMOTE_CONTROL не закінчується по таймауту.
+                                    BOMB_REMOTE_CONTROL does not end on timeout.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Якщо перк ніхто не підібрав, він зникає з поля
-                            після через деякий{ this._gets('perksPickTimeout') } час.
+                            If no one picks up the perk, it disappears from the field after a while{ this._gets('perksPickTimeout') }.
                         </li>
                         <li>
-                            Якщо ж участник підібрав перк, він отримує бонусні
-                            бали{ this._gets('catchPerkScore') }.
+                            If the participant picks up a perk, he receives
+                            bonus points{ this._gets('catchPerkScore') }.
                         </li>
                         <li>
-                            Перк BOMB_<wbr/>BLAST_<wbr/>RADIUS_<wbr/>INCREASE:
+                            Perk BOMB_<wbr/>BLAST_<wbr/>RADIUS_<wbr/>INCREASE:
                             <ul>
                                 <li>
-                                    Збільшує радіус вибуху бомби на певну
-                                    кількість{ this._gets('perksBombBlastRadiusIncrease') } клітинок
-                                    у всі сторони.
+                                    Increases the radius of the bomb explosion by a certain
+                                    number{ this._gets('perksBombBlastRadiusIncrease') } of
+                                    cells in all directions.
                                 </li>
                                 <li>
-                                    Діє лише для нових бомб.
+                                    Valid only for new bombs.
                                 </li>
                                 <li>
-                                    Дія перку зникає через
-                                    деякий{ this._gets('perksBombBlastRadiusIncreaseEffectTimeout') } час.
+                                    The effect of the perk disappears after
+                                    a while{ this._gets('perksBombBlastRadiusIncreaseEffectTimeout') }.
                                 </li>
                                 <li>
-                                    При отриманні декількох перків цього типу одночасно, радіус
-                                    вибуху бомби збільшується пропорційно до кількості отриманних перків,
-                                    а загальний час їх дії сумується.
+                                    When receiving several perks of this type at the same time,
+                                    the radius of the bomb explosion increases in proportion to
+                                    the number of received perks, and the total time of their
+                                    action is summed.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Перк BOMB_COUNT_INCREASE:
+                            Perk BOMB_COUNT_INCREASE:
                             <ul>
                                 <li>
-                                    Тимчасово збільшує кількість доступних гравцю бомб на певну
-                                    кількість{ this._gets('perksBombCountIncrease') } додатково
-                                    до наявних за замовчуванням бомб{ this._gets('bombsCount') } Бомбермена.
+                                    Temporarily increases the number of bombs { this._gets('perksBombCountIncrease') } available
+                                    to the player by a certain number in addition to the
+                                    default{ this._gets('bombsCount') } Bomberman bombs.
                                 </li>
                                 <li>
-                                    Бомбермен може класти не більше ніж одну бомбу за тік (секунду).
+                                    A bomberman can put no more than one bomb per tick (second).
                                 </li>
                                 <li>
-                                    Дія перку зникає через
-                                    деякий{ this._gets('perksBombCountEffectTimeout') } час.
+                                    The effect of the perk disappears after a while{ this._gets('perksBombCountEffectTimeout') }.
                                 </li>
                                 <li>
-                                    Перки не сумуються. При отриманні декількох перків цього типу одночасно, кількість
-                                    бомб повертається до значення{ this._gets('perksBombCountIncrease') }&nbsp
-                                    додатково до наявних за замовчуванням{ this._gets('bombsCount') }. Таймер
-                                    при цьому встановлюється в початкове положення{ this._gets('perksBombCountEffectTimeout') }.
+                                    Perks do not accumulate. When you receive several
+                                    perks of this type at the same time, the number of bombs
+                                    returns to the value{ this._gets('perksBombCountIncrease') }&nbsp
+                                    in addition to the default ones{ this._gets('bombsCount') }.
+                                    The timer is set to the initial position{ this._gets('perksBombCountEffectTimeout') }.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Перк BOMB_IMMUNE:
+                            Perk BOMB_IMMUNE:
                             <ul>
                                 <li>
-                                    Дає імунітет до вибухів бомб (навіть чужих).
+                                    Gives immunity to bomb explosions (even alien).
                                 </li>
                                 <li>
-                                    Дія перку зникає через
-                                    деякий{ this._gets('perksBombImmuneEffectTimeout') } час.
+                                    The effect of the perk disappears after a while{ this._gets('perksBombImmuneEffectTimeout') }.
                                 </li>
                                 <li>
-                                    Перки не сумуються. При отриманні декількох перків цього типу одночасно,
-                                    таймер дії встановлюється в початкове положення.
+                                    Perks do not accumulate. When receiving several perks of this type
+                                    at the same time, the action timer is set to the initial position.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Перк BOMB_REMOTE_CONTROL:
+                            Perk BOMB_REMOTE_CONTROL:
                             <ul>
                                 <li>
-                                    Дає можливість дистанційного керування детонатором.
+                                    Enables remote control of the detonator.
                                 </li>
                                 <li>
-                                    Бомба встановлюється на полі перщою командою ACT, а вибухає
-                                    при повторній дії ACT команди. При цьому використовується як бомба
-                                    так детонатор (окремо).
+                                    The bomb is placed on the field by the first ACT command, and explodes
+                                    when the ACT command is repeated. Both the bomb and
+                                    the detonator (separately) are used.
                                 </li>
                                 <li>
-                                    В наявності є певна
-                                    кількість{ this._gets('perksNumberOfBombRemoteControl') } детонаторів.
+                                    There are a number of detonators{ this._gets('perksNumberOfBombRemoteControl') }.
                                 </li>
                                 <li>
-                                    Дія перку не закінчується по таймауту.
+                                    The action of the perk does not end on timeout.
                                 </li>
                                 <li>
-                                    Перки не сумуються. При отриманні декількох перків цього типу одночасно,
-                                    загальна кількість детонаторів поновлюється до зазначенного вище.
+                                    Perks do not accumulate. Upon receipt of several perks of
+                                    this type simultaneously, the total number of detonators is
+                                    renewed to the above.
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            Перки не впливають одне на одного, тільки доповнюють.
+                            Perks do not affect each other, only complement each other.
                         </li>
                         <li>
-                            Кожен перк має свої власні: таймер та/або лічильник
-                            кількостей (залежить від типу).
+                            Each perk has its own: timer and / or counter (depending on the type).
                         </li>
                     </ul>
 
                     <div className='subTitle' id='starting'>
-                        Підказки
+                        Tips
                     </div>
                     <p>
-                        Якщо Ви не знаєте, що написати, спробуйте реалізувати
-                        наступні варіанти алгоритмів:
+                        If you do not know what to write, try the following algorithms:
                     </p>
                     <ul>
                         <li>
-                            Переміщення у випадкову сторону, якщо відповідна
-                            клітина вільна.
+                            Move to the random side if the corresponding cell is free.
                         </li>
                         <li>
-                            Рух на вільну клітину в бік найближчої стінки,
-                            що можно зруйнувати.
+                            Movement on a free cell towards the nearest wall that can be destroyed.
                         </li>
                         <li>
-                            Поставити бомбу рядом із стінкою, що можно зруйнувати.
+                            Place a bomb next to a wall that can be destroyed.
                         </li>
                         <li>
-                            Ухилення від бомб, якщо підраховано що її взривна
-                            хвиля може зачепити Бомбермена.
+                            Dodge bombs if it is estimated that its blast wave could hit Bomberman.
                         </li>
                         <li>
-                            Ухилення від Мітчоперів, що зустрілися на шляху.
+                            Avoiding Mitchhoppers who met on the way.
                         </li>
                         <li>
-                            Намагання підірвати Мітчопера або іншого Бомбермена бомбою.
+                            Trying to blow up Mitchhopper or another Bomberman with a bomb.
                         </li>
                         <li>
-                            Збір Перків і реалізація хитрішої стратегії, що безумовно
-                            призведе до перемоги.
+                            Collecting Perks and implementing a more cunning strategy,
+                            which will definitely lead to victory.
                         </li>
                     </ul>
 
                     <div className='subTitle' id='winners'>
-                        Як визначатимуться переможці?
+                        How will the winners be determined?
                     </div>
                     <p>
-                        Детальніше про це можно прочитати
+                        You can read more about this
                         &nbsp;
                         <a href={ privacyRulesDetailsUrl }>
-                            за посиланням<img src={ Icon } alt='Правила Конкурсу'/>
+                            by the link<img src={ Icon } alt='Contest Rules'/>
                         </a>
                     </p>
 
                     <div className='subTitle' id='additional'>
-                        Додаткова інформація
+                        Additional Information
                     </div>
                     <p>
-                        <b>(<a name='settings'>*</a>)</b> - Точні значення: балів за руйнування на полі та штрафних балів;
-                        кількості Раундів в Матчі; сили ефекту, таймаутів, вірогідності
-                        випадання Перків та інших змінних треба уточнити у організаторів
-                        на початку Ігрового Дня в Slack чаті або тут, на цій сторінці, після авторизації,
-                        або&nbsp;
+                        <b>(<a name='settings'>*</a>)</b> - Exact values: points for
+                        destruction on the field and penalty points; the number of
+                        Rounds in the Match; the strength of the effect, timeouts, the
+                        probability of dropping Perks and other variables must be clarified
+                        with the organizers at the beginning of the Game Day in the Slack
+                        chat or here, on this page, after authorization, or&nbsp;
                         <a href={ settingsLink } rel='noopener noreferrer' target='_blank'>
-                            за посиланням<img src={ Icon } alt='Долучитися до чату'/>
+                            by the link<img src={ Icon } alt='Join the chat'/>
                         </a>.
                     </p>
                     <p>
-                        Будьте уважні - ці значення відрізнятимуться для різних
-                        Ігрових днів Конкурсу.
+                        Be careful - these values will be different for different Game Days of the Contest.
                     </p>
                     <p>
-                        Для спілкування між Участниками та Організатором
-                        створено Канал у додатку Slack, приєднатися до якого
-                        можна
+                        To communicate between the Participants and the Organizer,
+                        a Channel has been created in the Slack application, which you can join
                         &nbsp;
                         <a href={ joinSlackUrl } rel='noopener noreferrer' target='_blank'>
-                            за посиланням<img src={ Icon } alt='Долучитися до чату'/>
+                            by the link<img src={ Icon } alt='Join the chat'/>
                         </a>
                     </p>
                     <p>
-                        Із детальним описом Правил і Положень гри можна
-                        ознайомитися
+                        A detailed description of the Rules and Regulations of the game can be found
                         &nbsp;
                         <a href={ privacyRulesUrl }>
-                            за посиланням<img src={ Icon } alt='Правила Конкурсу'/>
+                            by the link<img src={ Icon } alt='Contest Rules'/>
                         </a>
                     </p>
                 </div>
