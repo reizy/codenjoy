@@ -80,7 +80,7 @@ class RulesContainer extends Component {
         const joinSlackUrl = process.env.REACT_APP_JOIN_CHAT_LINK;
         const clientLink = loggedIn
             ? (
-                <a href={ getJavaClient(server) }>Завантажити клієнт</a>
+                <a href={ getJavaClient(server) }>Download client</a>
             )
             : ''
 
