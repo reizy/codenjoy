@@ -23,7 +23,7 @@ using System;
 
 namespace CollapseClient
 {
-	public struct Point
+	public class Point
 	{
 		public readonly int X;
 		public readonly int Y;
@@ -46,7 +46,7 @@ namespace CollapseClient
 		/// <summary>
 		/// Returns new BoardPoint object shifted left to "delta" points
 		/// </summary>
-		public Point ShiftLeft(int delta = 1)
+		public virtual Point ShiftLeft(int delta = 1)
 		{
 			return new Point(X - delta, Y);
 		}
@@ -54,7 +54,7 @@ namespace CollapseClient
 		/// <summary>
 		/// Returns new BoardPoint object shifted right to "delta" points
 		/// </summary>
-		public Point ShiftRight(int delta = 1)
+		public virtual Point ShiftRight(int delta = 1)
 		{
 			return new Point(X + delta, Y);
 		}
@@ -62,7 +62,7 @@ namespace CollapseClient
 		/// <summary>
 		/// Returns new BoardPoint object shifted top "delta" points
 		/// </summary>
-		public Point ShiftTop(int delta = 1)
+		public virtual Point ShiftTop(int delta = 1)
 		{
 			return new Point(X, Y + delta);
 		}
@@ -70,7 +70,7 @@ namespace CollapseClient
 		/// <summary>
 		/// Returns new BoardPoint object shifted bottom "delta" points
 		/// </summary>
-		public Point ShiftBottom(int delta = 1)
+		public virtual Point ShiftBottom(int delta = 1)
 		{
 			return new Point(X, Y - delta);
 
@@ -126,7 +126,10 @@ namespace CollapseClient
 
 		public override int GetHashCode()
 		{
-			return (X.GetHashCode() ^ Y.GetHashCode());
+			int hash = 23;
+			hash = hash * 31 + X;
+			hash = hash * 31 + Y;
+			return hash;
 		}
 	}
 }

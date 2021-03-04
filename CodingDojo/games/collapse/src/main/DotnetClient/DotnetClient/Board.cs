@@ -275,7 +275,7 @@ namespace CollapseClient
 		}
 
 		/// <summary>
-		/// Получить клетки, не занятые фигурами.
+		/// Получить не занятые клетки.
 		/// </summary>
 		/// <returns></returns>
 		public List<Point> GetFreeSpace()
@@ -325,6 +325,46 @@ namespace CollapseClient
 		private List<Element> GetAllAtInternal(int x, int y)
 		{
 			return new List<Element> { GetAtInternal(x, y) };
+		}
+
+		/// <summary>
+		/// Получить все клетки с заданным элементом
+		/// </summary>
+		/// <param name="element"></param>
+		/// <returns>Список клеток с элементами</returns>
+		public List<ElementPoint>FindAll(Element element)
+		{
+			List<ElementPoint> result = new List<ElementPoint>();
+			for (int x = 0; x < Size; x++)
+			{
+				for (int y = 0; y < Size; y++)
+				{
+					Element elementAt = GetAt(x, y);
+					if (elementAt == element)
+					{
+						result.Add(new ElementPoint(x, y, elementAt));
+					}
+				}
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Получить все клетки
+		/// </summary>
+		/// <returns>Спискок клеток с элементами</returns>
+		public List<ElementPoint> FindAllExtended()
+		{
+			List<ElementPoint> result = new List<ElementPoint>();
+			for (int x = 0; x < Size; x++)
+			{
+				for (int y = 0; y < Size; y++)
+				{
+					Element element = GetAt(x, y);
+					result.Add(new ElementPoint(x, y, element));
+				}
+			}
+			return result;
 		}
 
 		/// <summary>

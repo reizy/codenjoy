@@ -49,6 +49,7 @@
     <Compile Include="Command.cs" />
     <Compile Include="Direction.cs" />
     <Compile Include="Element.cs" />
+    <Compile Include="ElementPoint.cs" />
     <Compile Include="LengthToXY.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
