@@ -12,7 +12,7 @@
 		/// <summary>
 		/// Returns new BoardPoint object shifted left to "delta" points
 		/// </summary>
-		public virtual Point ShiftLeft(int delta = 1)
+		public override Point ShiftLeft(int delta = 1)
 		{
 			return new ElementPoint(X - delta, Y, Element);
 		}
@@ -20,7 +20,7 @@
 		/// <summary>
 		/// Returns new BoardPoint object shifted right to "delta" points
 		/// </summary>
-		public virtual Point ShiftRight(int delta = 1)
+		public override Point ShiftRight(int delta = 1)
 		{
 			return new ElementPoint(X + delta, Y, Element);
 		}
@@ -28,7 +28,7 @@
 		/// <summary>
 		/// Returns new BoardPoint object shifted top "delta" points
 		/// </summary>
-		public virtual Point ShiftTop(int delta = 1)
+		public override Point ShiftTop(int delta = 1)
 		{
 			return new ElementPoint(X, Y + delta, Element);
 		}
@@ -36,7 +36,7 @@
 		/// <summary>
 		/// Returns new BoardPoint object shifted bottom "delta" points
 		/// </summary>
-		public virtual Point ShiftBottom(int delta = 1)
+		public override Point ShiftBottom(int delta = 1)
 		{
 			return new ElementPoint(X, Y - delta, Element);
 		}
