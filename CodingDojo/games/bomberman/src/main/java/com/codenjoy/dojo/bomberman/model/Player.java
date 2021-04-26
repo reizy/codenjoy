@@ -23,65 +23,54 @@ package com.codenjoy.dojo.bomberman.model;
  */
 
 
-import com.codenjoy.dojo.bomberman.services.Events;
+import com.codenjoy.dojo.bomberman.services.GameSettings;
+import com.codenjoy.dojo.bomberman.services.Scores;
 import com.codenjoy.dojo.services.EventListener;
+import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.round.RoundGamePlayer;
-import com.codenjoy.dojo.services.settings.Parameter;
+
+import java.util.Optional;
 
 public class Player extends RoundGamePlayer<Hero, Field> {
 
-    protected GameSettings settings;
-
-    public Player(EventListener listener, Parameter<Boolean> roundsEnabled) {
-        super(listener, roundsEnabled);
+    public Player(EventListener listener, GameSettings settings) {
+        super(listener, settings);
     }
 
     @Override
     public Hero getHero() {
-        return (Hero)hero;
+        return hero;
     }
 
-    public void newHero(Field board) {
-        settings = board.settings();
+    @Override
+    public void start(int round, Object startEvent) {
+        super.start(round, startEvent);
+        // hero.clearScores(); TODO test me
+    }
+
+    public void initHero(Field field) {
         if (hero != null) {
             hero.setPlayer(null);
+            hero = null;
         }
-        hero = settings.getHero(settings.getLevel());
+        Optional<Point> pt = field.freeRandom();
+        if (pt.isEmpty()) {
+            // TODO вот тут надо как-то сообщить плееру, борде и самому серверу, что нет место для героя
+            throw new RuntimeException("Not enough space for Hero");
+        }
+        hero = settings().getHero(settings().getLevel());
+        hero.move(pt.get());
         hero.setPlayer(this);
-        hero.init(board);
-
-        if (!roundsEnabled()) {
-            hero.setActive(true);
-        }
+        hero.init(field);
     }
 
     @Override
     public void event(Object event) {
-        getHero().addScore(getScoreFor(event));
+        getHero().addScore(Scores.scoreFor(settings(), event));
         super.event(event);
     }
 
-    private int getScoreFor(Object event) {
-        if (event == Events.KILL_DESTROY_WALL) {
-            return settings.killWallScore().getValue();
-        }
-
-        if (event == Events.KILL_MEAT_CHOPPER) {
-            return settings.killMeatChopperScore().getValue();
-        }
-
-        if (event == Events.KILL_OTHER_HERO) {
-            return settings.killOtherHeroScore().getValue();
-        }
-
-        if (event == Events.CATCH_PERK) {
-            return settings.catchPerkScore().getValue();
-        }
-
-        return 0;
-    }
-
-    public GameSettings getSettings() {
-        return settings;
+    private GameSettings settings() {
+        return (GameSettings) settings;
     }
 }

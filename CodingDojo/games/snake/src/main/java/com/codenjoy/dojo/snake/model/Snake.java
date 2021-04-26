@@ -26,8 +26,11 @@ package com.codenjoy.dojo.snake.model;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.printer.BoardReader;
 import com.codenjoy.dojo.snake.model.artifacts.*;
+import com.codenjoy.dojo.snake.services.GameSettings;
 
 import java.util.LinkedList;
+
+import static com.codenjoy.dojo.snake.services.GameSettings.Keys.START_SNAKE_LENGTH;
 
 public class Snake implements Field {
 
@@ -38,13 +41,12 @@ public class Snake implements Field {
     private ArtifactGenerator generator;
     private int startLength;
     private Player player;
+    private GameSettings settings;
 
-    public Snake(ArtifactGenerator generator, Walls walls, int size, int startLength) {
+    public Snake(ArtifactGenerator generator, Walls walls, int size, GameSettings settings) {
         this.generator = generator;
-        this.startLength = startLength;
-        if (size%2 == 0) {
-            size++;
-        }
+        this.startLength = settings.integer(START_SNAKE_LENGTH);
+        this.settings = settings;
         this.size = size;
         this.walls = walls;
     }
@@ -119,6 +121,11 @@ public class Snake implements Field {
     }
 
     @Override
+    public GameSettings settings() {
+        return settings;
+    }
+
+    @Override
     public void remove(Player player) {
         this.player = null;
     }
@@ -164,7 +171,7 @@ public class Snake implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Snake.this.size;
 
             @Override
@@ -173,7 +180,7 @@ public class Snake implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>(){{
                     walls.forEach(this::add);
                     snake().forEach(this::add);

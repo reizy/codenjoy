@@ -22,7 +22,7 @@
 var currentBoardSize = null;
 
 function initCanvases(contextPath, players, allPlayersScreen,
-                multiplayerType, boardSize, gameName,
+                multiplayerType, boardSize, game,
                 enablePlayerInfo, enablePlayerInfoLevel,
                 sprites, alphabet, spriteElements,
                 drawBoard, onLoad)
@@ -81,9 +81,9 @@ function initCanvases(contextPath, players, allPlayersScreen,
         reloading = false;
     }
 
-    function justGame(gameRoom) {
+    function justGame(room) {
         var ROOMS_SEPARATOR = '-';
-        return gameRoom.split(ROOMS_SEPARATOR).shift();
+        return room.split(ROOMS_SEPARATOR).shift();
     }
 
     function loadSpriteImages(elements, alphabet, onImageLoad) {
@@ -92,7 +92,7 @@ function initCanvases(contextPath, players, allPlayersScreen,
             var color = elements[index];
             plots[ch] = color;
             var subFolder = (!!sprites) ? sprites + '/' : '';
-            plotsUrls[color] = contextPath + '/resources/sprite/' + justGame(gameName) + '/' + subFolder + color + '.png';
+            plotsUrls[color] = contextPath + '/resources/sprite/' + justGame(game) + '/' + subFolder + color + '.png';
 
             var image = new Image();
             image.onload = function() {
@@ -146,8 +146,8 @@ function initCanvases(contextPath, players, allPlayersScreen,
             });
         });
         $('#players_container script').tmpl(templateData).appendTo('#players_container');
-        if (!!game.canvasCursor) {
-            $('#players_container canvas').css('cursor', game.canvasCursor);
+        if (!!setup.canvasCursor) {
+            $('#players_container canvas').css('cursor', setup.canvasCursor);
         }
     }
 
@@ -183,11 +183,11 @@ function initCanvases(contextPath, players, allPlayersScreen,
             return playerData.board;
         }
         var getHeroesData = function() {
-            return playerData.heroesData.coordinates;
+            return playerData.coordinates;
         }
 
         var drawAllLayers = function(layers, onDrawItem){
-            var isDrawByOrder = game.isDrawByOrder;
+            var isDrawByOrder = setup.isDrawByOrder;
 
             var drawChar = function(plotIndex) {
                 var x = 0;
@@ -205,8 +205,8 @@ function initCanvases(contextPath, players, allPlayersScreen,
                     }
                     x++;
                     if (x == boardSize) {
-                       x = 0;
-                       y--;
+                        x = 0;
+                        y--;
                     }
                 }
             }
@@ -304,6 +304,17 @@ function initCanvases(contextPath, players, allPlayersScreen,
                         }
                     }
                     if (currentIsDrawName) {
+                        if (canvas.isHighlighted()) {
+                            var mark = Object.assign({}, font);
+                            mark.font = "80px 'Verdana, sans-serif'";
+                            mark.fillStyle = '#FF0';
+                            mark.shadowBlur = 0;
+                            // эти магические числа подогнаны под разные игры с разными размерами спрайтов
+                            mark.dx = 0.5*plotSize - 40;
+                            mark.dy = -0.5*plotSize + 27;
+                            var markPoint = { x : currentPoint.x - 1, y : currentPoint.y - 1 };
+                            canvas.drawText('⌾', markPoint, mark);
+                        }
                         drawName(playerId, currentPoint, font, currentHeroData);
                     }
                 }
@@ -325,11 +336,24 @@ function initCanvases(contextPath, players, allPlayersScreen,
         };
     };
 
+    function defaultFont() {
+        return {
+            font: "15px 'Verdana, sans-serif'",
+            fillStyle: '#0FF',
+            textAlign: 'left',
+            // TODO придумать как-то фон, чтобы шрифт читался
+            // shadowColor: '#000',
+            // shadowOffsetX: 0,
+            // shadowOffsetY: 0,
+            // shadowBlur: 7
+        }
+    }
+
     function defaultDrawBoard(drawer) {
         drawer.clear();
         drawer.drawBack();
         drawer.drawLayers();
-        drawer.drawPlayerNames();
+        drawer.drawPlayerNames(defaultFont(), null);
         drawer.drawFog();
     }
 
@@ -373,12 +397,12 @@ function initCanvases(contextPath, players, allPlayersScreen,
         var canvas = $("#" + playerId);
         var size = calculateTextSize(text);
         score.css({
-                position: "absolute",
-                marginLeft: 0,
-                marginTop: 0,
-                left: canvas.position().left + canvas.width()/2 - size.clientWidth/2,
-                top: canvas.position().top + canvas.height()/2 - size.clientHeight/2
-            });
+            position: "absolute",
+            marginLeft: 0,
+            marginTop: 0,
+            left: canvas.position().left + canvas.width()/2 - size.clientWidth/2,
+            top: canvas.position().top + canvas.height()/2 - size.clientHeight/2
+        });
 
         score.html(text);
 
@@ -396,6 +420,7 @@ function initCanvases(contextPath, players, allPlayersScreen,
             canvas[0].width = canvasSize;
             canvas[0].height = canvasSize;
         }
+        var ctx = canvas[0].getContext("2d");
 
         var drawPlot = function(color, x, y) {
             var image = images[color];
@@ -403,7 +428,6 @@ function initCanvases(contextPath, players, allPlayersScreen,
         }
 
         var drawImage = function(image, x, y, dx, dy) {
-            var ctx = canvas[0].getContext("2d");
             ctx.drawImage(
                 image,
                 x * plotSize - (image.width - plotSize)/2 + dx,
@@ -413,7 +437,6 @@ function initCanvases(contextPath, players, allPlayersScreen,
 
         var fillImage = function(color) {
             var image = images[color];
-            var ctx = canvas[0].getContext("2d");
             ctx.drawImage(
                 image,
                 0,
@@ -423,28 +446,32 @@ function initCanvases(contextPath, players, allPlayersScreen,
             );
         }
 
+        var highlighted = false;
+
+        canvas.click(function(event) {
+            if (event.shiftKey) {
+                highlighted = !highlighted;
+            }
+        });
+
+        var isHighlighted = function() {
+            return highlighted;
+        }
+
         var drawText = function(text, pt, font) {
             if (pt.x == -1 || pt.y == -1) return;
 
-            var ctx = canvas[0].getContext("2d");
             if (!font) {
-                font = {
-                    font: "15px 'Verdana, sans-serif'",
-                    fillStyle: "#0FF",
-                    textAlign: "left",
-                    shadowColor: "#000",
-                    shadowOffsetX: 0,
-                    shadowOffsetY: 0,
-                    shadowBlur: 7
-                }
+                font = defaultFont();
             }
             ctx.font = font.font;
             ctx.fillStyle =  font.fillStyle;
             ctx.textAlign = font.textAlign;
-            ctx.shadowColor = font.shadowColor;
-            ctx.shadowOffsetX = font.shadowOffsetX;
-            ctx.shadowOffsetY = font.shadowOffsetY;
-            ctx.shadowBlur = font.shadowBlur;
+            // TODO придумать как-то фон, чтобы шрифт читался
+            // ctx.shadowColor = font.shadowColor;
+            // ctx.shadowOffsetX = font.shadowOffsetX;
+            // ctx.shadowOffsetY = font.shadowOffsetY;
+            // ctx.shadowBlur = font.shadowBlur;
 
             var x = (pt.x + 1) * plotSize;
             var y = (boardSize - pt.y - 1) * plotSize - 5;
@@ -454,10 +481,8 @@ function initCanvases(contextPath, players, allPlayersScreen,
             if (!!font.dy) {
                 y += font.dy;
             }
-            for (var i = 0; i < 10; i++) {
-                ctx.fillText(text, x, y);
-            }
-            ctx.shadowBlur = 0;
+            ctx.fillText(text, x, y);
+            //ctx.shadowBlur = 0;
         }
 
         var clear = function() {
@@ -478,7 +503,8 @@ function initCanvases(contextPath, players, allPlayersScreen,
             drawText: drawText,
             clear : clear,
             getCanvasSize : getCanvasSize,
-            getPlotSize : getPlotSize
+            getPlotSize : getPlotSize,
+            isHighlighted : isHighlighted
         };
     }
 
@@ -502,7 +528,7 @@ function initCanvases(contextPath, players, allPlayersScreen,
         var result = [];
         var keys = getPlayers(data);
         for (var player in keys) {
-            result = result.concat(data[keys[player]].heroesData.group);
+            result = result.concat(data[keys[player]].group);
         }
         return result;
     }
@@ -550,7 +576,7 @@ function initCanvases(contextPath, players, allPlayersScreen,
                 var id = ids[index];
                 playersOnTop.push({
                     'id':id,
-                    'readableName':data[id].heroesData.readableNames[id]
+                    'readableName':data[id].readableNames[id]
                 });
             }
 
@@ -580,17 +606,6 @@ function initCanvases(contextPath, players, allPlayersScreen,
         return len > 0? new Array(len).join(chr || '0')+this : this;
     }
 
-    var getTickTime = function(time) {
-        var date = new Date(parseInt(time));
-        return [date.getFullYear(),
-                date.getDate().padLeft(),
-                (date.getMonth()+1).padLeft()].join('-') + 'T' +
-                [date.getHours().padLeft(),
-                date.getMinutes().padLeft(),
-                date.getSeconds().padLeft()].join(':') + '.' +
-                date.getMilliseconds();
-    }
-
     function drawUserCanvas(playerId, data, allPlayersScreen) {
         if (currentBoardSize != data.boardSize) {    // TODO так себе решение... Почему у разных юзеров передается размер борды а не всем сразу?
             reloadCanvasesData();
@@ -598,7 +613,7 @@ function initCanvases(contextPath, players, allPlayersScreen,
 
         var canvas = canvases[playerId];
         canvas.boardSize = boardSize;
-        readableNames = data.heroesData.readableNames;
+        readableNames = data.readableNames;
 
         drawBoard(getBoardDrawer(canvas, playerId, data, allPlayersScreen));
 
@@ -606,7 +621,7 @@ function initCanvases(contextPath, players, allPlayersScreen,
             $("#score_" + playerId).html(
                 data.score + '<br>' +
                 'Message : ' + data.message + '<br>' +
-                'Time : ' + getTickTime(data.tickTime) +  '<br>' +
+                'Time : ' + getTickDateTime(data.tickTime, false) +  '<br>' +
                 'Mills : ' + data.tickTime +
                 '<br>' +
                 'Answer : ' + data.command + '<br>'
@@ -618,7 +633,7 @@ function initCanvases(contextPath, players, allPlayersScreen,
         showScoreInformation(playerId, data.info);
 
         if (!allPlayersScreen) {
-            $("#level_" + playerId).text(data.heroesData.coordinates[playerId].level + 1);
+            $("#level_" + playerId).text(data.coordinates[playerId].level + 1);
         }
     }
 

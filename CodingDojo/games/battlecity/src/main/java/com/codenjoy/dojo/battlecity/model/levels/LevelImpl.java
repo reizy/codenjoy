@@ -23,6 +23,7 @@ package com.codenjoy.dojo.battlecity.model.levels;
  */
 
 
+import com.codenjoy.dojo.battlecity.model.Player;
 import com.codenjoy.dojo.battlecity.model.Tank;
 import com.codenjoy.dojo.battlecity.model.items.*;
 import com.codenjoy.dojo.services.Dice;
@@ -39,12 +40,12 @@ import static com.codenjoy.dojo.services.Direction.*;
 
 public class LevelImpl implements Level {
 
-    private final LengthToXY xy;
-    private final Dice dice;
-    private final String map;
+    private LengthToXY xy;
+    private Dice dice;
+    private String map;
 
     public LevelImpl(String map, Dice dice) {
-        this.map = map;
+        this.map = LevelUtils.clear(map);
         this.dice = dice;
         xy = new LengthToXY(size());
     }
@@ -83,43 +84,43 @@ public class LevelImpl implements Level {
     }
 
     @Override
-    public List<Tank> getAiTanks(int aiTicksPerShoot) {
+    public List<Tank> getAiTanks() {
         return new LinkedList<>(){{
             addAll(LevelUtils.getObjects(xy, map,
-                    (pt, el) -> new AITank(pt, DOWN, aiTicksPerShoot, dice),
+                    (pt, el) -> new AITank(pt, DOWN, dice),
                     AI_TANK_DOWN));
 
             addAll(LevelUtils.getObjects(xy, map,
-                    (pt, el) -> new AITank(pt, UP, aiTicksPerShoot, dice),
+                    (pt, el) -> new AITank(pt, UP, dice),
                     AI_TANK_UP));
 
             addAll(LevelUtils.getObjects(xy, map,
-                    (pt, el) -> new AITank(pt, LEFT, aiTicksPerShoot, dice),
+                    (pt, el) -> new AITank(pt, LEFT, dice),
                     AI_TANK_LEFT));
 
             addAll(LevelUtils.getObjects(xy, map,
-                    (pt, el) -> new AITank(pt, RIGHT, aiTicksPerShoot, dice),
+                    (pt, el) -> new AITank(pt, RIGHT, dice),
                     AI_TANK_RIGHT));
         }};
     }
 
     @Override
-    public List<Tank> getTanks(int ticksPerBullets) {
+    public List<Tank> getTanks() {
         return new LinkedList<>(){{
             addAll(LevelUtils.getObjects(xy, map,
-                    (pt, el) -> new Tank(pt, DOWN, dice, ticksPerBullets),
+                    (pt, el) -> new Tank(pt, DOWN),
                     TANK_DOWN, OTHER_TANK_DOWN));
 
             addAll(LevelUtils.getObjects(xy, map,
-                    (pt, el) -> new Tank(pt, UP, dice, ticksPerBullets),
+                    (pt, el) -> new Tank(pt, UP),
                     TANK_UP, OTHER_TANK_UP));
 
             addAll(LevelUtils.getObjects(xy, map,
-                    (pt, el) -> new Tank(pt, LEFT, dice, ticksPerBullets),
+                    (pt, el) -> new Tank(pt, LEFT),
                     TANK_LEFT, OTHER_TANK_LEFT));
 
             addAll(LevelUtils.getObjects(xy, map,
-                    (pt, el) -> new Tank(pt, RIGHT, dice, ticksPerBullets),
+                    (pt, el) -> new Tank(pt, RIGHT),
                     TANK_RIGHT, OTHER_TANK_RIGHT));
         }};
     }
@@ -133,18 +134,18 @@ public class LevelImpl implements Level {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             @Override
             public int size() {
                 return LevelImpl.this.size();
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<>() {{
                     addAll(LevelImpl.this.getBorders());
                     addAll(LevelImpl.this.getWalls());
-                    addAll(LevelImpl.this.getAiTanks(0));
+                    addAll(LevelImpl.this.getAiTanks());
                     addAll(LevelImpl.this.getIce());
                     addAll(LevelImpl.this.getRivers());
                     addAll(LevelImpl.this.getTrees());

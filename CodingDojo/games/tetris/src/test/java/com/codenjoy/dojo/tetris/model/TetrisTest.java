@@ -31,6 +31,7 @@ import com.codenjoy.dojo.services.printer.Printer;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
 import com.codenjoy.dojo.services.printer.PrinterFactoryImpl;
 import com.codenjoy.dojo.tetris.services.Events;
+import com.codenjoy.dojo.tetris.services.GameSettings;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.stubbing.OngoingStubbing;
@@ -52,10 +53,12 @@ public class TetrisTest {
     private PrinterFactory printer = new PrinterFactoryImpl();
     private FigureQueue queue;
     private PrinterFactoryImpl printerFactory;
+    private GameSettings settings;
 
     @Before
     public void setup() {
         dice = mock(Dice.class);
+        settings = new GameSettings();
     }
 
     private void dice(int...ints) {
@@ -76,9 +79,9 @@ public class TetrisTest {
         Levels levels = mock(Levels.class);
         when(levels.getCurrentLevelNumber()).thenReturn(0);
 
-        game = new Tetris(levels, queue, level.size());
+        game = new Tetris(levels, queue, level.size(), settings);
         listener = mock(EventListener.class);
-        player = new Player(listener);
+        player = new Player(listener, settings);
         game.newGame(player);
         Glass glass = game.getPlayer().getHero().glass();
         game.setPlots(glass, plots);
@@ -87,14 +90,14 @@ public class TetrisTest {
     }
 
     private void assrtDr(String expected) {
-        Printer printer = printerFactory.getPrinter(new BoardReader() {
+        Printer printer = printerFactory.getPrinter(new BoardReader<Player>() {
             @Override
             public int size() {
                 return game.size();
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Plot>() {{
                     addAll(hero.dropped());
                     addAll(hero.currentFigure());

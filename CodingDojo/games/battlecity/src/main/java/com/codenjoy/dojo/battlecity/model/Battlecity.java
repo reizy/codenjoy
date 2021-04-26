@@ -25,22 +25,24 @@ package com.codenjoy.dojo.battlecity.model;
 
 import com.codenjoy.dojo.battlecity.model.items.*;
 import com.codenjoy.dojo.battlecity.services.Events;
+import com.codenjoy.dojo.battlecity.services.GameSettings;
+import com.codenjoy.dojo.services.BoardUtils;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.printer.BoardReader;
-import com.codenjoy.dojo.services.settings.Parameter;
+import com.codenjoy.dojo.services.round.RoundField;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.codenjoy.dojo.battlecity.model.Elements.*;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 
-public class Battlecity implements Field {
+public class Battlecity extends RoundField<Player> implements Field {
 
-    private final Parameter<Integer> slipperiness;
-
+    private Dice dice;
     private int size;
 
     private PrizeGenerator prizeGen;
@@ -56,15 +58,13 @@ public class Battlecity implements Field {
     private Prizes prizes;
     private List<Tank> ais;
 
-    public Battlecity(int size, Dice dice,
-                      Parameter<Integer> whichSpawnWithPrize,
-                      Parameter<Integer> damagesBeforeAiDeath,
-                      Parameter<Integer> prizeOnField,
-                      Parameter<Integer> prizeWorking,
-                      Parameter<Integer> aiTicksPerShoot,
-                      Parameter<Integer> slipperiness)
-    {
+    private GameSettings settings;
+
+    public Battlecity(int size, Dice dice, GameSettings settings) {
+        super(Events.START_ROUND, Events.WIN_ROUND, Events.KILL_YOUR_TANK, settings);
         this.size = size;
+        this.dice = dice;
+        this.settings = settings;
         ais = new LinkedList<>();
         prizes = new Prizes();
         walls = new LinkedList<>();
@@ -73,18 +73,25 @@ public class Battlecity implements Field {
         ice = new LinkedList<>();
         rivers = new LinkedList<>();
         players = new LinkedList<>();
-
-        prizeGen = new PrizeGenerator(this, dice,
-                prizeOnField,
-                prizeWorking);
-
-        aiGen = new AiGenerator(this, dice,
-                whichSpawnWithPrize,
-                damagesBeforeAiDeath,
-                aiTicksPerShoot);
-
-        this.slipperiness = slipperiness;
+        prizeGen = new PrizeGenerator(this, dice, settings);
+        aiGen = new AiGenerator(this, dice, settings);
     }
+
+    @Override
+    protected List<Player> players() {
+        return players;
+    }
+
+    @Override
+    protected void setNewObjects() {
+        // do nothing
+    }
+
+    @Override
+    public void cleanStuff() {
+        removeDeadItems();
+    }
+
 
     public void addAiTanks(List<? extends Point> tanks) {
         aiGen.dropAll(tanks);
@@ -98,9 +105,8 @@ public class Battlecity implements Field {
     }
 
     @Override
-    public void tick() {
-        removeDeadItems();
-
+    public void tickField() {
+        aiGen.allHave(withPrize());
         aiGen.dropAll();
 
         List<Tank> tanks = allTanks();
@@ -230,12 +236,18 @@ public class Battlecity implements Field {
     }
 
     @Override
+    public boolean isTree(Point pt) {
+        return trees.stream().anyMatch(tree -> tree.itsMe(pt));
+    }
+
+    @Override
     public boolean isIce(Point pt) {
         return ice.stream().anyMatch(ice -> ice.itsMe(pt));
     }
 
     @Override
     public void add(Prize prize) {
+        prize.init(settings);
         prizes.add(prize);
     }
 
@@ -253,13 +265,13 @@ public class Battlecity implements Field {
         Player died = null;
         boolean aiDied = ais.contains(diedTank);
         if (!aiDied) {
-             died = getPlayer(diedTank);
+             died = player(diedTank);
         }
 
         Tank killerTank = killedBullet.getOwner();
         Player killer = null;
         if (!ais.contains(killerTank)) {
-            killer = getPlayer(killerTank);
+            killer = player(killerTank);
         }
 
         if (killer != null) {
@@ -272,42 +284,33 @@ public class Battlecity implements Field {
         }
 
         if (died != null) {
-            died.event(Events.KILL_YOUR_TANK);
+            died.getHero().die();
         }
     }
 
-    private Player getPlayer(Tank tank) {
-        for (Player player : players) {
-            if (player.getHero().equals(tank)) {
-                return player;
-            }
-        }
-
-        throw new RuntimeException("Танк игрока не найден!");
+    private Player player(Tank tank) {
+        return players.stream()
+                .filter(player -> player.getHero().equals(tank))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Танк игрока не найден!"));
     }
 
     @Override
     public boolean isBarrierFor(Tank tank, Point pt) {
-        if (isBarrier(pt)) {
-            return true;
-        }
-
-        if (isRiver(pt)) {
-            if (tank.prizes().contains(PRIZE_WALKING_ON_WATER)) {
-                return false;
-            }
-            return true;
-        }
-
-        return false;
+        return isBarrier(pt)
+                || (isRiver(pt) && !tank.canWalkOnWater());
     }
 
     @Override
-    public int slipperiness() {
-        return slipperiness.getValue();
+    public boolean isFree(Point pt) {
+        return !(isBarrier(pt) || isTree(pt) || isRiver(pt) || isIce(pt));
     }
 
     @Override
+    public Optional<Point> freeRandom() {
+        return BoardUtils.freeRandom(size, dice, pt -> isFree(pt));
+    }
+
     public boolean isBarrier(Point pt) {
         for (Wall wall : this.walls) {
             if (wall.itsMe(pt) && !wall.destroyed()) {
@@ -344,9 +347,9 @@ public class Battlecity implements Field {
     public List<Tank> allTanks() {
         List<Tank> result = new LinkedList<>(ais);
         for (Player player : players) {
-//            if (player.getTank().isAlive()) { // TODO разремарить с тестом
+            if (player.getHero() != null) {
                 result.add(player.getHero());
-//            }
+            }
         }
         return result;
     }
@@ -380,7 +383,7 @@ public class Battlecity implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Battlecity.this.size;
 
             @Override
@@ -389,7 +392,7 @@ public class Battlecity implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>() {{
                     addAll(Battlecity.this.borders());
                     addAll(Battlecity.this.allTanks());
@@ -410,6 +413,11 @@ public class Battlecity implements Field {
                 .collect(toList());
     }
 
+    private int withPrize() {
+        int withPrize = (int) allTanks().stream().filter(Tank::withPrize).count();
+        return prizes().size() + withPrize;
+    }
+
     public List<Tree> trees() {
         return trees;
     }
@@ -424,10 +432,6 @@ public class Battlecity implements Field {
 
     public List<Border> borders() {
         return borders;
-    }
-
-    public void addBorder(List<Border> borders) {
-        this.borders.addAll(borders);
     }
 
     public void addTree(Tree tree) {
@@ -446,27 +450,37 @@ public class Battlecity implements Field {
         rivers.add(river);
     }
 
+    public void addWall(Wall wall) {
+        wall.init(settings);
+        walls.add(wall);
+    }
+
     public AiGenerator getAiGenerator() {
         return aiGen;
     }
 
     public void addWall(List<Wall> walls) {
-        this.walls.addAll(walls);
+        walls.forEach(this::addWall);
     }
 
-    public void addWall(Wall wall) {
-        walls.add(wall);
+    public void addBorder(List<Border> borders) {
+        borders.forEach(this::addBorder);
     }
 
     public void addRiver(List<River> rivers) {
-        this.rivers.addAll(rivers);
+        rivers.forEach(this::addRiver);
     }
 
     public void addTree(List<Tree> trees) {
-        this.trees.addAll(trees);
+        trees.forEach(this::addTree);
     }
 
     public void addIce(List<Ice> ice) {
-        this.ice.addAll(ice);
+        ice.forEach(this::addIce);
+    }
+
+    @Override
+    public GameSettings settings() {
+        return settings;
     }
 }

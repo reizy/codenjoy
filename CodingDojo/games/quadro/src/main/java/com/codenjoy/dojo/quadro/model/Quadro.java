@@ -25,6 +25,7 @@ package com.codenjoy.dojo.quadro.model;
 
 import com.codenjoy.dojo.quadro.model.items.Chip;
 import com.codenjoy.dojo.quadro.services.Events;
+import com.codenjoy.dojo.quadro.services.GameSettings;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.QDirection;
@@ -51,9 +52,12 @@ public class Quadro implements Field {
     private int gameOver = 0;
     private Dice dice;
 
-    public Quadro(Level level, Dice dice) {
+    private GameSettings settings;
+
+    public Quadro(Level level, Dice dice, GameSettings settings) {
         this.dice = dice;
         size = level.getSize();
+        this.settings = settings;
         players = new LinkedList<>();
         chips = level.getChips();
     }
@@ -169,9 +173,9 @@ public class Quadro implements Field {
 
         if (color) {
             players.get(0).event(Events.WIN);
-            players.get(1).event(Events.LOOSE);
+            players.get(1).event(Events.LOSE);
         } else {
-            players.get(0).event(Events.LOOSE);
+            players.get(0).event(Events.LOSE);
             players.get(1).event(Events.WIN);
         }
     }
@@ -214,7 +218,7 @@ public class Quadro implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Quadro.this.size;
 
             @Override
@@ -223,9 +227,14 @@ public class Quadro implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new ArrayList<>(chips.chips());
             }
         };
+    }
+
+    @Override
+    public GameSettings settings() {
+        return settings;
     }
 }

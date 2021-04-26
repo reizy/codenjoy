@@ -23,17 +23,17 @@ package com.codenjoy.dojo.icancode.services;
  */
 
 
-import com.codenjoy.dojo.client.Encoding;
 import com.codenjoy.dojo.icancode.services.levels.*;
+import com.codenjoy.dojo.utils.LevelUtils;
 import com.codenjoy.dojo.utils.TestUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created by oleksandr.baglai on 24.06.2016.
- */
 public class LevelsTest {
+
+    public static int VIEW_SIZE_TESTING = 16;
+
     @Test
     public void testLevel1() {
         String map = getMap(new Level1().map());
@@ -76,7 +76,7 @@ public class LevelsTest {
     }
 
     private String getMap(String level) {
-        return Levels.resize(Encoding.removeN(level), Levels.VIEW_SIZE_TESTING);
+        return Levels.resize(LevelUtils.clear(level), VIEW_SIZE_TESTING);
     }
 
     @Test
@@ -171,7 +171,7 @@ public class LevelsTest {
                 "                " +
                 "    ########    " +
                 "    #S.O..$#    " +
-                "    #......#    " +
+                "    #j.....#    " +
                 "    ####...#    " +
                 "       #..O#    " +
                 "    ####...#    " +
@@ -190,7 +190,7 @@ public class LevelsTest {
                 "                " +
                 "    ╔══════┐    " +
                 "    ║S.O..$│    " +
-                "    ║......│    " +
+                "    ║j.....│    " +
                 "    └──╗...│    " +
                 "       ║..O│    " +
                 "    ╔══╝...│    " +
@@ -209,7 +209,7 @@ public class LevelsTest {
         asrtMap("                " +
                 "                " +
                 "    #######     " +
-                "    #S.O..#     " +
+                "    #SjO..#     " +
                 "    ####..#     " +
                 "       #..#     " +
                 "    ####..###   " +
@@ -228,7 +228,7 @@ public class LevelsTest {
         asrtMap("                " +
                 "                " +
                 "    ╔═════┐     " +
-                "    ║S.O..│     " +
+                "    ║SjO..│     " +
                 "    └──╗..│     " +
                 "       ║..│     " +
                 "    ╔══╝..╚═┐   " +
@@ -250,11 +250,11 @@ public class LevelsTest {
         asrtMap("                " +
                 "                " +
                 "    ########    " +
-                "    #S...B.#    " +
+                "    #SmjBB.#    " +
                 "    ###B...#    " +
                 "      #B...#    " +
                 "    ###$B..#### " +
-                "    #$....B..B# " +
+                "    #$...BB..B# " +
                 "    #.#####...# " +
                 "    #.#   #...# " +
                 "    #.#####.B.# " +
@@ -269,11 +269,11 @@ public class LevelsTest {
         asrtMap("                " +
                 "                " +
                 "    ╔══════┐    " +
-                "    ║S...B.│    " +
+                "    ║SmjBB.│    " +
                 "    └─╗B...│    " +
                 "      ║B...│    " +
                 "    ╔═╝$B..╚══┐ " +
-                "    ║$....B..B│ " +
+                "    ║$...BB..B│ " +
                 "    ║.┌───╗...│ " +
                 "    ║.│   ║...│ " +
                 "    ║.╚═══╝.B.│ " +
@@ -290,9 +290,9 @@ public class LevelsTest {
 
         asrtMap("                " +
                 "  #####         " +
-                "  #S..#         " +
+                "  #S.j#         " +
                 "  #..B#######   " +
-                "  #B..B˃...$#   " +
+                "  #m..B˃...$#   " +
                 "  ###....BBB#   " +
                 "    #.B....$#   " +
                 "    #...˄B..### " +
@@ -309,9 +309,9 @@ public class LevelsTest {
 
         asrtMap("                " +
                 "  ╔═══┐         " +
-                "  ║S..│         " +
+                "  ║S.j│         " +
                 "  ║..B╚═════┐   " +
-                "  ║B..B˃...$│   " +
+                "  ║m..B˃...$│   " +
                 "  └─╗....BBB│   " +
                 "    ║.B....$│   " +
                 "    ║...˄B..╚═┐ " +
@@ -374,7 +374,7 @@ public class LevelsTest {
                 "                " +
                 "                " +
                 "  ############  " +
-                "  #S.........#  " +
+                "  #S.j.......#  " +
                 "  ##########.#  " +
                 "           #.#  " +
                 "  ##########.#  " +
@@ -393,7 +393,7 @@ public class LevelsTest {
                 "                " +
                 "                " +
                 "  ╔══════════┐  " +
-                "  ║S.........│  " +
+                "  ║S.j.......│  " +
                 "  └────────╗.│  " +
                 "           ║.│  " +
                 "  ╔════════╝.│  " +
@@ -429,7 +429,7 @@ public class LevelsTest {
                 " ####..$..#  ###### " +
                 "    #...O.#         " +
                 " ####....B########  " +
-                " #S...O$........S#  " +
+                " #S.a.O$........S#  " +
                 " #################  ", map);
 
         String decorate = Levels.decorate(map);
@@ -452,7 +452,7 @@ public class LevelsTest {
                 " └──╗..$..│  └────┘ " +
                 "    ║...O.│         " +
                 " ╔══╝....B╚══════┐  " +
-                " ║S...O$........S│  " +
+                " ║S.a.O$........S│  " +
                 " └───────────────┘  ", decorate);
     }
 
@@ -482,13 +482,13 @@ public class LevelsTest {
                 " #..# #....O...####B..## #### " +
                 " #.O# ####..$..#  #####       " +
                 " #..#    #$..O.#        ##### " +
-                " #$$# ####....B######## #$$.# " +
+                " #$$# ####m...B######## #$$.# " +
                 " #### #....O$...O...$.# #...# " +
-                "      #.#####..######## ###B# " +
+                "      #.#####.a######## ###B# " +
                 "   ####$#   #..#          #.# " +
                 "   #..O.#   #..#####  #####.# " +
                 "####.####   #.O....####..$..# " +
-                "#S...#      #...$..B.....#### " +
+                "#S.j.#      #...$..B.....#### " +
                 "######      ##############    ", map);
 
         String decorate = Levels.decorate(map);
@@ -515,13 +515,13 @@ public class LevelsTest {
                 " ║..│ ║....O...┌──╗B..┌┘ └──┘ " +
                 " ║.O│ └──╗..$..│  └───┘       " +
                 " ║..│    ║$..O.│        ╔═══┐ " +
-                " ║$$│ ╔══╝....B╚══════┐ ║$$.│ " +
+                " ║$$│ ╔══╝m...B╚══════┐ ║$$.│ " +
                 " └──┘ ║....O$...O...$.│ ║...│ " +
-                "      ║.┌───╗..┌──────┘ └─╗B│ " +
+                "      ║.┌───╗.a┌──────┘ └─╗B│ " +
                 "   ╔══╝$│   ║..│          ║.│ " +
                 "   ║..O.│   ║..╚═══┐  ╔═══╝.│ " +
                 "╔══╝.┌──┘   ║.O....╚══╝..$..│ " +
-                "║S...│      ║...$..B.....┌──┘ " +
+                "║S.j.│      ║...$..B.....┌──┘ " +
                 "└────┘      └────────────┘    ", decorate);
     }
 

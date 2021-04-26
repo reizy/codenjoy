@@ -29,19 +29,26 @@ import com.codenjoy.dojo.services.hash.Hash;
 import com.codenjoy.dojo.services.mocks.FirstGameType;
 import com.codenjoy.dojo.services.mocks.SecondGameType;
 import com.codenjoy.dojo.services.nullobj.NullPlayer;
+import com.codenjoy.dojo.services.nullobj.NullPlayerGame;
+import com.codenjoy.dojo.services.room.RoomService;
 import com.codenjoy.dojo.services.security.GameAuthorities;
+import com.codenjoy.dojo.services.semifinal.SemifinalService;
 import com.codenjoy.dojo.stuff.SmartAssert;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.SortedJSONArray;
 import org.json.SortedJSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -51,6 +58,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Random;
 
 import static com.codenjoy.dojo.stuff.SmartAssert.assertEquals;
 import static org.junit.Assert.fail;
@@ -65,6 +73,29 @@ public abstract class AbstractRestControllerTest {
                 return Arrays.asList(FirstGameType.class, SecondGameType.class);
             }
         };
+    }
+
+    public static class PropertyOverrideContextInitializer
+            implements ApplicationContextInitializer<ConfigurableApplicationContext>
+    {
+        @Override
+        public void initialize(ConfigurableApplicationContext context) {
+            setup(context, "messages", "messages.db");
+            setup(context, "log", "logs.db");
+            setup(context, "payment", "payment.db");
+            setup(context, "saves", "saves.db");
+            setup(context, "users", "users.db");
+            setup(context, "settings", "settings.db");
+
+//            TestPropertySourceUtils.addPropertiesFilesToEnvironment(
+//                    context, "context-override-application.properties");
+        }
+
+        public void setup(ConfigurableApplicationContext context, String db, String file) {
+            String dbFile = "target/" + file + new Random().nextInt();
+            TestPropertySourceUtils.addInlinedPropertiesToEnvironment(
+                    context, "database.files." + db + "=" + dbFile);
+        }
     }
 
     protected MockMvc mvc;
@@ -88,10 +119,13 @@ public abstract class AbstractRestControllerTest {
     protected GameService games;
 
     @Autowired
-    protected SemifinalSettings semifinal;
+    protected SemifinalService semifinalService;
 
     @Autowired
     protected DebugService debugService;
+
+    @Autowired
+    protected RoomService roomService;
 
     @Before
     public void setUp() {
@@ -141,12 +175,17 @@ public abstract class AbstractRestControllerTest {
         login(null);
     }
 
-    protected PlayerGame register(String id, String ip, String roomName, String gameName) {
+    protected PlayerGame register(String id, String ip, String room, String game) {
         String password = Hash.md5(id);
-        registration.register(id, id, id, password, "", GameAuthorities.USER.roles());
-        playerService.register(id, ip, roomName, gameName);
+        String readableName = id + "-name";
+        registration.register(id, id, readableName, password, "", GameAuthorities.USER.roles());
+        playerService.register(id, game, room, ip);
         PlayerGame playerGame = playerGames.get(id);
-        resetMocks(playerGame);
+        if (playerGame == NullPlayerGame.INSTANCE) {
+            registration.remove(id); // удаляем если не можем создать
+        } else {
+            resetMocks(playerGame);
+        }
         return playerGame;
     }
 
@@ -192,6 +231,16 @@ public abstract class AbstractRestControllerTest {
                 .content(data));
     }
 
+    @SneakyThrows
+    protected String delete(String uri) {
+        return delete(200, uri);
+    }
+
+    @SneakyThrows
+    protected String delete(int status, String uri) {
+        return process(status, MockMvcRequestBuilders.delete(uri));
+    }
+
     protected String process(int status, MockHttpServletRequestBuilder post) throws Exception {
         MvcResult mvcResult = mvc.perform(post
                 .accept(MediaType.APPLICATION_JSON_VALUE)).andReturn();
@@ -206,6 +255,18 @@ public abstract class AbstractRestControllerTest {
         } catch (Exception e) {
             assertEquals(expected, e.getMessage());
         }
+    }
+
+    protected void assertPostError(String message, String uri, String data) {
+        String source = post(500, uri, data);
+        JSONObject error = tryParseAsJson(source);
+        assertEquals(message, error.getString("message"));
+    }
+
+    protected void assertDeleteError(String message, String uri) {
+        String source = delete(500, uri);
+        JSONObject error = tryParseAsJson(source);
+        assertEquals(message, error.getString("message"));
     }
 
     protected void assertError(String message, String uri) {
@@ -225,10 +286,27 @@ public abstract class AbstractRestControllerTest {
         }
     }
 
-    protected String fix(String input) {
+    protected String quote(String input) {
+        if (input.startsWith("[")) {
+            return new SortedJSONArray(input)
+                    .toString()
+                    .replace('\"', '\'');
+        }
+
         return new SortedJSONObject(input)
                 .toString()
                 .replace('\"', '\'');
+    }
+
+    protected String unquote(String input) {
+        input = input.replace('\'', '\"');
+        if (input.startsWith("[")) {
+            return new SortedJSONArray(input)
+                    .toString();
+        }
+
+        return new SortedJSONObject(input)
+                .toString();
     }
 
     protected String quotes(String input) {

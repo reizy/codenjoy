@@ -22,34 +22,51 @@ package com.codenjoy.dojo.services;
  * #L%
  */
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SimpleProfiler {
 
     private long time;
+    private long phaseTime;
     private String message;
-
     @Autowired
-    private PlayerGames playerGames;
+    private TimeService timeService;
+
+    private final PlayerGames playerGames;
 
     public synchronized void start(String message) {
         this.message = message;
 
         log.debug("==================================================================================");
         log.debug(message + " starts");
-        time = System.currentTimeMillis();
+        time = now();
+        phaseTime = now();
+    }
+
+    private long now() {
+        return timeService.now();
+    }
+
+    public synchronized void phase(String phase) {
+        if (log.isDebugEnabled()) {
+            log.debug(phase + " for all {} games is {} ms",
+                    playerGames.size(), now() - phaseTime);
+            phaseTime = now();
+        }
     }
 
     public synchronized void end() {
         if (log.isDebugEnabled()) {
-            time = System.currentTimeMillis() - time;
             log.debug(message + " for all {} games is {} ms",
-                    playerGames.size(), time);
+                    playerGames.size(), now() - time);
+            time = now();
+            phaseTime = now();
         }
-
     }
 }

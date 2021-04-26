@@ -10,12 +10,12 @@ package com.codenjoy.dojo.loderunner.client;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -28,10 +28,9 @@ import com.codenjoy.dojo.loderunner.model.Elements;
 import com.codenjoy.dojo.services.Point;
 
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
-import static com.codenjoy.dojo.services.PointImpl.pt;
+import static com.codenjoy.dojo.loderunner.model.Elements.*;
 
 public class Board extends AbstractBoard<Elements> {
 
@@ -40,78 +39,61 @@ public class Board extends AbstractBoard<Elements> {
         return Elements.valueOf(ch);
     }
 
-    public Collection<Point> getBarriers() {
-        Collection<Point> all = getWalls();
-        return removeDuplicates(all);
-    }
-
     @Override
     protected int inversionY(int y) {
         return size - 1 - y;
     }
 
-    public Collection<Point> getWalls() {
-        return get(Elements.BRICK, Elements.UNDESTROYABLE_WALL);
+    public Collection<Point> getBarriers() {
+        Collection<Point> all = getWalls();
+        // add other barriers here
+        return removeDuplicates(all);
     }
 
-    public boolean isBarrierAt(int x, int y) {
-        return getBarriers().contains(pt(x, y));
+    public Collection<Point> getWalls() {
+        return get(walls().toArray(new Elements[0]));
+    }
+
+    public boolean isBarrierAt(Point pt) {
+        return getBarriers().contains(pt);
     }
 
     public Point getMe() {
-        return get(Elements.HERO_DIE,
-                Elements.HERO_DRILL_LEFT,
-                Elements.HERO_DRILL_RIGHT,
-                Elements.HERO_FALL_RIGHT,
-                Elements.HERO_FALL_LEFT,
-                Elements.HERO_LADDER,
-                Elements.HERO_LEFT,
-                Elements.HERO_RIGHT,
-                Elements.HERO_PIPE_LEFT,
-                Elements.HERO_PIPE_RIGHT).get(0);
+        List<Point> list = get(heroes().toArray(new Elements[0]));
+
+        return (list.isEmpty()) ? null : list.get(0);
     }
 
     public boolean isGameOver() {
-        return !get(Elements.HERO_DIE).isEmpty();
+        return !get(HERO_DIE).isEmpty();
     }
 
-    public boolean isEnemyAt(int x, int y) {
-        return isAt(x, y, Elements.ENEMY_LADDER) ||
-                isAt(x, y, Elements.ENEMY_LEFT) ||
-                isAt(x, y, Elements.ENEMY_PIPE_LEFT) ||
-                isAt(x, y, Elements.ENEMY_PIPE_RIGHT) ||
-                isAt(x, y, Elements.ENEMY_RIGHT) ||
-                isAt(x, y, Elements.ENEMY_PIT);
+    public boolean isEnemyAt(Point pt) {
+        return is(pt, enemies());
     }
 
-    public boolean isOtherHeroAt(int x, int y) {
-        return isAt(x, y, Elements.OTHER_HERO_LEFT) ||
-                isAt(x, y, Elements.OTHER_HERO_RIGHT) ||
-                isAt(x, y, Elements.OTHER_HERO_LADDER) ||
-                isAt(x, y, Elements.OTHER_HERO_PIPE_LEFT) ||
-                isAt(x, y, Elements.OTHER_HERO_PIPE_RIGHT);
+    public boolean is(Point pt, List<Elements> enemies) {
+        return getAllAt(pt).stream()
+                .anyMatch(el -> enemies.contains(el));
     }
 
-    public boolean aWall(int x, int y) {
-        return isAt(x, y, Elements.BRICK) ||
-                isAt(x, y, Elements.UNDESTROYABLE_WALL);
+    public boolean isOtherHeroAt(Point pt) {
+        return is(pt, otherHeroes());
     }
 
-    public boolean aGold(int x, int y) {
-        return isAt(x, y, Elements.GOLD);
+    public boolean isWall(Point pt) {
+        return is(pt, walls());
     }
 
-    public boolean aLadder(int x, int y) {
-        return isAt(x, y, Elements.LADDER) ||
-                isAt(x, y, Elements.HERO_LADDER) ||
-                isAt(x, y, Elements.ENEMY_LADDER);
+    public boolean isGold(Point pt) {
+        return is(pt, gold());
     }
 
-    public boolean aPipe(int x, int y) {
-        return isAt(x, y, Elements.PIPE) ||
-                isAt(x, y, Elements.HERO_PIPE_LEFT) ||
-                isAt(x, y, Elements.HERO_PIPE_RIGHT) ||
-                isAt(x, y, Elements.OTHER_HERO_PIPE_LEFT) ||
-                isAt(x, y, Elements.OTHER_HERO_PIPE_RIGHT);
+    public boolean isLadder(Point pt) {
+        return is(pt, ladders());
+    }
+
+    public boolean isPipe(Point pt) {
+        return is(pt, pipes());
     }
 }

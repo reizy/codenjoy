@@ -54,8 +54,8 @@ public class Board extends AbstractBoard<Elements> {
      * @return Is it possible to go through the cell with {x,y} coordinates.
      */
     public boolean isBarrierAt(int x, int y) {
-        return !isAt(LAYER1, x, y, FLOOR, START, EXIT, GOLD, HOLE) ||
-                !isAt(LAYER2, x, y, EMPTY, GOLD,
+        return !isAt(LAYER1, x, y, FLOOR, START, EXIT, GOLD, HOLE)
+                || !isAt(LAYER2, x, y, EMPTY, GOLD,
                         LASER_DOWN, LASER_UP, LASER_LEFT, LASER_RIGHT,
                         ROBO_OTHER, ROBO_OTHER_FLYING, ROBO_OTHER_FALLING, ROBO_OTHER_LASER,
                         ROBO, ROBO_FLYING, ROBO_FALLING, ROBO_LASER);
@@ -211,6 +211,19 @@ public class Board extends AbstractBoard<Elements> {
     }
 
     /**
+     * @return Returns list of coordinates for all perks.
+     */
+    public List<Point> getPerks() {
+        return get(LAYER1,
+                UNSTOPPABLE_LASER_PERK,
+                DEATH_RAY_PERK,
+                UNLIMITED_FIRE_PERK,
+                FIRE_PERK,
+                JUMP_PERK,
+                MOVE_BOXES_PERK);
+    }
+
+    /**
      * @return Checks if your robot is alive.
      */
     public boolean isMeAlive() {
@@ -277,6 +290,9 @@ public class Board extends AbstractBoard<Elements> {
                     break;
                 case 8:
                     builder.append(" Zombies: " + listToString(getZombies()));
+                    break;
+                case 9:
+                    builder.append(" Perks: " + listToString(getPerks()));
                     break;
             }
 

@@ -26,11 +26,10 @@ package com.codenjoy.dojo.lunolet.services;
 import com.codenjoy.dojo.client.ClientBoard;
 import com.codenjoy.dojo.client.Solver;
 import com.codenjoy.dojo.lunolet.client.Board;
-import com.codenjoy.dojo.lunolet.client.ai.DumbSolver;
+import com.codenjoy.dojo.lunolet.client.ai.AISolver;
 import com.codenjoy.dojo.lunolet.model.*;
 import com.codenjoy.dojo.services.AbstractGameType;
 import com.codenjoy.dojo.services.EventListener;
-import com.codenjoy.dojo.services.GameType;
 import com.codenjoy.dojo.services.PlayerScores;
 import com.codenjoy.dojo.services.multiplayer.GameField;
 import com.codenjoy.dojo.services.multiplayer.GamePlayer;
@@ -41,24 +40,25 @@ import com.codenjoy.dojo.services.settings.Parameter;
 
 import static com.codenjoy.dojo.services.settings.SimpleParameter.v;
 
-public class GameRunner extends AbstractGameType implements GameType {
+public class GameRunner extends AbstractGameType<GameSettings> {
 
-    public GameRunner() {
-        new Scores(0, settings);
+    @Override
+    public GameSettings getSettings() {
+        return new GameSettings();
     }
 
     @Override
-    public PlayerScores getPlayerScores(Object score) {
-        return new Scores((Integer) score, settings);
+    public PlayerScores getPlayerScores(Object score, GameSettings settings) {
+        return new Scores(Integer.valueOf(score.toString()), settings);
     }
 
     @Override
-    public GameField createGame(int levelNumber) {
-        return new Lunolet(new LevelManager());
+    public GameField createGame(int levelNumber, GameSettings settings) {
+        return new Lunolet(new LevelManager(), settings);
     }
 
     @Override
-    public Parameter<Integer> getBoardSize() {
+    public Parameter<Integer> getBoardSize(GameSettings settings) {
         return v(20);
     }
 
@@ -74,7 +74,7 @@ public class GameRunner extends AbstractGameType implements GameType {
 
     @Override
     public Class<? extends Solver> getAI() {
-        return DumbSolver.class;
+        return AISolver.class;
     }
 
     @Override
@@ -83,12 +83,12 @@ public class GameRunner extends AbstractGameType implements GameType {
     }
 
     @Override
-    public GamePlayer createPlayer(EventListener listener, String playerId) {
-        return new Player(listener);
+    public GamePlayer createPlayer(EventListener listener, String playerId, GameSettings settings) {
+        return new Player(listener, settings);
     }
 
     @Override
-    public MultiplayerType getMultiplayerType() {
+    public MultiplayerType getMultiplayerType(GameSettings settings) {
         return MultiplayerType.SINGLE;
     }
 

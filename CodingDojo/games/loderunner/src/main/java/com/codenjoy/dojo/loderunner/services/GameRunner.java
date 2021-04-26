@@ -10,12 +10,12 @@ package com.codenjoy.dojo.loderunner.services;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -28,37 +28,39 @@ import com.codenjoy.dojo.client.Solver;
 import com.codenjoy.dojo.loderunner.client.Board;
 import com.codenjoy.dojo.loderunner.client.ai.AISolver;
 import com.codenjoy.dojo.loderunner.model.*;
-import com.codenjoy.dojo.services.*;
+import com.codenjoy.dojo.services.AbstractGameType;
+import com.codenjoy.dojo.services.EventListener;
+import com.codenjoy.dojo.services.PlayerScores;
 import com.codenjoy.dojo.services.multiplayer.GameField;
 import com.codenjoy.dojo.services.multiplayer.GamePlayer;
 import com.codenjoy.dojo.services.multiplayer.MultiplayerType;
 import com.codenjoy.dojo.services.printer.CharElements;
 import com.codenjoy.dojo.services.settings.Parameter;
 
+import static com.codenjoy.dojo.services.round.RoundSettings.Keys.ROUNDS_ENABLED;
+import static com.codenjoy.dojo.services.round.RoundSettings.Keys.ROUNDS_PLAYERS_PER_ROOM;
 import static com.codenjoy.dojo.services.settings.SimpleParameter.v;
 
-public class GameRunner extends AbstractGameType implements GameType {
+public class GameRunner extends AbstractGameType<GameSettings> {
 
-    private final Level level;
-
-    public GameRunner() {
-        new Scores(0, settings);  // TODO сеттринги разделены по разным классам, продумать архитектуру
-        level = new LevelImpl(getMap());
+    @Override
+    public GameSettings getSettings() {
+        return new GameSettings();
     }
 
     @Override
-    public PlayerScores getPlayerScores(Object score) {
-        return new Scores((Integer) score, settings);
+    public PlayerScores getPlayerScores(Object score, GameSettings settings) {
+        return new Scores(Integer.valueOf(score.toString()), settings);
     }
 
     @Override
-    public GameField createGame(int levelNumber) {
-        return new Loderunner(level, getDice());
+    public GameField createGame(int levelNumber, GameSettings settings) {
+        return new Loderunner(settings.level(getDice()), getDice(), settings);
     }
 
     @Override
-    public Parameter<Integer> getBoardSize() {
-        return v(level.getSize());
+    public Parameter<Integer> getBoardSize(GameSettings settings) {
+        return v(settings.level(getDice()).getSize());
     }
 
     @Override
@@ -82,16 +84,18 @@ public class GameRunner extends AbstractGameType implements GameType {
     }
 
     @Override
-    public MultiplayerType getMultiplayerType() {
-        return MultiplayerType.MULTIPLE;
+    public MultiplayerType getMultiplayerType(GameSettings settings) {
+        if (settings.bool(ROUNDS_ENABLED)) {
+            return MultiplayerType.TEAM.apply(
+                    settings.integer(ROUNDS_PLAYERS_PER_ROOM),
+                    MultiplayerType.DISPOSABLE);
+        } else {
+            return MultiplayerType.MULTIPLE;
+        }
     }
 
     @Override
-    public GamePlayer createPlayer(EventListener listener, String playerId) {
-        return new Player(listener);
-    }
-
-    protected String getMap() {
-        return Level1.get();
+    public GamePlayer createPlayer(EventListener listener, String playerId, GameSettings settings) {
+        return new Player(listener, settings);
     }
 }

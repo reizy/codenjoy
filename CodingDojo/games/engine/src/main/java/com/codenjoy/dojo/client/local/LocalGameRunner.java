@@ -24,6 +24,7 @@ package com.codenjoy.dojo.client.local;
 
 
 import com.codenjoy.dojo.client.AbstractBoard;
+import com.codenjoy.dojo.client.AbstractTextBoard;
 import com.codenjoy.dojo.client.ClientBoard;
 import com.codenjoy.dojo.client.Solver;
 import com.codenjoy.dojo.services.*;
@@ -32,6 +33,7 @@ import com.codenjoy.dojo.services.multiplayer.GamePlayer;
 import com.codenjoy.dojo.services.multiplayer.LevelProgress;
 import com.codenjoy.dojo.services.multiplayer.Single;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
+import com.codenjoy.dojo.services.settings.Settings;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -51,13 +53,16 @@ public class LocalGameRunner {
     public static boolean printBoardOnly = false;
     public static Consumer<String> out = System.out::println;
     public static Integer countIterations = null;
-    public static boolean printConversions = true;
-    public static boolean printDice = true;
+    public static boolean printConversions = false;
+    public static boolean printDice = false;
     public static boolean printTick = false;
+    public static boolean printSeed = false;
     public static String showPlayers = null;
     public static boolean exit = false;
     public static int waitForPlayers = 1;
+    public static int levelNumber = LevelProgress.levelsStartsFrom1;
 
+    private Settings settings;
     private GameField field;
     private List<Game> games;
     private GameType gameType;
@@ -92,12 +97,13 @@ public class LocalGameRunner {
     public LocalGameRunner(GameType gameType) {
         this.gameType = gameType;
 
+        settings = gameType.getSettings();
         solvers = new LinkedList<>();
         boards = new LinkedList<>();
         games = new LinkedList<>();
         scores = new LinkedList<>();
 
-        field = gameType.createGame(LevelProgress.levelsStartsFrom1);
+        field = gameType.createGame(levelNumber, settings);
     }
 
     public LocalGameRunner run(Consumer<Integer> onTick) {
@@ -118,6 +124,8 @@ public class LocalGameRunner {
                 }
 
                 synchronized (this) {
+                    debugAt(tick);
+
                     List<String> answers = new LinkedList<>();
                     for (Game game : games) {
                         answers.add(askAnswer(games.indexOf(game)));
@@ -155,16 +163,20 @@ public class LocalGameRunner {
         return this;
     }
 
+    private void debugAt(int tick) {
+        // breakpoint here
+    }
+
     private String askAnswer(int index) {
         ClientBoard board = board(index);
 
         Object data = game(index).getBoardAsString();
         board.forString(data.toString());
 
-        if (printBoardOnly) {
-            print(index, ((AbstractBoard) board).boardAsString());
-        } else {
+        if (!printBoardOnly || board instanceof AbstractTextBoard) {
             print(index, board.toString());
+        } else {
+            print(index, ((AbstractBoard) board).boardAsString());
         }
 
         String answer = solver(index).get(board);
@@ -173,7 +185,7 @@ public class LocalGameRunner {
             print(index, "Scores: " + scores.get(index).getScore());
         }
 
-        print(index, "Answer: " + answer);
+        print(index, "Answer:" + ((StringUtils.isEmpty(answer))?"":" ") + answer);
         return answer;
     }
 
@@ -213,6 +225,10 @@ public class LocalGameRunner {
         return games.get(index);
     }
 
+    public static Dice getDice(String soul, long max, long count) {
+        return LocalGameRunner.getDice(generateXorShift(soul, max, count));
+    }
+
     public static Dice getDice(int... numbers) {
         int[] index = {0};
         return (n) -> {
@@ -233,12 +249,14 @@ public class LocalGameRunner {
         };
     }
 
-    public static int[] generateXorShift(String soul, long max, long count) {
-        long[] current = new long[] { soul.hashCode() };
-        System.out.println("Soul = " + soul);
+    private static int[] generateXorShift(String seed, long max, long count) {
+        long[] current = new long[] { seed.hashCode() };
+        if (printSeed) {
+            out.accept("Seed = " + seed + "\n");
+        }
         int[] result = IntStream.generate(() -> {
-            long a0 = current[0] % soul.length();
-            int a1 = soul.charAt((int)Math.abs(a0));
+            long a0 = current[0] % seed.length();
+            int a1 = seed.charAt((int)Math.abs(a0));
             long a2 = (current[0] << (a1 % 5)) ^ current[0];
             long a3 = (current[0] >>> (a1 % 6)) ^ (current[0] << (a1 % 2));
             current[0] = a2 ^ a3;
@@ -256,7 +274,7 @@ public class LocalGameRunner {
     }
 
     private Game createGame() {
-        PlayerScores score = gameType.getPlayerScores(0);
+        PlayerScores score = gameType.getPlayerScores(0, settings);
         scores.add(score);
         int index = scores.indexOf(score);
 
@@ -265,7 +283,7 @@ public class LocalGameRunner {
                     print(index, "Fire Event: " + event.toString());
                     score.event(event);
                 },
-                getPlayerId());
+                getPlayerId(), settings);
 
         PrinterFactory factory = gameType.getPrinterFactory();
 

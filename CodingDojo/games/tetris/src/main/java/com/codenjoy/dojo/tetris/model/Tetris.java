@@ -25,6 +25,8 @@ package com.codenjoy.dojo.tetris.model;
 
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.printer.BoardReader;
+import com.codenjoy.dojo.services.settings.SettingsReader;
+import com.codenjoy.dojo.tetris.services.GameSettings;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,10 +43,13 @@ public class Tetris implements Field {
     private Player player;
     private Levels levels;
 
-    public Tetris(Levels levels, FigureQueue queue, int size) {
+    private GameSettings settings;
+
+    public Tetris(Levels levels, FigureQueue queue, int size, GameSettings settings) {
         this.levels = levels;
         this.queue = queue;
         this.size = size;
+        this.settings = settings;
         take();
     }
 
@@ -63,6 +68,11 @@ public class Tetris implements Field {
     }
 
     @Override
+    public GameSettings settings() {
+        return settings;
+    }
+
+    @Override
     public List<Type> getFuture() {
         return queue.future();
     }
@@ -74,14 +84,14 @@ public class Tetris implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             @Override
             public int size() {
                 return Tetris.this.size();
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 Hero hero = player.getHero();
 
                 return new LinkedList<Point>() {{

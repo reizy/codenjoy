@@ -23,42 +23,34 @@ package com.codenjoy.dojo.battlecity.model;
  */
 
 import com.codenjoy.dojo.battlecity.model.items.Prize;
+import com.codenjoy.dojo.battlecity.services.GameSettings;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
-import com.codenjoy.dojo.services.settings.Parameter;
+import com.codenjoy.dojo.services.settings.Chance;
 
-import java.util.Arrays;
-import java.util.List;
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.PRIZE_ON_FIELD;
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.PRIZE_WORKING;
 
 
 public class PrizeGenerator {
 
-    private static final List<Elements> PRIZES = Arrays.asList(
-            Elements.PRIZE_IMMORTALITY,
-            Elements.PRIZE_BREAKING_WALLS,
-            Elements.PRIZE_WALKING_ON_WATER);
-
+    private Chance<Elements> chance;
     private Field field;
-    private Dice dice;
-    private Parameter<Integer> prizeOnField;
-    private Parameter<Integer> prizeWorking;
 
-    public PrizeGenerator(Field field, Dice dice,
-                          Parameter<Integer> prizeOnField,
-                          Parameter<Integer> prizeWorking)
-    {
+    private GameSettings settings;
+
+    public PrizeGenerator(Field field, Dice dice, GameSettings settings) {
         this.field = field;
-        this.dice = dice;
-        this.prizeOnField = prizeOnField;
-        this.prizeWorking = prizeWorking;
+        this.chance = settings.chance(dice);
+        this.settings = settings;
     }
 
     public void drop(Point pt) {
-        Elements type = PRIZES.get(dice.next(PRIZES.size()));
+        Elements type = chance.any();
 
         field.add(new Prize(pt,
-                prizeOnField.getValue(),
-                prizeWorking.getValue(),
+                settings.integer(PRIZE_ON_FIELD),
+                settings.integer(PRIZE_WORKING),
                 type));
     }
 }

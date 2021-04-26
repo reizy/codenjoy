@@ -35,14 +35,14 @@ public abstract class RoundField<P extends RoundGamePlayer<? extends RoundPlayer
     private List<P> inactive;
 
     private Object startRoundEvent;
-    private Object looseEvent;
+    private Object loseEvent;
 
-    public RoundField(Round round, Object startRoundEvent, Object winEvent, Object looseEvent) {
-        this.round = round;
+    public RoundField(Object startRoundEvent, Object winEvent, Object loseEvent, RoundSettings settings) {
+        this.round = RoundFactory.get(settings);
         round.init(this, winEvent);
 
         this.startRoundEvent = startRoundEvent;
-        this.looseEvent = looseEvent;
+        this.loseEvent = loseEvent;
 
         inactive = new LinkedList<>();
     }
@@ -94,9 +94,9 @@ public abstract class RoundField<P extends RoundGamePlayer<? extends RoundPlayer
     @Override
     public void oneMoreDead(P player) {
         if (round instanceof NullRound) {
-            player.die(false, looseEvent);
+            player.die(false, loseEvent);
         } else {
-            player.die(round.isMatchOver(), looseEvent);
+            player.die(round.isMatchOver(), loseEvent);
             inactive.add(player);
         }
     }
@@ -133,19 +133,25 @@ public abstract class RoundField<P extends RoundGamePlayer<? extends RoundPlayer
         round.clear();
         inactive.clear();
 
+        resetAllPlayers();
+    }
+
+    public void resetAllPlayers() {
         players().forEach(p -> newGame(p));
     }
 
     public void remove(P player) {
-        if (players().contains(player)) {
-            players().remove(player);
+        if (!players().contains(player)) {
+            return;
+        }
 
-            // кто уходит из игры не лишает коллег очков за победу
-            // но только если он был жив к этому моменту
-            if (player.getHero().isActiveAndAlive()) {
-                player.getHero().die();
-                rewardTheWinnerIfNeeded(() -> {});
-            }
+        players().remove(player);
+
+        // кто уходит из игры не лишает коллег очков за победу
+        // но только если он был жив к этому моменту
+        if (player.getHero().isActiveAndAlive()) {
+            player.getHero().die();
+            rewardTheWinnerIfNeeded(() -> {});
         }
     }
 

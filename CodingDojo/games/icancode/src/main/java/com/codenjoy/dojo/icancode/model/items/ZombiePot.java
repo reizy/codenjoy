@@ -25,25 +25,24 @@ package com.codenjoy.dojo.icancode.model.items;
 import com.codenjoy.dojo.icancode.model.FieldItem;
 import com.codenjoy.dojo.services.Tickable;
 import com.codenjoy.dojo.icancode.model.Elements;
+import com.codenjoy.dojo.services.settings.SettingsReader;
+
+import static com.codenjoy.dojo.icancode.services.GameSettings.Keys.COUNT_ZOMBIES_ON_MAP;
+import static com.codenjoy.dojo.icancode.services.GameSettings.Keys.TICKS_PER_NEW_ZOMBIE;
 
 public class ZombiePot extends FieldItem implements Tickable {
 
-    public static int TICKS_PER_NEW_ZOMBIE = 20;
-    public static int COUNT_ZOMBIES_ON_MAP = 4;
-
     private int time = 0;
 
-    public ZombiePot(Elements el) {
-        super(el);
+    public ZombiePot() {
+        super(Elements.ZOMBIE_START);
     }
 
     @Override
     public void tick() {
-        if (++time % TICKS_PER_NEW_ZOMBIE == 0) {
-            if (field.zombies().size() < COUNT_ZOMBIES_ON_MAP) {
-                field.move(newZombie(),
-                        this.getCell().getX(),
-                        this.getCell().getY());
+        if (++time % field.settings().integer(TICKS_PER_NEW_ZOMBIE) == 0) {
+            if (field.zombies().size() < field.settings().integer(COUNT_ZOMBIES_ON_MAP)) {
+                field.move(newZombie(), this.getCell());
             }
         }
     }
@@ -57,6 +56,6 @@ public class ZombiePot extends FieldItem implements Tickable {
 
     public void reset() {
         time = 0;
-        field.zombies().forEach(it -> it.die());
+        field.zombies().forEach(Zombie::die);
     }
 }

@@ -29,15 +29,13 @@ import com.codenjoy.dojo.services.Direction;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.multiplayer.GamePlayer;
 import com.codenjoy.dojo.services.printer.BoardReader;
-import com.codenjoy.dojo.services.round.Round;
-import com.codenjoy.dojo.services.round.RoundImpl;
 import com.codenjoy.dojo.services.round.RoundField;
-import com.codenjoy.dojo.services.settings.Parameter;
 import com.codenjoy.dojo.snakebattle.model.Player;
 import com.codenjoy.dojo.snakebattle.model.hero.Hero;
 import com.codenjoy.dojo.snakebattle.model.level.Level;
 import com.codenjoy.dojo.snakebattle.model.objects.*;
 import com.codenjoy.dojo.snakebattle.services.Events;
+import com.codenjoy.dojo.snakebattle.services.GameSettings;
 
 import java.util.*;
 import java.util.function.Function;
@@ -59,26 +57,13 @@ public class SnakeBoard extends RoundField<Player> implements Field {
     private List<Gold> gold;
 
     private List<Player> players;
-
-    private Parameter<Integer> flyingCount;
-    private Parameter<Integer> furyCount;
-    private Parameter<Integer> stoneReduced;
-
     private int size;
     private Dice dice;
+    private GameSettings settings;
 
-    public SnakeBoard(Level level, Dice dice, Round round,
-                      Parameter<Integer> flyingCount,
-                      Parameter<Integer> furyCount,
-                      Parameter<Integer> stoneReduced)
-    {
-        super(round, Events.START, Events.WIN, Events.DIE);
-
-        this.flyingCount = flyingCount;
-        this.furyCount = furyCount;
-        this.stoneReduced = stoneReduced;
+    public SnakeBoard(Level level, Dice dice, GameSettings settings) {
+        super(Events.START, Events.WIN, Events.DIE, settings);
         this.dice = dice;
-
         walls = level.getWalls();
         starts = level.getStartPoints();
         apples = level.getApples();
@@ -87,6 +72,7 @@ public class SnakeBoard extends RoundField<Player> implements Field {
         furyPills = level.getFuryPills();
         gold = level.getGold();
         size = level.getSize();
+        this.settings = settings;
         players = new LinkedList<>();
     }
 
@@ -117,21 +103,35 @@ public class SnakeBoard extends RoundField<Player> implements Field {
     public void setNewObjects() {
         int max = (players.size() / 2) + 1;
         int i = dice.next(50);
-        if (i == 42 && furyPills.size() < max)
-            setFuryPill(getFreeRandom());
-        if (i == 32 && flyingPills.size() < max)
-            setFlyingPill(getFreeRandom());
-        if (i == 21 && gold.size() < max*2)
-            setGold(getFreeRandom());
-        if ((i == 11 && stones.size() < size / 2) || stones.isEmpty())
-            setStone(getFreeRandom());
-        if ((i < 10 && apples.size() < max*10) || apples.size() < max*2)
-            setApple(getFreeRandom());
+        Optional<Point> pt = freeRandom();
+        if (!pt.isPresent()) {
+            return;
+        }
+
+        if (i == 42 && furyPills.size() < max) {
+            setFuryPill(pt.get());
+        }
+
+        if (i == 32 && flyingPills.size() < max) {
+            setFlyingPill(pt.get());
+        }
+
+        if (i == 21 && gold.size() < max*2) {
+            setGold(pt.get());
+        }
+
+        if ((i == 11 && stones.size() < size / 2) || stones.isEmpty()) {
+            setStone(pt.get());
+        }
+
+        if ((i < 10 && apples.size() < max*10) || apples.size() < max*2) {
+            setApple(pt.get());
+        }
     }
 
     @Override
-    public Point getFreeRandom() {
-        return BoardUtils.getFreeRandom(size, dice, pt -> isFree(pt));
+    public Optional<Point> freeRandom() {
+        return BoardUtils.freeRandom(size, dice, pt -> isFree(pt));
     }
 
     @Override
@@ -256,9 +256,11 @@ public class SnakeBoard extends RoundField<Player> implements Field {
             }
             if (flyingPills.contains(head)) {
                 flyingPills.remove(head);
+                player.event(Events.FLYING);
             }
             if (furyPills.contains(head)) {
                 furyPills.remove(head);
+                player.event(Events.FURY);
             }
         }
     }
@@ -297,7 +299,7 @@ public class SnakeBoard extends RoundField<Player> implements Field {
 
     public boolean isFreeForStone(Point pt) {
         Point leftSide = pt.copy();
-        leftSide.change(Direction.LEFT);
+        leftSide.move(Direction.LEFT);
         return isFree(pt) && !starts.contains(leftSide);
     }
 
@@ -358,21 +360,6 @@ public class SnakeBoard extends RoundField<Player> implements Field {
         return aliveActive().stream()
                 .map(player -> player.getHero())
                 .filter(h -> !h.equals(me));
-    }
-
-    @Override
-    public Parameter<Integer> flyingCount() {
-        return flyingCount;
-    }
-
-    @Override
-    public Parameter<Integer> furyCount() {
-        return furyCount;
-    }
-
-    @Override
-    public Parameter<Integer> stoneReduced() {
-        return stoneReduced;
     }
 
     private Hero enemyCrossedWith(Hero me) {
@@ -447,6 +434,11 @@ public class SnakeBoard extends RoundField<Player> implements Field {
         player.newHero(this);
     }
 
+    @Override
+    public GameSettings settings() {
+        return settings;
+    }
+
     public List<Wall> getWalls() {
         return walls;
     }
@@ -472,7 +464,7 @@ public class SnakeBoard extends RoundField<Player> implements Field {
     }
 
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = SnakeBoard.this.size;
 
             @Override
@@ -481,7 +473,7 @@ public class SnakeBoard extends RoundField<Player> implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedHashSet<Point>(){{
                     drawHeroes(hero -> !hero.isAlive(), hero -> Arrays.asList(hero.head()));
                     drawHeroes(hero -> hero.isFlying(), hero -> hero.reversedBody());

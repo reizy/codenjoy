@@ -23,9 +23,11 @@ package com.codenjoy.dojo.battlecity.model.levels;
  */
 
 
-import com.codenjoy.dojo.battlecity.model.Player;
 import com.codenjoy.dojo.battlecity.services.GameRunner;
-import com.codenjoy.dojo.services.Dice;
+import com.codenjoy.dojo.battlecity.services.GameSettings;
+import com.codenjoy.dojo.services.EventListener;
+import com.codenjoy.dojo.services.multiplayer.GameField;
+import com.codenjoy.dojo.services.multiplayer.GamePlayer;
 import com.codenjoy.dojo.services.printer.Printer;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
 import com.codenjoy.dojo.services.printer.PrinterFactoryImpl;
@@ -40,17 +42,20 @@ public class LevelTest {
 
     @Test
     public void test() {
-        LevelImpl level = new LevelImpl(new GameRunner().getMap(), mock(Dice.class));
+        GameRunner runner = new GameRunner();
+        GameSettings settings = runner.getSettings();
+        GamePlayer player = runner.createPlayer(mock(EventListener.class), "id", settings);
+        GameField game = runner.createGame(0, settings);
+        player.newHero(game);
 
-        assertEquals(34, level.size());
+        assertEquals(34, game.reader().size());
 
-        Player player = mock(Player.class);
         Printer printer = printerFactory.getPrinter(
-                level.reader(), player);
+                game.reader(), player);
 
         assertEquals(
                 "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
-                "☼ ¿    ¿    ¿        ¿    ¿    ¿ ☼\n" +
+                "☼ ◘    ¿    ¿        ¿    ◘    ¿ ☼\n" +
                 "☼                                ☼\n" +
                 "☼  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ☼\n" +
                 "☼ #╬╬╬# ╬╬╬ #╬╬╬##╬╬╬# ╬╬╬ #╬╬╬# ☼\n" +

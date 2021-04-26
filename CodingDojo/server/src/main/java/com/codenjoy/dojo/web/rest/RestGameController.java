@@ -23,19 +23,13 @@ package com.codenjoy.dojo.web.rest;
  */
 
 import com.codenjoy.dojo.client.CodenjoyContext;
-import com.codenjoy.dojo.services.GameService;
-import com.codenjoy.dojo.services.GameType;
-import com.codenjoy.dojo.services.GuiPlotColorDecoder;
+import com.codenjoy.dojo.services.*;
+import com.codenjoy.dojo.services.dao.Registration;
 import com.codenjoy.dojo.web.rest.pojo.PGameTypeInfo;
 import com.codenjoy.dojo.web.rest.pojo.PSprites;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -47,23 +41,30 @@ public class RestGameController {
 
     private GameService gameService;
 
+    private PlayerService playerService;
+
+    private ConfigProperties properties;
+
     @GetMapping("/{name}/exists")
     public Boolean exists(@PathVariable("name") String name) {
-        return gameService.getGameNames().contains(name);
+        return gameService.getGames().contains(name);
     }
 
-    @GetMapping("/{name}/info")
-    public PGameTypeInfo type(@PathVariable("name") String name) {
+    // TODO узнать кто использует и предупредить, что добавилось room
+    @GetMapping("/{name}/{room}/info")
+    public PGameTypeInfo type(@PathVariable("name") String name,
+                              @PathVariable("room") String room)
+    {
         if (!exists(name)) {
-            return null;
+            return null; // TODO а если room несуществует, может тоже возвращать null
         }
 
-        GameType game = gameService.getGame(name);
+        GameType game = gameService.getGameType(name, room);
 
         PSprites sprites = new PSprites(spritesAlphabet(), spritesUrl(name),
                 spritesNames(name), spritesValues(name));
         
-        return new PGameTypeInfo(game, help(name), client(name), ws(), sprites);
+        return new PGameTypeInfo(game, room, help(name), client(name), ws(), sprites);
     }
 
     @GetMapping("/{name}/help/url")
@@ -144,5 +145,12 @@ public class RestGameController {
         return String.valueOf(GuiPlotColorDecoder.GUI.toCharArray());
     }
 
+    @DeleteMapping("/scores")
+    public void cleanScores(@AuthenticationPrincipal Registration.User user) {
+        if (!properties.isPlayerScoreCleanupEnabled()) {
+            return;
+        }
+        playerService.cleanScores(user.getId());
+    }
 }
 

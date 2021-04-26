@@ -23,35 +23,44 @@ package com.codenjoy.dojo.services;
  */
 
 
+import com.codenjoy.dojo.services.semifinal.SemifinalStatus;
+
 import java.util.List;
+import java.util.Map;
 
 public interface PlayerService extends Tickable {
 
-    Player register(String id, String ip, String roomName, String gameName);
+    Player register(String id, String game, String room, String ip);
     Player register(PlayerSave save);
     List<Player> getAll();
-    List<Player> getAll(String gameName);
+    List<Player> getAll(String game);
+    List<Player> getAllInRoom(String room);
     void remove(String id);
     void update(Player player);
     boolean contains(String id);
     Player get(String id);
-    void updateAll(List<PlayerInfo> players);
+    void updateAll(List<? extends Player> players);
     void removeAll();
-    void removeAll(String roomName);
-    Player getRandom(String gameType);
+    void removeAll(String room);
+    Player getRandom(String game);
     GameType getAnyGameWithPlayers();
+    Map<String, Integer> getRoomCounts();
 
     void cleanAllScores();
-    void cleanAllScores(String roomName);
+    void cleanAllScores(String room);
+    void cleanScores(String id);
     void reloadAllRooms();
-    void reloadAllRooms(String roomName);
-    void loadSaveForAll(String gameName, String save);
+    void reloadAllRooms(String room);
+    void loadSaveForAll(String room, String save);
 
     Joystick getJoystick(String id); // TODO Как-то тут этот метод не вяжется, но ладно пока пусть остается
 
     void closeRegistration();
     boolean isRegistrationOpened();
+    boolean isRegistrationOpened(String room);
     void openRegistration();
 
     void reloadAI(String id);
+
+    SemifinalStatus getSemifinalStatus(String room);
 }

@@ -32,6 +32,7 @@ import com.codenjoy.dojo.services.printer.PrinterFactoryImpl;
 import com.codenjoy.dojo.snake.model.artifacts.Apple;
 import com.codenjoy.dojo.snake.model.artifacts.BasicWalls;
 import com.codenjoy.dojo.snake.model.artifacts.Stone;
+import com.codenjoy.dojo.snake.services.GameSettings;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,14 +60,14 @@ public class PrinterTest {
         when(board.getWalls()).thenReturn(new Walls());
         when(board.snake()).thenReturn(null);
 
-        printer = printerFactory.getPrinter(new BoardReader() {
+        printer = printerFactory.getPrinter(new BoardReader<Player>() {
             @Override
             public int size() {
                 return BOARD_SIZE;
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new HashSet<Point>(){{
                     board.getWalls().forEach(this::add);
                     if (board.snake() != null) {
@@ -193,7 +194,7 @@ public class PrinterTest {
 
         when(board.createSnake()).thenReturn(snake);
         listener = mock(EventListener.class);
-        Player player = new Player(listener);
+        Player player = new Player(listener, mock(GameSettings.class));
         player.newHero(board);
 
         snake.right();

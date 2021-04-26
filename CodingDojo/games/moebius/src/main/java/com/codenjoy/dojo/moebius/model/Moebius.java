@@ -24,17 +24,13 @@ package com.codenjoy.dojo.moebius.model;
 
 
 import com.codenjoy.dojo.moebius.services.Events;
+import com.codenjoy.dojo.moebius.services.GameSettings;
 import com.codenjoy.dojo.services.BoardUtils;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.printer.BoardReader;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
-import static com.codenjoy.dojo.services.BoardUtils.NO_SPACE;
+import java.util.*;
 
 public class Moebius implements Field {
 
@@ -44,10 +40,13 @@ public class Moebius implements Field {
     private Dice dice;
     private Player player;
 
-    public Moebius(Level level, Dice dice) {
+    private GameSettings settings;
+
+    public Moebius(Level level, Dice dice, GameSettings settings) {
         this.dice = dice;
         this.level = level;
         this.size = level.getSize();
+        this.settings = settings;
     }
 
     @Override
@@ -66,12 +65,12 @@ public class Moebius implements Field {
 
         removePipes();
 
-        Point pt = getFreeRandom();
-        if (pt.equals(NO_SPACE)) {
+        Optional<Point> pt = freeRandom();
+        if (pt.isPresent()) {
+            setLine(pt.get(), Elements.random(dice));
+        } else {
             player.event(new Events(Events.Event.GAME_OVER));
             player.getHero().die();
-        } else {
-            setLine(pt, Elements.random(dice));
         }
     }
 
@@ -135,8 +134,8 @@ public class Moebius implements Field {
     }
 
     @Override
-    public Point getFreeRandom() {
-        return BoardUtils.getFreeRandom(size, dice,
+    public Optional<Point> freeRandom() {
+        return BoardUtils.freeRandom(size, dice,
                 pt -> !pt.isOutOf(1, 1, size) && isFree(pt));
     }
 
@@ -175,7 +174,7 @@ public class Moebius implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Moebius.this.size;
 
             @Override
@@ -184,7 +183,7 @@ public class Moebius implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>(){{
                     addAll(Moebius.this.getLines());
                 }};
@@ -192,4 +191,8 @@ public class Moebius implements Field {
         };
     }
 
+    @Override
+    public GameSettings settings() {
+        return settings;
+    }
 }

@@ -10,12 +10,12 @@ package com.codenjoy.dojo.loderunner.model;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -24,17 +24,18 @@ package com.codenjoy.dojo.loderunner.model;
 
 
 import com.codenjoy.dojo.loderunner.services.Events;
+import com.codenjoy.dojo.loderunner.services.GameSettings;
 import com.codenjoy.dojo.services.Direction;
 import com.codenjoy.dojo.services.EventListener;
 import com.codenjoy.dojo.services.Point;
-import com.codenjoy.dojo.services.multiplayer.GamePlayer;
+import com.codenjoy.dojo.services.round.RoundGamePlayer;
 
-public class Player extends GamePlayer<Hero, Field> {
+import java.util.Optional;
 
-    Hero hero;
+public class Player extends RoundGamePlayer<Hero, Field> {
 
-    public Player(EventListener listener) {
-        super(listener);
+    public Player(EventListener listener, GameSettings settings) {
+        super(listener, settings);
     }
 
     @Override
@@ -43,9 +44,23 @@ public class Player extends GamePlayer<Hero, Field> {
     }
 
     @Override
-    public void newHero(Field field) {
-        Point pt = field.getFreeRandom();
-        hero = new Hero(pt, Direction.RIGHT);
+    public void start(int round, Object startEvent) {
+        super.start(round, startEvent);
+        hero.clearScores();
+    }
+
+    @Override
+    public void initHero(Field field) {
+        if (hero != null) {
+            hero = null;
+        }
+        Optional<Point> pt = field.freeRandom();
+        if (pt.isEmpty()) {
+            // TODO вот тут надо как-то сообщить плееру, борде и самому серверу, что нет место для героя
+            throw new RuntimeException("Not enough space for Hero");
+        }
+        hero = new Hero(pt.get(), Direction.RIGHT);
+        hero.setPlayer(this);
         hero.init(field);
     }
 
@@ -54,4 +69,27 @@ public class Player extends GamePlayer<Hero, Field> {
         return hero != null && hero.isAlive();
     }
 
+    @Override
+    public void event(Object event) {
+        super.event(event);
+
+        if (event instanceof Events) {
+            switch ((Events) event) {
+                case KILL_ENEMY:
+                    hero.increaseScore();
+                    break;
+                case START_ROUND:
+                case SUICIDE:
+                case KILL_HERO:
+                case WIN_ROUND:
+                    hero.clearScores();
+                    break;
+            }
+        }
+    }
+
+    // only for testing
+    public void setHero(Hero hero) {
+        this.hero = hero;
+    }
 }

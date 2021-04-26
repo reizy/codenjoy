@@ -23,36 +23,26 @@ package com.codenjoy.dojo.icancode.services;
  */
 
 
-import com.codenjoy.dojo.icancode.model.ICanCode;
-
-/**
- * Ивенты, которые могут возникать в игре опиши тут. Что есть ивенты? ну убили твоего героя и ты хочешь ему очков начислить штрафных
- * или, быть может, наоборот - он поднял что-то ценное и ты хочешь ему дать бонус. Вот все все ивенты.
- */
 public class Events {
-
-    public static Events WIN(int goldCount) {
-        return WIN(goldCount, ICanCode.TRAINING);
-    }
 
     public static Events WIN(int goldCount, boolean multiple) {
         return new Events(goldCount, multiple);
     }
 
     public static Events KILL_ZOMBIE(int killCount, boolean multiple) {
-        return new Events(Type.KILL_ZOMBIE, killCount).withMultiplie(multiple);
+        return new Events(Type.KILL_ZOMBIE, killCount, multiple);
     }
 
     public static Events KILL_HERO(int killCount, boolean multiple) {
-        return new Events(Type.KILL_HERO, killCount).withMultiplie(multiple);
+        return new Events(Type.KILL_HERO, killCount, multiple);
     }
 
-    public static Events LOOSE() {
-        return new Events();
+    public static Events LOSE(boolean multiple) {
+        return new Events(multiple);
     }
 
     public enum Type {
-        WIN, LOOSE,
+        WIN, LOSE,
         KILL_ZOMBIE, KILL_HERO;
     }
 
@@ -62,14 +52,10 @@ public class Events {
     private boolean multiple;
     private int killCount;
 
-    public Events(Type type, int killCount) {
+    public Events(Type type, int killCount, boolean multiple) {
+        this.multiple = multiple;
         this.type = type;
         this.killCount = killCount;
-    }
-
-    private Events withMultiplie(boolean multiple) {
-        this.multiple = multiple;
-        return this;
     }
 
     public Events(int goldCount, boolean multiple) {
@@ -78,8 +64,9 @@ public class Events {
         this.goldCount = goldCount;
     }
 
-    public Events() {
-        type = Type.LOOSE;
+    public Events(boolean multiple) {
+        this.multiple = multiple;
+        type = Type.LOSE;
     }
 
     public boolean isMultiple() {
@@ -129,11 +116,10 @@ public class Events {
 
     @Override
     public String toString() {
-        return "Events{" +
-                "type=" + type +
-                ", goldCount=" + goldCount +
-                ", killCount=" + killCount +
-                ", multiple=" + multiple +
-                '}';
+        return type +
+                "(gold=" + goldCount +
+                ", kill=" + killCount +
+                ", " + ((multiple)?"multiple":"single") +
+                ")";
     }
 }

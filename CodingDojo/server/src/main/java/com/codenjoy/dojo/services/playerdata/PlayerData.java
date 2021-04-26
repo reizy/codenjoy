@@ -23,12 +23,14 @@ package com.codenjoy.dojo.services.playerdata;
  */
 
 
+import com.codenjoy.dojo.services.hero.HeroData;
 import com.codenjoy.dojo.transport.screen.ScreenData;
-import com.codenjoy.dojo.utils.JsonUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
+
+import java.util.List;
+import java.util.Map;
 
 @Getter
 @AllArgsConstructor
@@ -36,11 +38,14 @@ public class PlayerData implements ScreenData {
 
     private int boardSize;
     private Object board;
-    private String gameName;
+    private String game;
     private Object score;
     private String info;
-    private JSONObject scores;
-    private JSONObject heroesData;
+    private Map<String, Object> scores;
+    private Map<String, HeroData> coordinates;
+    private Map<String, String> readableNames;
+    private List<String> group;
+    private Integer lastChatMessage;
 
     public String getInfo() {
         return (info == null) ? StringUtils.EMPTY : info;
@@ -51,18 +56,24 @@ public class PlayerData implements ScreenData {
         return String.format(
                 "PlayerData[BoardSize:%s, " +
                         "Board:'%s', " +
-                        "GameName:'%s', " +
+                        "Game:'%s', " +
                         "Score:%s, " +
                         "Info:'%s', " +
                         "Scores:'%s', " +
-                        "HeroesData:'%s']",
+                        "Coordinates:'%s', " +
+                        "ReadableNames:'%s', " +
+                        "Group:%s, " +
+                        "LastChatMessage:%s]",
                 boardSize,
                 board,
-                gameName,
+                game,
                 score,
                 getInfo(),
-                JsonUtils.toStringSorted(scores.toString()),
-                JsonUtils.toStringSorted(heroesData.toString()));
+                scores,
+                coordinates,
+                readableNames,
+                group,
+                lastChatMessage);
     }
 
 }

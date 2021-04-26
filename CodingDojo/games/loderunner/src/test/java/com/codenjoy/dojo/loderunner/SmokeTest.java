@@ -10,12 +10,12 @@ package com.codenjoy.dojo.loderunner;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -23,310 +23,109 @@ package com.codenjoy.dojo.loderunner;
  */
 
 
+import com.codenjoy.dojo.client.Solver;
 import com.codenjoy.dojo.client.local.LocalGameRunner;
 import com.codenjoy.dojo.loderunner.client.Board;
 import com.codenjoy.dojo.loderunner.client.ai.AISolver;
 import com.codenjoy.dojo.loderunner.services.GameRunner;
+import com.codenjoy.dojo.loderunner.services.GameSettings;
+import com.codenjoy.dojo.loderunner.services.levels.Big;
 import com.codenjoy.dojo.services.Dice;
+import com.codenjoy.dojo.utils.Smoke;
 import org.junit.Test;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
+import static com.codenjoy.dojo.loderunner.services.GameSettings.Keys.*;
+import static com.codenjoy.dojo.loderunner.services.GameSettings.Keys.ENEMIES_COUNT;
+import static com.codenjoy.dojo.services.round.RoundSettings.Keys.ROUNDS_ENABLED;
+import static java.util.stream.Collectors.toList;
 
 public class SmokeTest {
-    private int index;
 
     @Test
-    public void test() {
-        // given
-        List<String> messages = new LinkedList<>();
+    public void testSoft() {
+        Dice dice = LocalGameRunner.getDice("435874345435874365843564398", 100, 200);
 
-        LocalGameRunner.timeout = 0;
-        LocalGameRunner.out = (e) -> messages.add(e);
-        LocalGameRunner.countIterations = 15;
+        // about 2.6 sec
+        int ticks = 1000;
+        int players = 2;
+        Supplier<Solver> solver = () -> new AISolver(dice);
 
-        Dice dice = LocalGameRunner.getDice(
-                0, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6);
+        LocalGameRunner.showPlayers = null;
+        Smoke.play(ticks, "SmokeTest.data",
+                new GameRunner() {
+                    @Override
+                    public Dice getDice() {
+                        return dice;
+                    }
 
-        GameRunner gameType = new GameRunner() {
-            @Override
-            public Dice getDice() {
-                return dice;
-            }
+                    @Override
+                    public GameSettings getSettings() {
+                        return super.getSettings()
+                                .bool(ROUNDS_ENABLED, false)
+                                .string(LEVEL_MAP,
+                                        "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n" +
+                                        "☼~~~~~~~~H   ~~~☼\n" +
+                                        "☼        H###   ☼\n" +
+                                        "☼   ~~~~~H    ##☼\n" +
+                                        "☼H##     H##    ☼\n" +
+                                        "☼H       H~~~~~ ☼\n" +
+                                        "☼H       H      ☼\n" +
+                                        "☼H#####  H      ☼\n" +
+                                        "☼H         #####☼\n" +
+                                        "☼H  ~~~»        ☼\n" +
+                                        "☼H##   ######H H☼\n" +
+                                        "☼H~~~        H H☼\n" +
+                                        "☼H             H☼\n" +
+                                        "☼H   ~~~~~~~~~ H☼\n" +
+                                        "☼###H    H     H☼\n" +
+                                        "☼   H    H     H☼\n" +
+                                        "☼###############☼\n" +
+                                        "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼\n")
+                                .integer(SHADOW_PILLS_COUNT, 1)
+                                .integer(GOLD_COUNT_GREEN, 5)
+                                .integer(GOLD_COUNT_RED, 6)
+                                .integer(GOLD_COUNT_YELLOW, 7)
+                                .integer(ENEMIES_COUNT, 2);
+                    }
+                },
+                Stream.generate(solver)
+                        .limit(players).collect(toList()),
+                Stream.generate(() -> new Board())
+                        .limit(players).collect(toList()));
+    }
 
-            @Override
-            protected String getMap() {
-                return  "☼☼☼☼☼☼☼☼☼☼" +
-                        "☼ $ ~~~» ☼" +
-                        "☼H##   # ☼" +
-                        "☼H~~~   $☼" +
-                        "☼H   $   ☼" +
-                        "☼H   ~~~~☼" +
-                        "☼###H    ☼" +
-                        "☼$  H   $☼" +
-                        "☼########☼" +
-                        "☼☼☼☼☼☼☼☼☼☼";
-            }
-        };
+    @Test
+    public void testHard() {
+        Dice dice = LocalGameRunner.getDice("435874345435874365843564398", 100, 20000);
 
-        // when
-        LocalGameRunner.run(gameType,
-                new AISolver(dice),
-                new Board());
+        // about 14 sec
+        int ticks = 100;
+        int players = 10;
+        int enemies = 5;
+        Supplier<Solver> solver = () -> new AISolver(dice);
 
-        // then
-        assertEquals("DICE:0\n" +
-                        "DICE:1\n" +
-                        "DICE:2\n" +
-                        "DICE:3\n" +
-                        "DICE:4\n" +
-                        "DICE:5\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~» ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H  [$   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼$  H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 0\n" +
-                        "1:Answer: DOWN\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~<  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H  ►~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼$  H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 0\n" +
-                        "1:Answer: DOWN\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~<~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###Y    ☼\n" +
-                        "1:☼$  H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 0\n" +
-                        "1:Answer: DOWN\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ <~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼$  Y   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 0\n" +
-                        "1:Answer: LEFT\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##«  # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼$ ◄H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 0\n" +
-                        "1:Answer: LEFT\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~<   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼$◄ H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 0\n" +
-                        "1:Answer: LEFT\n" +
-                        "1:Fire Event: GET_GOLD\n" +
-                        "DICE:6\n" +
-                        "DICE:1\n" +
-                        "DICE:2\n" +
-                        "DICE:3\n" +
-                        "DICE:4\n" +
-                        "DICE:5\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H  «$   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼◄  H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: RIGHT\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H  «~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼ ► H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: RIGHT\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###Q    ☼\n" +
-                        "1:☼  ►H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: RIGHT\n" +
-                        "1:Fire Event: KILL_HERO\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼   Ѡ   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: \n" +
-                        "1:PLAYER_GAME_OVER -> START_NEW_GAME\n" +
-                        "DICE:6\n" +
-                        "DICE:0\n" +
-                        "DICE:1\n" +
-                        "DICE:2\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼► «H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: \n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼►« H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: \n" +
-                        "1:Fire Event: KILL_HERO\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H   ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼Ѡ  H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: \n" +
-                        "1:PLAYER_GAME_OVER -> START_NEW_GAME\n" +
-                        "DICE:3\n" +
-                        "DICE:4\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H ► ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼ » H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: LEFT\n" +
-                        "------------------------------------------\n" +
-                        "1:Board:\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:☼ $ ~~~  ☼\n" +
-                        "1:☼H##   # ☼\n" +
-                        "1:☼H~~~   $☼\n" +
-                        "1:☼H   $   ☼\n" +
-                        "1:☼H◄  ~~~~☼\n" +
-                        "1:☼###H    ☼\n" +
-                        "1:☼  »H   $☼\n" +
-                        "1:☼########☼\n" +
-                        "1:☼☼☼☼☼☼☼☼☼☼\n" +
-                        "1:\n" +
-                        "1:Scores: 1\n" +
-                        "1:Answer: LEFT\n" +
-                        "------------------------------------------",
-                String.join("\n", messages));
+        LocalGameRunner.showPlayers = "1";
+        Smoke.play(ticks, "SmokeTestHard.data",
+                new GameRunner() {
+                    @Override
+                    public Dice getDice() {
+                        return dice;
+                    }
 
+                    @Override
+                    public GameSettings getSettings() {
+                        return super.getSettings()
+                                .bool(ROUNDS_ENABLED, false)
+                                .string(LEVEL_MAP, Big.all().get(0))
+                                .integer(ENEMIES_COUNT, enemies);
+                    }
+                },
+                Stream.generate(solver)
+                        .limit(players).collect(toList()),
+                Stream.generate(() -> new Board())
+                        .limit(players).collect(toList()));
     }
 }

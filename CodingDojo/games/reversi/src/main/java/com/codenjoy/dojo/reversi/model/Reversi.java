@@ -26,6 +26,7 @@ package com.codenjoy.dojo.reversi.model;
 import com.codenjoy.dojo.reversi.model.items.Break;
 import com.codenjoy.dojo.reversi.model.items.Chip;
 import com.codenjoy.dojo.reversi.services.Events;
+import com.codenjoy.dojo.reversi.services.GameSettings;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.multiplayer.MultiplayerType;
@@ -48,8 +49,10 @@ public class Reversi implements Field {
     private Level level;
     private Dice dice;
     private boolean current;
+    private GameSettings settings;
 
-    public Reversi(Level level, Dice dice) {
+    public Reversi(Level level, Dice dice, GameSettings settings) {
+        this.settings = settings;
         flipper = new Flipper(this);
         this.level = level;
         this.dice = dice;
@@ -147,9 +150,9 @@ public class Reversi implements Field {
             blackPlayer().event(Events.WIN());
         } else if (countBlack < countWhite) {
             whitePlayer().event(Events.WIN());
-            blackPlayer().event(Events.LOOSE());
+            blackPlayer().event(Events.LOSE());
         } else if (countBlack > countWhite) {
-            whitePlayer().event(Events.LOOSE());
+            whitePlayer().event(Events.LOSE());
             blackPlayer().event(Events.WIN());
         }
     }
@@ -271,8 +274,13 @@ public class Reversi implements Field {
     }
 
     @Override
+    public GameSettings settings() {
+        return settings;
+    }
+
+    @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Reversi.this.size;
 
             @Override
@@ -281,7 +289,7 @@ public class Reversi implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>(){{
                     addAll(Reversi.this.chips);
                     addAll(Reversi.this.breaks);

@@ -30,7 +30,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
- import static com.codenjoy.dojo.services.PlayerGames.withRoom;
+import static com.codenjoy.dojo.services.PlayerGames.withRoom;
+import static java.util.stream.Collectors.toMap;
 
 @Component("saveService")
 public class SaveServiceImpl implements SaveService {
@@ -41,6 +42,7 @@ public class SaveServiceImpl implements SaveService {
     @Autowired protected PlayerService players;
     @Autowired protected Registration registration;
     @Autowired protected PlayerGames playerGames;
+    @Autowired protected TimeService time;
     @Autowired protected ConfigProperties config;
 
     @Override
@@ -49,34 +51,40 @@ public class SaveServiceImpl implements SaveService {
     }
 
     private long saveAll(List<PlayerGame> playerGames) {
-        long now = System.currentTimeMillis();
-        for (PlayerGame playerGame : playerGames) {
-            saveGame(playerGame, now);
-        }
+        long now = time.now();
+        saver.saveGames(playerGames, now);
         return now;
     }
 
     @Override
-    public long saveAll(String roomName) {
-        return saveAll(playerGames.getAll(withRoom(roomName)));
+    public long saveAll(String room) {
+        return saveAll(playerGames.getAll(withRoom(room)));
     }
 
     @Override
     public void loadAll() {
-        for (String id : saver.getSavedList()) {
-            load(id);
-        }
+        loadAll(saver.loadAll(saver.getSavedList()));
+    }
+
+    private void loadAll(List<PlayerSave> saves) {
+        saves.forEach(this::load);
+    }
+
+    @Override
+    public void loadAll(String room) {
+        loadAll(saver.loadAll(saver.getSavedList(room)));
     }
 
     @Override
     public long save(String id) {
         PlayerGame playerGame = playerGames.get(id);
-        if (playerGame != NullPlayerGame.INSTANCE) {
-            long now = System.currentTimeMillis();
-            saveGame(playerGame, now);
-            return now;
+        if (playerGame == NullPlayerGame.INSTANCE) {
+            return -1;
         }
-        return -1;
+
+        long now = time.now();
+        saveGame(playerGame, now);
+        return now;
     }
 
     private void saveGame(PlayerGame playerGame, long time) {
@@ -87,16 +95,20 @@ public class SaveServiceImpl implements SaveService {
 
     @Override
     public boolean load(String id) {
-        PlayerSave save = saver.loadGame(id);
+        return load(saver.loadGame(id));
+    }
+
+    public boolean load(PlayerSave save) {
         if (save == PlayerSave.NULL) {
             return false;
         }
 
-        resetPlayer(id, save);
+        resetPlayer(save);
         return true;
     }
 
-    private void resetPlayer(String id, PlayerSave save) {
+    private void resetPlayer(PlayerSave save) {
+        String id = save.getId();
         if (players.contains(id)) {
             players.remove(id);
         }
@@ -104,15 +116,16 @@ public class SaveServiceImpl implements SaveService {
     }
 
     /**
-     * Метод для ручной загрузки player из save для заданной gameType / roomName.
+     * Метод для ручной загрузки player из save для заданной gameType / room.
      * Из save если он существует, грузится только callbackUrl пользователя,
      * все остальное передается с параметрами.
      * TODO я не уверен, что оно тут надо, т.к. есть вероятно другие версии этого метода
      */
     @Override
-    public void load(String id, String roomName, String gameName, String save) {
+    public void load(String id, String game, String room, String save) {
         String ip = tryGetIpFromSave(id);
-        resetPlayer(id, new PlayerSave(id, ip, roomName, gameName, 0, save));
+        PlayerSave playerSave = new PlayerSave(id, ip, game, room, 0, save);
+        resetPlayer(playerSave);
     }
 
     private String tryGetIpFromSave(String id) {
@@ -122,17 +135,34 @@ public class SaveServiceImpl implements SaveService {
 
     @Override
     public List<PlayerInfo> getSaves() {
+        List<Player> active = players.getAll();
+        List<String> savedList = saver.getSavedList();
+        return getSaves(active, savedList);
+    }
+
+    @Override
+    public List<PlayerInfo> getSaves(String room) {
+        List<Player> active = players.getAllInRoom(room);
+        List<String> savedList = saver.getSavedList(room);
+        return getSaves(active, savedList);
+    }
+
+    private List<PlayerInfo> getSaves(List<Player> active, List<String> saved) {
+        Set<String> ids = new LinkedHashSet<>(saved);
+        active.forEach(player -> ids.add(player.getId()));
+        Map<String, Registration.User> users = registration.getUsers(ids).stream()
+                .collect(toMap(user -> user.getId(), user -> user));
+
         Map<String, PlayerInfo> map = new HashMap<>();
-        for (Player player : players.getAll()) {
+        for (Player player : active) {
             PlayerInfo info = new PlayerInfo(player);
-            setDataFromRegistration(info, player.getId());
+            setDataFromRegistration(info, users, player.getId());
             setSaveFromField(info, playerGames.get(player.getId()));
 
             map.put(player.getId(), info);
         }
 
-        List<String> savedList = saver.getSavedList();
-        for (String id : savedList) {
+        for (String id : saved) {
             if (id == null) continue;
 
             boolean found = map.containsKey(id);
@@ -142,7 +172,7 @@ public class SaveServiceImpl implements SaveService {
             } else {
                 PlayerSave save = saver.loadGame(id);
                 PlayerInfo info = new PlayerInfo(save, null, null);
-                setDataFromRegistration(info, id);
+                setDataFromRegistration(info, users, id);
 
                 map.put(id, info);
             }
@@ -154,12 +184,16 @@ public class SaveServiceImpl implements SaveService {
         return result;
     }
 
-    private void setDataFromRegistration(PlayerInfo info, String name) {
-        registration.getUserById(name)
-                .ifPresent((user) -> {
-                    info.setCode(user.getCode());
-                    info.setReadableName(user.getReadableName());
-                });
+    private void setDataFromRegistration(PlayerInfo info,
+                                         Map<String, Registration.User> users,
+                                         String id)
+    {
+        Registration.User user = users.get(id);
+        if (user != null) {
+            info.setCode(user.getCode());
+            info.setReadableName(user.getReadableName());
+            info.setEmail(user.getEmail());
+        }
     }
 
     void setSaveFromField(PlayerInfo info, PlayerGame playerGame) {
@@ -177,6 +211,13 @@ public class SaveServiceImpl implements SaveService {
     @Override
     public void removeAllSaves() {
         for (String id : saver.getSavedList()) {
+            saver.delete(id);
+        }
+    }
+
+    @Override
+    public void removeAllSaves(String room) {
+        for (String id : saver.getSavedList(room)) {
             saver.delete(id);
         }
     }

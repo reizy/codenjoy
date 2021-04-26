@@ -24,16 +24,22 @@ package com.codenjoy.dojo.minesweeper.model;
 
 
 import com.codenjoy.dojo.minesweeper.services.Events;
+import com.codenjoy.dojo.minesweeper.services.GameSettings;
 import com.codenjoy.dojo.services.Direction;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.QDirection;
 import com.codenjoy.dojo.services.printer.BoardReader;
 import com.codenjoy.dojo.services.settings.Parameter;
 
+import javax.swing.text.html.parser.Element;
 import java.util.*;
+
+import static com.codenjoy.dojo.minesweeper.services.GameSettings.Keys.*;
 
 public class Minesweeper implements Field {
 
+    private Parameter<Integer> detectorCharge;
+    private Parameter<Integer> minesOnBoard;
     private List<Point> cells;
     private List<Mine> mines;
     private List<Mine> removedMines;
@@ -41,27 +47,24 @@ public class Minesweeper implements Field {
     private MinesGenerator minesGenerator;
     private int maxScore;
     private int score;
-    private List<Wall> walls = new LinkedList<>();
-
-    private Parameter<Integer> size;  // TODO это пооубирать отсюда, если изменяются настройки, надо пересобрать все игры
-    private Parameter<Integer> detectorCharge;
-    private Parameter<Integer> minesCount;
-
+    private List<Wall> walls;
     private List<Flag> flags;
     private Map<Point, Integer> walkAt;
-    private Integer currentSize;
+    private int currentSize;
     private Player player;
 
-    public Minesweeper(Parameter<Integer> size, Parameter<Integer> minesCount, Parameter<Integer> detectorCharge,
-                       MinesGenerator minesGenerator) {
-        this.size = size;
+    private GameSettings settings;
+
+    public Minesweeper(MinesGenerator minesGenerator, GameSettings settings) {
+        this.settings = settings;
         this.minesGenerator = minesGenerator;
-        this.detectorCharge = detectorCharge;
-        this.minesCount = minesCount;
+        minesOnBoard = settings.integerValue(MINES_ON_BOARD);
+        detectorCharge = settings.integerValue(DETECTOR_CHARGE);
         buildWalls();
     }
 
     private void buildWalls() {
+        walls = new LinkedList<>();
         for (int i = 0; i < size(); i++) {
             walls.add(new Wall(0, i));
             walls.add(new Wall(size() - 1, i));
@@ -72,23 +75,23 @@ public class Minesweeper implements Field {
     }
 
     private void validate() {
-        if (size.getValue() < 5) {
-            size.update(5);
+        if (size() < 5) {
+            settings.integer(BOARD_SIZE, 5);
         }
 
-        while (minesCount.getValue() > ((size.getValue() - 1) * (size.getValue() - 1) - 1)) {
-            minesCount.update(minesCount.getValue() / 2);
+        while (minesOnBoard.getValue() > ((size() - 1) * (size() - 1) - 1)) {
+            minesOnBoard.update(minesOnBoard.getValue() / 2);
         }
 
-        if (detectorCharge.getValue() < minesCount.getValue()) {
-            detectorCharge.update(minesCount.getValue());
+        if (detectorCharge.getValue() < minesOnBoard.getValue()) {
+            detectorCharge.update(minesOnBoard.getValue());
         }
     }
     
     private List<Point> initializeBoardCells() {
         List<Point> result = new ArrayList<>();
-        for (int x = 1; x < size.getValue() - 1; x++) {
-            for (int y = 1; y < size.getValue() - 1; y++) {
+        for (int x = 1; x < size() - 1; x++) {
+            for (int y = 1; y < size() - 1; y++) {
                 result.add(new Cell(x, y, this));
             }
         }
@@ -100,7 +103,7 @@ public class Minesweeper implements Field {
         List<Point> result = new LinkedList<>();
         for (Point cell : getCells()) {
             boolean isSapper = cell.equals(sapper());
-            boolean isBoard = cell.getX() == 0 || cell.getY() == 0 || cell.getX() == size.getValue() - 1 || cell.getY() == size.getValue() - 1;  // TODO test me
+            boolean isBoard = cell.getX() == 0 || cell.getY() == 0 || cell.getX() == size() - 1 || cell.getY() == size() - 1;  // TODO test me
             boolean isMine = isMine(cell);
             if (!isSapper && !isMine && !isBoard) {
                 result.add(cell);
@@ -116,7 +119,7 @@ public class Minesweeper implements Field {
 
     @Override
     public int size() {
-        return size.getValue();
+        return settings.integer(BOARD_SIZE);
     }
 
     @Override
@@ -148,7 +151,7 @@ public class Minesweeper implements Field {
 
     private boolean moveSapperAndFillFreeCell(Direction direction) {
         walkAt.put(sapper().copy(), getMinesNearSapper());
-        sapper().change(direction);
+        sapper().move(direction);
 
         boolean wasHere = walkAt.containsKey(sapper());
         return !wasHere;
@@ -198,14 +201,14 @@ public class Minesweeper implements Field {
     public int minesNear(Point pt) {
         Integer count = walkAt.get(pt);
         if (count == null) {
-            return -1;
+            return Elements.NONE.value;
         }
         return count;
     }
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Minesweeper.this.size();
 
             @Override
@@ -214,8 +217,8 @@ public class Minesweeper implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
-                return new LinkedList<Point>() {{
+            public Iterable<? extends Point> elements(Player player) {
+                return new LinkedList<>() {{
                     add(Minesweeper.this.sapper());
                     addAll(Minesweeper.this.getMines());
                     addAll(Minesweeper.this.removedMines);
@@ -239,8 +242,8 @@ public class Minesweeper implements Field {
         score = 0;
         cells = initializeBoardCells();
         player.newHero(this);
-        sapper().iWantToHaveMineDetectorWithChargeNumber(detectorCharge.getValue());
-        mines = minesGenerator.get(minesCount.getValue(), this);
+        sapper().charge(detectorCharge.getValue());
+        mines = minesGenerator.get(minesOnBoard.getValue(), this);
         removedMines = new LinkedList<>();
         tick();
     }
@@ -301,15 +304,12 @@ public class Minesweeper implements Field {
                 return;
             }
 
-            sapper().tryToUseDetector(new DetectorAction() {
-                @Override
-                public void used() {
-                    flags.add(new Flag(result));
-                    if (getMines().contains(result)) {
-                        removeMine(result);
-                    } else {
-                        player.event(Events.FORGET_CHARGE);
-                    }
+            sapper().tryToUseDetector(() -> {
+                flags.add(new Flag(result));
+                if (getMines().contains(result)) {
+                    removeMine(result);
+                } else {
+                    player.event(Events.FORGET_CHARGE);
                 }
             });
 
@@ -365,8 +365,8 @@ public class Minesweeper implements Field {
 
     @Override
     public void tick() {
-        if (currentSize != size.getValue()) {  // TODO потестить это
-            currentSize = size.getValue();
+        if (currentSize != size()) {  // TODO потестить это
+            currentSize = size();
             newGame(player);
             return;
         }
@@ -380,5 +380,10 @@ public class Minesweeper implements Field {
 
     public List<Flag> getFlags() {
         return flags;
+    }
+
+    @Override
+    public GameSettings settings() {
+        return settings;
     }
 }

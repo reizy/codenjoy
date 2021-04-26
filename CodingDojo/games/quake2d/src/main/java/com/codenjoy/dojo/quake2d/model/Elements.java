@@ -24,10 +24,6 @@ package com.codenjoy.dojo.quake2d.model;
 
 import com.codenjoy.dojo.services.printer.CharElements;
 
-/**
- * Тут указана легенда всех возможных объектов на поле и их состояний.
- * Важно помнить, что для каждой енумной константы надо создать спрайт в папке \src\main\webapp\resources\sprite.
- */
 public enum Elements implements CharElements {
 
     NONE(' '),             // например это пустое место, куда можно перейти герою
@@ -39,7 +35,7 @@ public enum Elements implements CharElements {
     DEAD_HERO('X'),        // а это временное явление - трупик моего героя, которое пропадет в следующем такте
     SUPER_DEFENCE('#'),    // доп защита
     HEALTH_PACKAGE('+'),   // доп защита
-    SUPER_ATTACK('~'),     // доп атака
+    SUPER_WEAPON('~'),     // доп атака
     ROBOT('!');            // робот
 //    GOLD('$'),           // это то, за чем будет охота
 //    BOMB('x');           // а это бомба, на которой можно подорваться

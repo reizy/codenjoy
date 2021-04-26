@@ -23,8 +23,14 @@ package com.codenjoy.dojo.services;
  */
 
 
+import com.codenjoy.dojo.client.local.LocalGameRunner;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.stream.Stream;
+
+import static com.codenjoy.dojo.services.Direction.*;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
 import static com.codenjoy.dojo.services.PointImpl.*;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -163,6 +169,7 @@ public class PointImplTest {
     public void shouldEqualsAndHashCode() {
         Point pt = pt(10, 15);
 
+        assertTrue(pt.equals(pt));
         assertTrue(pt.equals(pt(10, 15)));
         assertFalse(pt.equals(pt(10 + 1, 15)));
         assertFalse(pt.equals(pt(10, 15 + 1)));
@@ -185,6 +192,64 @@ public class PointImplTest {
         pt.move(40, 43);
 
         assertEquals("[40,43]", pt.toString());
+    }
+
+    @Test
+    public void shouldMoveDirection() {
+        Point pt = pt(10, 15);
+
+        pt.move(UP);
+
+        assertEquals("[10,16]", pt.toString());
+
+        pt.move(DOWN);
+
+        assertEquals("[10,15]", pt.toString());
+
+        pt.move(Direction.LEFT);
+
+        assertEquals("[9,15]", pt.toString());
+
+        pt.move(RIGHT);
+
+        assertEquals("[10,15]", pt.toString());
+    }
+
+    @Test
+    public void shouldMoveQDirection() {
+        Point pt = pt(10, 15);
+
+        pt.move(QDirection.UP);
+
+        assertEquals("[10,16]", pt.toString());
+
+        pt.move(QDirection.DOWN);
+
+        assertEquals("[10,15]", pt.toString());
+
+        pt.move(QDirection.LEFT);
+
+        assertEquals("[9,15]", pt.toString());
+
+        pt.move(QDirection.RIGHT);
+
+        assertEquals("[10,15]", pt.toString());
+
+        pt.move(QDirection.RIGHT_UP);
+
+        assertEquals("[11,16]", pt.toString());
+
+        pt.move(QDirection.LEFT_DOWN);
+
+        assertEquals("[10,15]", pt.toString());
+
+        pt.move(QDirection.RIGHT_DOWN);
+
+        assertEquals("[11,14]", pt.toString());
+
+        pt.move(QDirection.LEFT_UP);
+
+        assertEquals("[10,15]", pt.toString());
     }
 
     @Test
@@ -221,10 +286,10 @@ public class PointImplTest {
     }
 
     @Test
-    public void shouldChange() {
+    public void shouldMoveDelta() {
         Point pt = pt(10, 15);
 
-        pt.change(pt(12, -23));
+        pt.moveDelta(pt(12, -23));
 
         assertEquals("[22,-8]", pt.toString());
     }
@@ -271,4 +336,30 @@ public class PointImplTest {
         verify(dice, times(2)).next(size);
         assertEquals("[100,101]", pt.toString());
     }
+
+    @Test
+    public void equalsPerformanceTest() {
+        Dice dice = LocalGameRunner.getDice("435874345435874365843564398", 100, 20000);
+        LocalGameRunner.printConversions = false;
+        LocalGameRunner.printDice = false;
+
+        int size = 1000;
+        int count = 10000;
+        List<Point> points = Stream.generate(() -> random(dice, size))
+                .limit(count).collect(toList());
+
+        for (int i = 0; i < count; i++) {
+            points.contains(pt(size / 2, size / 2));
+        }
+    }
+
+    @Test
+    public void shouldDirectionTo() {
+        assertEquals(RIGHT, pt(1, 1).direction(pt(2, 1)));
+        assertEquals(LEFT, pt(1, 1).direction(pt(0, 1)));
+        assertEquals(UP, pt(1, 1).direction(pt(1, 2)));
+        assertEquals(DOWN, pt(1, 1).direction(pt(1, 0)));
+        assertEquals(null, pt(1, 1).direction(pt(0, 0)));
+    }
+
 }

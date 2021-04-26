@@ -27,6 +27,7 @@ import com.codenjoy.dojo.football.model.elements.Goal;
 import com.codenjoy.dojo.football.model.elements.Hero;
 import com.codenjoy.dojo.football.model.elements.Wall;
 import com.codenjoy.dojo.football.services.Events;
+import com.codenjoy.dojo.football.services.GameSettings;
 import com.codenjoy.dojo.services.BoardUtils;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
@@ -35,8 +36,8 @@ import com.codenjoy.dojo.services.printer.BoardReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
-import static com.codenjoy.dojo.services.BoardUtils.NO_SPACE;
 import static com.codenjoy.dojo.services.PointImpl.pt;
 
 public class Football implements Field {
@@ -45,16 +46,18 @@ public class Football implements Field {
     private List<Goal> topGoals;
     private List<Goal> bottomGoals;
     private List<Player> players;
+    private List<Ball> balls;
 
     private final int size;
     private Dice dice;
 
-    private List<Ball> balls;
+    private GameSettings settings;
 
-    public Football(Level level, Dice dice) {
+    public Football(Level level, Dice dice, GameSettings settings) {
         this.dice = dice;
         walls = level.getWalls();
         size = level.getSize();
+        this.settings = settings;
         players = new LinkedList<>();
         balls = level.getBalls();
         topGoals = level.getTopGoals();
@@ -128,16 +131,9 @@ public class Football implements Field {
     }
 
     @Override
-    public Point getFreeRandomOnMyHalf(Player player) {
-        Point result = BoardUtils.getFreeRandom(size, dice,
-                pt -> isFreeAndOnMyHalf(pt, player));
-
-        if (!result.equals(NO_SPACE)) {
-            return result;
-        }
-
-        return BoardUtils.getFreeRandom(size, dice,
-                pt -> isFree(pt));
+    public Optional<Point> freeRandom(Player player) {
+        return BoardUtils.freeRandom(size, dice, pt -> isFreeAndOnMyHalf(pt, player))
+                .or(() -> BoardUtils.freeRandom(size, dice, pt -> isFree(pt)));
     }
 
     private boolean isFreeAndOnMyHalf(Point pt, Player player) {
@@ -217,7 +213,7 @@ public class Football implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Football.this.size;
 
             @Override
@@ -226,7 +222,7 @@ public class Football implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>() {{
                     addAll(Football.this.getWalls());
                     addAll(Football.this.getHeroes());
@@ -269,5 +265,10 @@ public class Football implements Field {
     public boolean isWall(int x, int y) {
         Point pt = pt(x, y);
         return x > size - 1 || x < 0 || y < 0 || y > size - 1 || getWalls().contains(pt);
+    }
+
+    @Override
+    public GameSettings settings() {
+        return settings;
     }
 }

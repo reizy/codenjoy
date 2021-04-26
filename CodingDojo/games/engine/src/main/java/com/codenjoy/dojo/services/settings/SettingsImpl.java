@@ -23,10 +23,16 @@ package com.codenjoy.dojo.services.settings;
  */
 
 
-import java.util.*;
+import com.codenjoy.dojo.services.nullobj.NullParameter;
+import lombok.ToString;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import static java.util.stream.Collectors.toList;
 
+@ToString
 public class SettingsImpl implements Settings {
 
     private Map<String, Parameter<?>> map = new LinkedHashMap<>();
@@ -72,7 +78,7 @@ public class SettingsImpl implements Settings {
         if (map.containsKey(name)) {
             return map.get(name);
         }
-        throw new IllegalArgumentException(String.format("Parameter with name '%s' not found", name));
+        return NullParameter.INSTANCE.get();
     }
 
     @Override
@@ -120,5 +126,13 @@ public class SettingsImpl implements Settings {
     @Override
     public void reset() {
         map.values().forEach(parameter -> parameter.reset());
+    }
+
+    public String toStringShort() {
+        return getParameters().stream()
+                .map(parameter -> String.format("%s=%s",
+                        parameter.getName(), parameter.getValue()))
+                .collect(toList())
+                .toString();
     }
 }

@@ -27,25 +27,27 @@ import com.codenjoy.dojo.battlecity.model.items.Bullet;
 import com.codenjoy.dojo.battlecity.model.items.Prize;
 import com.codenjoy.dojo.battlecity.model.items.Prizes;
 import com.codenjoy.dojo.battlecity.model.items.Tree;
+import com.codenjoy.dojo.battlecity.services.Events;
+import com.codenjoy.dojo.battlecity.services.GameSettings;
 import com.codenjoy.dojo.services.*;
-import com.codenjoy.dojo.services.multiplayer.PlayerHero;
+import com.codenjoy.dojo.services.round.RoundPlayerHero;
+import com.codenjoy.dojo.services.round.Timer;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.codenjoy.dojo.battlecity.model.Elements.PRIZE_BREAKING_WALLS;
+import static com.codenjoy.dojo.battlecity.model.Elements.PRIZE_WALKING_ON_WATER;
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.*;
 import static com.codenjoy.dojo.services.StateUtils.filterOne;
 
-public class Tank extends PlayerHero<Field> implements State<Elements, Player> {
+public class Tank extends RoundPlayerHero<Field> implements State<Elements, Player> {
 
-    public static final int MAX = 100;
-
-    protected Dice dice;
-
-    private boolean alive;
     protected Direction direction;
     protected boolean moving;
     private boolean fire;
+    private int score;
 
     private Gun gun;
     private Sliding sliding;
@@ -53,61 +55,65 @@ public class Tank extends PlayerHero<Field> implements State<Elements, Player> {
     private List<Bullet> bullets;
     private Prizes prizes;
 
-    public Tank(Point pt, Direction direction, Dice dice, int ticksPerShoot) {
+    private Timer onWater;
+
+    public Tank(Point pt, Direction direction) {
         super(pt);
+        score = 0;
         this.direction = direction;
-        this.dice = dice;
-        gun = new Gun(ticksPerShoot);
-        reset();
+        bullets = new LinkedList<>();
+        prizes = new Prizes();
+    }
+
+    @Override
+    public GameSettings settings() {
+        return (GameSettings) field.settings();
     }
 
     @Override
     public void up() {
-        if (alive) {
-            direction = Direction.UP;
-            moving = true;
-        }
+        if (!isActiveAndAlive()) return;
+
+        direction = Direction.UP;
+        moving = true;
     }
 
     @Override
     public void down() {
-        if (alive) {
-            direction = Direction.DOWN;
-            moving = true;
-        }
+        if (!isActiveAndAlive()) return;
+
+        direction = Direction.DOWN;
+        moving = true;
     }
 
     @Override
     public void right() {
-        if (alive) {
-            direction = Direction.RIGHT;
-            moving = true;
-        }
+        if (!isActiveAndAlive()) return;
+
+        direction = Direction.RIGHT;
+        moving = true;
     }
 
     @Override
     public void left() {
-        if (alive) {
-            direction = Direction.LEFT;
-            moving = true;
-        }
+        if (!isActiveAndAlive()) return;
+
+        direction = Direction.LEFT;
+        moving = true;
     }
 
     public Direction getDirection() {
         return direction;
     }
 
-    // TODO подумать как устранить дублирование с MovingObject
     public void move() {
-        if (!moving && !field.isIce(this)) {
-            return;
+        moving = moving || field.isIce(this);
+        if (!moving) return;
+
+        if (sliding.active(this)) {
+            direction = sliding.affect(direction);
         }
-        Direction updated = sliding.act(this);
-        if (updated == null) {
-            // TODO исследовать иногда тут NPE что ломает всю игру
-        } else {
-            direction = updated;
-        }
+
         moving(direction.change(this));
     }
 
@@ -122,9 +128,9 @@ public class Tank extends PlayerHero<Field> implements State<Elements, Player> {
 
     @Override
     public void act(int... p) {
-        if (alive) {
-            fire = true;
-        }
+        if (!isActiveAndAlive()) return;
+
+        fire = true;
     }
 
     public Collection<Bullet> getBullets() {
@@ -134,27 +140,19 @@ public class Tank extends PlayerHero<Field> implements State<Elements, Player> {
     public void init(Field field) {
         super.init(field);
 
-        sliding = new Sliding(field);
+        gun = new Gun(settings());
+        sliding = new Sliding(field, direction, settings());
 
-        int c = 0;
-        Point pt = this;
-        while (field.isBarrier(pt) && c++ < MAX) {
-            pt = PointImpl.random(dice, field.size());
-        }
-        if (c >= MAX) {
-            alive = false;
-            return;
-        }
-        move(pt);
-        alive = true;
+        reset();
+        setAlive(true);
+    }
+
+    protected int ticksPerShoot() {
+        return settings().integer(TANK_TICKS_PER_SHOOT);
     }
 
     public void kill(Bullet bullet) {
-        alive = false;
-    }
-
-    public boolean isAlive() {
-        return alive;
+        setAlive(false);
     }
 
     public void removeBullets() {
@@ -163,47 +161,84 @@ public class Tank extends PlayerHero<Field> implements State<Elements, Player> {
 
     @Override
     public void tick() {
+        // TODO добавить проверку if (!isActiveAndAlive()) return;
+
+        gunType();
+
         gun.tick();
         prizes.tick();
+
+        checkOnWater();
+    }
+
+    public void checkOnWater() {
+        if (field.isRiver(this) && !prizes.contains(PRIZE_WALKING_ON_WATER)) {
+            if (onWater == null || onWater.done()) {
+                onWater = new Timer(settings().integerValue(PENALTY_WALKING_ON_WATER));
+                onWater.start();
+            }
+            onWater.tick(() -> {});
+        } else {
+            onWater = null;
+        }
     }
 
     @Override
     public Elements state(Player player, Object... alsoAtPoint) {
-        Tree tree = filterOne(alsoAtPoint, Tree.class);
+        Elements tree = player.getHero().treeState(this, alsoAtPoint);
+        if (!isAlive()) {
+            return Elements.BANG;
+        }
+
         if (tree != null) {
             return Elements.TREE;
         }
 
-        if (isAlive()) {
-            if (player.getHero() == this) {
-                switch (direction) {
-                    case LEFT:  return Elements.TANK_LEFT;
-                    case RIGHT: return Elements.TANK_RIGHT;
-                    case UP:    return Elements.TANK_UP;
-                    case DOWN:  return Elements.TANK_DOWN;
-                    default:    throw new RuntimeException("Неправильное состояние танка!");
-                }
-            } else {
-                switch (direction) {
-                    case LEFT:  return Elements.OTHER_TANK_LEFT;
-                    case RIGHT: return Elements.OTHER_TANK_RIGHT;
-                    case UP:    return Elements.OTHER_TANK_UP;
-                    case DOWN:  return Elements.OTHER_TANK_DOWN;
-                    default:    throw new RuntimeException("Неправильное состояние танка!");
-                }
+        if (player.getHero() != this) {
+            switch (direction) {
+                case LEFT:  return Elements.OTHER_TANK_LEFT;
+                case RIGHT: return Elements.OTHER_TANK_RIGHT;
+                case UP:    return Elements.OTHER_TANK_UP;
+                case DOWN:  return Elements.OTHER_TANK_DOWN;
+                default:    throw new RuntimeException("Неправильное состояние танка!");
             }
-        } else {
-            return Elements.BANG;
         }
+
+        switch (direction) {
+            case LEFT:  return Elements.TANK_LEFT;
+            case RIGHT: return Elements.TANK_RIGHT;
+            case UP:    return Elements.TANK_UP;
+            case DOWN:  return Elements.TANK_DOWN;
+            default:    throw new RuntimeException("Неправильное состояние танка!");
+        }
+    }
+
+    public Elements treeState(Tank tank, Object[] alsoAtPoint) {
+        Tree tree = filterOne(alsoAtPoint, Tree.class);
+        if (tree == null) {
+            return null;
+        }
+
+        if (prizes.contains(Elements.PRIZE_VISIBILITY)) {
+            return null;
+        }
+
+        if (tank == this && settings().bool(SHOW_MY_TANK_UNDER_TREE)) {
+            if (tree != null) {
+                return null;
+            }
+        }
+
+        return Elements.TREE;
     }
 
     public void reset() {
         moving = false;
         fire = false;
-        alive = true;
+        setAlive(true);
         gun.reset();
-        bullets = new LinkedList<>();
-        prizes = new Prizes();
+        bullets.clear();
+        prizes.clear();
     }
 
     public void tryFire() {
@@ -229,6 +264,26 @@ public class Tank extends PlayerHero<Field> implements State<Elements, Player> {
     }
 
     public void take(Prize prize) {
+        getPlayer().event(Events.CATCH_PRIZE.apply(Integer.valueOf("" + prize.elements().ch)));
         prizes.add(prize);
+    }
+
+    private void gunType() {
+        if (prizes.contains(PRIZE_BREAKING_WALLS)) {
+            gun.machineGun();
+        }
+    }
+
+    public boolean canWalkOnWater() {
+        return prizes.contains(PRIZE_WALKING_ON_WATER)
+                || (onWater != null && onWater.done());
+    }
+
+    public int scores() {
+        return score;
+    }
+
+    public void addScore(int added) {
+        score = Math.max(0, score + added);
     }
 }

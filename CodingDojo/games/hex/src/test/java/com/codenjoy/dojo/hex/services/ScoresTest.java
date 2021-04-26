@@ -24,27 +24,22 @@ package com.codenjoy.dojo.hex.services;
 
 
 import com.codenjoy.dojo.services.PlayerScores;
-import com.codenjoy.dojo.services.settings.Settings;
-import com.codenjoy.dojo.services.settings.SettingsImpl;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.codenjoy.dojo.hex.services.GameSettings.Keys.LOSE_PENALTY;
+import static com.codenjoy.dojo.hex.services.GameSettings.Keys.WIN_SCORE;
 import static org.junit.Assert.assertEquals;
 
-/**
- * User: sanja
- * Date: 05.06.13
- * Time: 20:35
- */
 public class ScoresTest {
     private PlayerScores scores;
 
-    private Settings settings;
-    private Integer loosePenalty;
+    private GameSettings settings;
+    private Integer losePenalty;
     private Integer winScore;
 
-    public void loose(int count) {
-        scores.event(new Event(Event.EventEnum.LOOSE, count));
+    public void lose(int count) {
+        scores.event(new Event(Event.EventEnum.LOSE, count));
     }
 
     public void win(int count) {
@@ -53,37 +48,37 @@ public class ScoresTest {
 
     @Before
     public void setup() {
-        settings = new SettingsImpl();
+        settings = new GameSettings();
         scores = new Scores(0, settings);
-
-        loosePenalty = settings.getParameter("Loose penalty").type(Integer.class).getValue();
-        winScore = settings.getParameter("Win score").type(Integer.class).getValue();
     }
 
     @Test
     public void shouldCollectScores() {
         scores = new Scores(140, settings);
 
-        win(1);  //+30
-        win(1);  //+30
-        win(1);  //+30
-        win(2);  //+60
+        win(1);
+        win(1);
+        win(1);
+        win(2);
 
-        loose(1); //-100
+        lose(1);
 
-        assertEquals(140 + 5 * winScore - loosePenalty, scores.getScore());
+        assertEquals(140
+                + 5 * settings.integer(WIN_SCORE)
+                - settings.integer(LOSE_PENALTY),
+                scores.getScore());
     }
 
     @Test
     public void shouldStillZeroAfterDead() {
-        loose(1);    //-100
+        lose(1);
 
         assertEquals(0, scores.getScore());
     }
 
     @Test
     public void shouldClearScore() {
-        win(1);    // +30
+        win(1);
 
         scores.clear();
 

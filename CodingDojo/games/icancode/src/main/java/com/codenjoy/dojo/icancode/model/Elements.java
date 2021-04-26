@@ -25,9 +25,8 @@ package com.codenjoy.dojo.icancode.model;
 
 import com.codenjoy.dojo.services.printer.CharElements;
 
-import java.util.Arrays;
-import java.util.Dictionary;
-import java.util.Hashtable;
+import java.lang.reflect.Array;
+import java.util.*;
 
 import static com.codenjoy.dojo.icancode.model.Elements.Layers.*;
 
@@ -97,6 +96,14 @@ public enum Elements implements CharElements {
     MALE_ZOMBIE(LAYER2, '♂'),
     ZOMBIE_DIE(LAYER2, '✝'),
 
+    // perks
+    UNSTOPPABLE_LASER_PERK(LAYER1, 'l'),
+    DEATH_RAY_PERK(LAYER1, 'r'),
+    UNLIMITED_FIRE_PERK(LAYER1, 'f'),
+    FIRE_PERK(LAYER1, 'a'),
+    JUMP_PERK(LAYER1, 'j'),
+    MOVE_BOXES_PERK(LAYER1, 'm'),
+
     // system elements, don't touch it
     FOG(LAYER1, 'F'),
     BACKGROUND(LAYER2, 'G');
@@ -107,7 +114,11 @@ public enum Elements implements CharElements {
         public final static int LAYER3 = 2;
     }
 
-    private static volatile Dictionary<String, Elements> elementsMap;
+    // optimized for performance
+    private final static Map<Character, Elements> elements = new HashMap<>(){{
+        Arrays.stream(Elements.values())
+                .forEach(el -> put(el.ch, el));
+    }};
 
     private final char ch;
     private final int layer;
@@ -127,12 +138,23 @@ public enum Elements implements CharElements {
         return String.valueOf(ch);
     }
 
-    public static Elements valueOf(char ch) {
-        if (elementsMap == null) {
-            makeElementsMap();
-        }
+    public Elements other() {
+        switch (this) {
+            case ROBO : return ROBO_OTHER;
+            case ROBO_FALLING : return ROBO_OTHER_FALLING;
+            case ROBO_FLYING : return ROBO_OTHER_FLYING;
+            case ROBO_LASER : return ROBO_OTHER_LASER;
 
-        Elements result = elementsMap.get(String.valueOf(ch));
+            case ROBO_OTHER : return ROBO;
+            case ROBO_OTHER_FALLING : return ROBO_FALLING;
+            case ROBO_OTHER_FLYING : return ROBO_FLYING;
+            case ROBO_OTHER_LASER : return ROBO_LASER;
+        }
+        throw new IllegalArgumentException("Bad hero state: " + this);
+    }
+
+    public static Elements valueOf(char ch) {
+        Elements result = elements.get(ch);
 
         if (result == null) {
             throw new IllegalArgumentException("No such element for '" + ch + "'");
@@ -141,12 +163,14 @@ public enum Elements implements CharElements {
         return result;
     }
 
-    private static void makeElementsMap() {
-        elementsMap = new Hashtable<>();
-
-        for (Elements el : Elements.values()) {
-            elementsMap.put(el.toString(), el);
-        }
+    public static List<Elements> perks() {
+        return Arrays.asList(
+                UNSTOPPABLE_LASER_PERK,
+                DEATH_RAY_PERK,
+                UNLIMITED_FIRE_PERK,
+                FIRE_PERK,
+                JUMP_PERK,
+                MOVE_BOXES_PERK);
     }
 
     public int getLayer() {

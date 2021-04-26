@@ -24,28 +24,25 @@ package com.codenjoy.dojo.icancode.client
 
 
 import com.codenjoy.dojo.services.Dice
+import com.codenjoy.dojo.services.Direction
 import com.codenjoy.dojo.services.RandomDice
 
 /**
  * Your AI
  */
-class YourKotlinSolver : AbstractSolver {
-
-    constructor(dice: Dice) : super(dice) {
-        this.dice = dice;
-    }
+class YourKotlinSolver(dice: Dice?) : AbstractSolver(dice) {
 
     override fun whatToDo(board: Board): Command {
         with(board) {
-            if (!board.isMeAlive) return Command.doNothing()
+            if (!isMeAlive) return Command.doNothing()
 
-            var goals = board.gold
+            var goals = gold
             if (goals.isEmpty()) {
-                goals = board.exits
+                goals = exits
             }
 
             // TODO your code here
-            return Command.jump()
+            return Command.go(Direction.RIGHT)
         }
     }
 }

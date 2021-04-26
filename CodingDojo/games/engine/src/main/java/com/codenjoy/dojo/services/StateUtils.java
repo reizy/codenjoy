@@ -22,6 +22,9 @@ package com.codenjoy.dojo.services;
  * #L%
  */
 
+import com.codenjoy.dojo.services.multiplayer.GamePlayer;
+import com.codenjoy.dojo.services.multiplayer.PlayerHero;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,18 +32,26 @@ import static java.util.stream.Collectors.toList;
 
 // TODO перенести в utils пакет
 public class StateUtils {
-	public static <T extends Point> List<T> filter(Object[] array, Class<T> clazz) {
+
+	public static <T> List<T> filter(Object[] array, Class<T> clazz) {
 		return (List) Arrays.stream(array)
 				.filter(it -> it != null)
-				.filter(it -> it.getClass().equals(clazz))
+				.filter(it -> clazz.isAssignableFrom(it.getClass()))
 				.collect(toList());
 	}
 
-	public static <T extends Point> T filterOne(Object[] array, Class<T> clazz) {
+	public static <T> T filterOne(Object[] array, Class<T> clazz) {
 		return (T) Arrays.stream(array)
 				.filter(it -> it != null)
-				.filter(it -> it.getClass().equals(clazz))
+				.filter(it -> clazz.isAssignableFrom(it.getClass()))
 				.findFirst()
 				.orElse(null);
+	}
+
+	public static boolean itsMe(GamePlayer player, PlayerHero hero,
+								Object[] alsoAtPoint, State item)
+	{
+		return player.getHero() == hero
+				|| Arrays.asList(alsoAtPoint).contains(item);
 	}
 }

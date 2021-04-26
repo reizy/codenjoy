@@ -10,12 +10,12 @@ package com.codenjoy.dojo.loderunner.services;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -24,32 +24,32 @@ package com.codenjoy.dojo.loderunner.services;
 
 
 import com.codenjoy.dojo.services.PlayerScores;
-import com.codenjoy.dojo.services.settings.Parameter;
-import com.codenjoy.dojo.services.settings.Settings;
+
+import static com.codenjoy.dojo.loderunner.services.GameSettings.Keys.*;
 
 public class Scores implements PlayerScores {
 
-    private final Parameter<Integer> killHeroPenalty;
-    private final Parameter<Integer> killEnemyScore;
-    private final Parameter<Integer> getGoldScore;
-    private final Parameter<Integer> forNextGoldIncScore;
-
     private volatile int score;
-    private volatile int count;
+    private GameSettings settings;
+    private volatile int countRed;
+    private volatile int countGreen;
+    private volatile int countYellow;
 
-    public Scores(int startScore, Settings settings) {
+    public Scores(int startScore, GameSettings settings) {
         this.score = startScore;
-
-        killHeroPenalty = settings.addEditBox("Kill hero penalty").type(Integer.class).def(0);
-        killEnemyScore = settings.addEditBox("Kill enemy score").type(Integer.class).def(10);
-        getGoldScore = settings.addEditBox("Get gold score").type(Integer.class).def(1);
-        forNextGoldIncScore = settings.addEditBox("Get next gold increment score").type(Integer.class).def(1);
+        this.settings = settings;
     }
 
     @Override
     public int clear() {
-        count = 0;
+        clearSeries();
         return score = 0;
+    }
+
+    private void clearSeries() {
+        countRed = 0;
+        countGreen = 0;
+        countYellow = 0;
     }
 
     @Override
@@ -59,14 +59,23 @@ public class Scores implements PlayerScores {
 
     @Override
     public void event(Object event) {
-        if (event.equals(Events.GET_GOLD)) {
-            score += getGoldScore.getValue() + count;
-            count += forNextGoldIncScore.getValue();
+        if (event.equals(Events.GET_YELLOW_GOLD)) {
+            score += settings.integer(GOLD_SCORE_YELLOW) + countYellow;
+            countYellow += settings.integer(GOLD_SCORE_YELLOW_INCREMENT);
+        } else if (event.equals(Events.GET_GREEN_GOLD)) {
+            score += settings.integer(GOLD_SCORE_GREEN) + countGreen;
+            countGreen += settings.integer(GOLD_SCORE_GREEN_INCREMENT);
+        } else if (event.equals(Events.GET_RED_GOLD)) {
+            score += settings.integer(GOLD_SCORE_RED) + countRed;
+            countRed += settings.integer(GOLD_SCORE_RED_INCREMENT);
         } else if (event.equals(Events.KILL_ENEMY)) {
-            score += killEnemyScore.getValue();
+            score += settings.integer(KILL_ENEMY_SCORE);
         } else if (event.equals(Events.KILL_HERO)) {
-            count = 0;
-            score -= killHeroPenalty.getValue();
+            clearSeries();
+            score -= settings.integer(KILL_HERO_PENALTY);
+        } else if (event.equals(Events.SUICIDE)) {
+            clearSeries();
+            score -= settings.integer(SUICIDE_PENALTY);
         }
         score = Math.max(0, score);
     }
@@ -74,5 +83,15 @@ public class Scores implements PlayerScores {
     @Override
     public void update(Object score) {
         this.score = Integer.valueOf(score.toString());
+    }
+
+    @Override
+    public String toString() {
+        return "Scores{" +
+                "score=" + score +
+                ", red=" + countRed +
+                ", green=" + countGreen +
+                ", yellow=" + countYellow +
+                '}';
     }
 }

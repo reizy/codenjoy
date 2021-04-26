@@ -23,10 +23,10 @@ package com.codenjoy.dojo.pong.model;
  */
 
 import com.codenjoy.dojo.pong.services.Events;
+import com.codenjoy.dojo.pong.services.GameSettings;
 import com.codenjoy.dojo.services.*;
 import com.codenjoy.dojo.services.printer.BoardReader;
 
-import java.util.LinkedList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -45,9 +45,12 @@ public class Pong implements Field {
     private Ball ball;
     private List<Wall> walls;
 
-    public Pong(Level level, Dice dice) {
+    private GameSettings settings;
+
+    public Pong(Level level, Dice dice, GameSettings settings) {
         this.dice = dice;
         size = level.getSize();
+        this.settings = settings;
         leftBound = 0 + BOUND_DISTANCE;
         rightBound = size - 1 - BOUND_DISTANCE;
         ball = level.getBall();
@@ -73,7 +76,7 @@ public class Pong implements Field {
 
         for (Player player : players) {
             if (playerPassedBall(player)) {
-                player.event(Events.LOOSE);
+                player.event(Events.LOSE);
                 allExcept(player).forEach(p -> p.event(Events.WIN));
                 resetBall();
                 return;
@@ -148,7 +151,7 @@ public class Pong implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Pong.this.size;
 
             @Override
@@ -157,7 +160,7 @@ public class Pong implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>() {{
                     addAll(getPanels());
                     add(ball);
@@ -199,20 +202,8 @@ public class Pong implements Field {
         }};
     }
 
+    @Override
+    public GameSettings settings() {
+        return settings;
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

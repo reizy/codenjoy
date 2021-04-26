@@ -27,6 +27,7 @@ import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.printer.BoardReader;
 import com.codenjoy.dojo.sudoku.model.level.Level;
 import com.codenjoy.dojo.sudoku.services.Events;
+import com.codenjoy.dojo.sudoku.services.GameSettings;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -45,10 +46,13 @@ public class Sudoku implements Field {
     private boolean gameOver;
     private boolean win;
 
-    public Sudoku(Level level, int levelNumber) {
+    private GameSettings settings;
+
+    public Sudoku(Level level, int levelNumber, GameSettings settings) {
         cells = level.cells();
         walls = level.walls();
         size = level.size();
+        this.settings = settings;
         acts = new LinkedList<>();
         gameOver = false;
         this.levelNumber = levelNumber;
@@ -119,6 +123,11 @@ public class Sudoku implements Field {
         this.player = null;
     }
 
+    @Override
+    public GameSettings settings() {
+        return settings;
+    }
+
     public List<Cell> getCells() {
         List<Cell> result = new LinkedList<>();
 
@@ -145,7 +154,7 @@ public class Sudoku implements Field {
 
     @Override
     public void gameOver() {
-        player.event(Events.LOOSE);
+        player.event(Events.LOSE);
         this.gameOver = true;
     }
 
@@ -164,7 +173,7 @@ public class Sudoku implements Field {
     }
 
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Sudoku.this.size;
 
             @Override
@@ -173,7 +182,7 @@ public class Sudoku implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>(){{
                     addAll(Sudoku.this.walls);
                     addAll(Sudoku.this.cells);

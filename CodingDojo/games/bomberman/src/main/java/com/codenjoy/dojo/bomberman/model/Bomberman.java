@@ -25,17 +25,19 @@ package com.codenjoy.dojo.bomberman.model;
 
 import com.codenjoy.dojo.bomberman.model.perks.*;
 import com.codenjoy.dojo.bomberman.services.Events;
+import com.codenjoy.dojo.bomberman.services.GameSettings;
+import com.codenjoy.dojo.services.BoardUtils;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.printer.BoardReader;
-import com.codenjoy.dojo.services.round.RoundFactory;
 import com.codenjoy.dojo.services.round.RoundField;
-import com.codenjoy.dojo.services.settings.Parameter;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import java.util.*;
 
+import static com.codenjoy.dojo.bomberman.services.GameSettings.Keys.BIG_BADABOOM;
+import static com.codenjoy.dojo.bomberman.services.GameSettings.Keys.BOARD_SIZE;
 import static java.util.stream.Collectors.toList;
 
 public class Bomberman extends RoundField<Player> implements Field {
@@ -46,34 +48,27 @@ public class Bomberman extends RoundField<Player> implements Field {
     private final List<Player> players = new LinkedList<>();
 
     private final Walls walls;
-    private final Parameter<Integer> size;
     private final List<Bomb> bombs = new LinkedList<>();
     private final List<Blast> blasts = new LinkedList<>();
-    private final GameSettings settings;
     private final List<Wall> destroyedWalls = new LinkedList<>();
     private final List<Bomb> destroyedBombs = new LinkedList<>();
     private final Dice dice;
     private List<PerkOnBoard> perks = new LinkedList<>();
 
-    public Bomberman(GameSettings settings) {
-        super(RoundFactory.get(settings.getRoundSettings()),
-                Events.START_ROUND, Events.WIN_ROUND, Events.DIED);
+    private final GameSettings settings;
 
+    public Bomberman(Dice dice, GameSettings settings) {
+        super(Events.START_ROUND, Events.WIN_ROUND, Events.DIED, settings);
         this.settings = settings;
 
-        dice = settings.getDice();
-        size = settings.getBoardSize();
-        walls = settings.getWalls();
+        this.dice = dice;
+        walls = settings.getWalls(dice);
         walls.init(this);
     }
 
     @Override
     protected List<Player> players() {
         return players;
-    }
-
-    public GameSettings settings() {
-        return settings;
     }
 
     @Override
@@ -95,8 +90,18 @@ public class Bomberman extends RoundField<Player> implements Field {
     }
 
     @Override
+    public Optional<Point> freeRandom() {
+        return BoardUtils.freeRandom(size(), dice, pt -> isFree(pt));
+    }
+
+    @Override
+    public boolean isFree(Point pt) {
+        return !isBarrier(pt, !FOR_HERO);
+    }
+
+    @Override
     public int size() {
-        return size.getValue();
+        return settings.integer(BOARD_SIZE);
     }
 
     @Override
@@ -185,7 +190,7 @@ public class Bomberman extends RoundField<Player> implements Field {
         do {
             makeBlastsFromDestoryedBombs();
 
-            if (settings.isBigBadaboom().getValue()) {
+            if (settings.bool(BIG_BADABOOM)) {
 
                 // если бомбу зацепила взрывная волна и ее тоже подрываем
                 for (Bomb bomb : bombs) {
@@ -258,7 +263,9 @@ public class Bomberman extends RoundField<Player> implements Field {
         List barriers = walls.listSubtypes(Wall.class);
         barriers.addAll(heroes(ACTIVE_ALIVE));
 
-        return new BoomEngineOriginal(bomb.getOwner()).boom(barriers, size.getValue(), bomb, bomb.getPower());   // TODO move bomb inside BoomEngine
+        // TODO move bomb inside BoomEngine
+        return new BoomEngineOriginal(bomb.getOwner())
+                .boom(barriers, size(), bomb, bomb.getPower());
     }
 
     private void killAllNear(List<Blast> blasts) {
@@ -343,7 +350,7 @@ public class Bomberman extends RoundField<Player> implements Field {
 
                 // TODO может это делать на этапе, когда balsts развиднеется в removeBlasts
                 blasts.remove(perk);
-                walls.add(new MeatChopperHunter(perk, hunter));
+                walls.add(new MeatChopperHunter(perk, this, hunter));
             });
         });
     }
@@ -396,24 +403,24 @@ public class Bomberman extends RoundField<Player> implements Field {
     }
 
     private boolean dropPerk(Point pt, Dice dice) {
-        Elements element = PerksSettingsWrapper.nextPerkDrop(dice);
-        PerkSettings settings = PerksSettingsWrapper.getPerkSettings(element);
+        Elements element = settings.perksSettings().nextPerkDrop(dice);
+        PerkSettings perk = settings.perksSettings().get(element);
 
         switch (element) {
             case BOMB_BLAST_RADIUS_INCREASE:
-                setup(pt, new BombBlastRadiusIncrease(settings.value(), settings.timeout()));
+                setup(pt, new BombBlastRadiusIncrease(perk.value(), perk.timeout()));
                 return true;
 
             case BOMB_COUNT_INCREASE:
-                setup(pt, new BombCountIncrease(settings.value(), settings.timeout()));
+                setup(pt, new BombCountIncrease(perk.value(), perk.timeout()));
                 return true;
 
             case BOMB_IMMUNE:
-                setup(pt, new BombImmune(settings.timeout()));
+                setup(pt, new BombImmune(perk.timeout()));
                 return true;
 
             case BOMB_REMOTE_CONTROL:
-                setup(pt, new BombRemoteControl(settings.value(), settings.timeout()));
+                setup(pt, new BombRemoteControl(perk.value(), perk.timeout()));
                 return true;
 
             default:
@@ -422,7 +429,7 @@ public class Bomberman extends RoundField<Player> implements Field {
     }
 
     private void setup(Point pt, Perk perk) {
-        perk.setPickTimeout(PerksSettingsWrapper.getPickTimeout());
+        perk.setPickTimeout(settings.perksSettings().pickTimeout());
         perks.add(new PerkOnBoard(pt, perk));
     }
 
@@ -445,6 +452,12 @@ public class Bomberman extends RoundField<Player> implements Field {
     @Override
     public boolean isBarrier(Point pt, boolean isForHero) {
         List<Player> players = isForHero ? aliveActive() : players();
+
+        // мы дергаем этот метод когда еще герой ищет себе место, потому тут надо скипнуть все недоинициализированные плеера
+        players = players.stream()
+                .filter(p -> p.getHero() != null)
+                .collect(toList());
+
         for (Player player : players) {
             if (player.getHero().itsMe(pt)) {
                 return true;
@@ -494,7 +507,7 @@ public class Bomberman extends RoundField<Player> implements Field {
     }
 
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private final int size = Bomberman.this.size();
 
             @Override
@@ -503,7 +516,7 @@ public class Bomberman extends RoundField<Player> implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 List<Point> elements = new LinkedList<>();
 
                 elements.addAll(Bomberman.this.heroes(ALL));
@@ -515,5 +528,10 @@ public class Bomberman extends RoundField<Player> implements Field {
                 return elements;
             }
         };
+    }
+
+    @Override
+    public GameSettings settings() {
+        return settings;
     }
 }

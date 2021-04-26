@@ -24,6 +24,7 @@ package com.codenjoy.dojo.battlecity.model;
 
 import com.codenjoy.dojo.battlecity.model.items.AITank;
 import com.codenjoy.dojo.battlecity.model.items.AITankPrize;
+import com.codenjoy.dojo.battlecity.services.GameSettings;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Direction;
 import com.codenjoy.dojo.services.Point;
@@ -31,6 +32,7 @@ import com.codenjoy.dojo.services.settings.Parameter;
 
 import java.util.List;
 
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.*;
 import static com.codenjoy.dojo.services.PointImpl.pt;
 
 public class AiGenerator {
@@ -38,24 +40,19 @@ public class AiGenerator {
     private final Field field;
     private final Dice dice;
 
-    private Parameter<Integer> whichSpawnWithPrize;
-    private Parameter<Integer> damagesBeforeAiDeath;
-    private Parameter<Integer> aiTicksPerShoot;
-
     private int capacity;
     private int spawn;
+    private int haveWithPrize;
+    private int aiPrize;
 
-    public AiGenerator(Field field, Dice dice,
-                       Parameter<Integer> whichSpawnWithPrize,
-                       Parameter<Integer> damagesBeforeAiDeath,
-                       Parameter<Integer> aiTicksPerShoot)
-    {
+    private GameSettings settings;
+
+    public AiGenerator(Field field, Dice dice, GameSettings settings) {
         this.field = field;
         this.dice = dice;
+        this.settings = settings;
         this.spawn = 0;
-        this.whichSpawnWithPrize = whichSpawnWithPrize;
-        this.damagesBeforeAiDeath = damagesBeforeAiDeath;
-        this.aiTicksPerShoot = aiTicksPerShoot;
+        this.aiPrize = 0;
     }
 
     void newSpawn(){
@@ -63,12 +60,10 @@ public class AiGenerator {
     }
 
     public void dropAll() {
-        int size = field.size();
         int needed = capacity - field.aiTanks().size();
 
         for (int i = 0; i < needed; i++) {
-            int y = size - 2;
-            Point pt = findFreePosition(y, size);
+            Point pt = freePosition();
             if (pt == null) continue;
 
             drop(pt);
@@ -81,7 +76,8 @@ public class AiGenerator {
         int c = 0;
         do {
             pt.setX(dice.next(size));
-        } while (field.isBarrier(pt) && c++ < size);
+
+        } while ((field.isBarrier(pt) || field.isRiver(pt)) && c++ < size);
 
         if (field.isBarrier(pt)) {
             return null;
@@ -89,34 +85,40 @@ public class AiGenerator {
         return pt;
     }
 
+    private Point freePosition() {
+        return findFreePosition(field.size() - 2, field.size());
+    }
+
     private Tank tank(Point pt) {
-        if (isPrizeTankTurn()) {
-            return new AITankPrize(pt,
-                    Direction.DOWN,
-                    damagesBeforeAiDeath.getValue(),
-                    aiTicksPerShoot.getValue(),
-                    dice);
+        if (isPrizeTankTurn() && canDrop()) {
+            return new AITankPrize(pt, Direction.DOWN, dice);
         } else {
-            return new AITank(pt,
-                    Direction.DOWN,
-                    aiTicksPerShoot.getValue(),
-                    dice);
+            return new AITank(pt, Direction.DOWN, dice);
         }
     }
 
     private boolean isPrizeTankTurn() {
-        if (whichSpawnWithPrize.getValue() == 0) {
+        if (settings.integer(SPAWN_AI_PRIZE) == 0) {
             return false;
         }
-
-        return spawn % whichSpawnWithPrize.getValue() == 0;
+        return spawn % settings.integer(SPAWN_AI_PRIZE) == 0;
     }
 
     public Tank drop(Point pt) {
-        Tank tank = tank(pt);
+        Tank tank = checkDropPt(pt);
         tank.init(field);
         field.addAi(tank);
         newSpawn();
+        return tank;
+    }
+
+    private Tank checkDropPt(Point pt) {
+        Tank tank;
+        if (field.isRiver(pt)) {
+            tank = tank(freePosition());
+        } else {
+            tank = tank(pt);
+        }
         return tank;
     }
 
@@ -125,5 +127,36 @@ public class AiGenerator {
         for (Point pt : points) {
             drop(pt);
         }
+    }
+
+    public void allHave(int haveWithPrize) {
+        this.haveWithPrize = haveWithPrize;
+    }
+
+    private int neededWithPrize() {
+        if (settings.integer(AI_PRIZE_LIMIT) == 0) {
+            aiPrize = 0;
+        }
+        int neededWithPrize = settings.integer(AI_PRIZE_LIMIT) - haveWithPrize;
+
+        if (aiPrize < neededWithPrize) {
+            aiPrize++;
+        } else {
+            aiPrize = 0;
+        }
+        return aiPrize;
+    }
+
+    private boolean canDrop() {
+        int moreWithPrize = neededWithPrize();
+
+        if(moreWithPrize == 0) {
+            return false;
+        }
+
+        if (moreWithPrize > 0) {
+            return true;
+        }
+       return false;
     }
 }

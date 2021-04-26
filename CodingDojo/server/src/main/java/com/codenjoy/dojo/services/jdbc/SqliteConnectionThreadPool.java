@@ -31,18 +31,18 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-public class SqliteConnectionThreadPool extends CrudConnectionThreadPool {
+public class SqliteConnectionThreadPool extends CrudPrimaryKeyConnectionThreadPool {
 
     private static final int CONNECTIONS = 3;
     private String database;
 
-    public SqliteConnectionThreadPool(String database, String... createTableSqls) {
+    public SqliteConnectionThreadPool(String database, String... createTableQueries) {
         super(CONNECTIONS, () -> getConnection(database));
 
         this.database = database;
 
-        for (String sql : createTableSqls) {
-            createDB(sql);
+        for (String query : createTableQueries) {
+            createDB(query);
         }
     }
 
@@ -58,10 +58,6 @@ public class SqliteConnectionThreadPool extends CrudConnectionThreadPool {
         return DriverManager.getConnection("jdbc:sqlite:" + database, config.toProperties());
     }
 
-    private void createDB(String sql) {
-        update(sql);
-    }
-
     public void removeDatabase() {
         close();
 
@@ -69,5 +65,24 @@ public class SqliteConnectionThreadPool extends CrudConnectionThreadPool {
         if (!file.delete()) {
             throw new RuntimeException("Cant remove DB " + file.getAbsolutePath());
         }
+    }
+
+    @Override
+    public String getLastInsertedIdQuery(String table, String column) {
+        return "select last_insert_rowid()";
+    }
+
+    protected String getPkDirective() {
+        return "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL";
+    }
+
+    @Override
+    protected String clearLastInsertedIdQuery(String table, String column) {
+        return String.format("UPDATE sqlite_sequence SET seq = 0 WHERE name = '%s'", table);
+    }
+
+    @Override
+    public void createCluster(String table, String indexName) {
+        // do nothing, there is not clusters in sqlite indexes
     }
 }

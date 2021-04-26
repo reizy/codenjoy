@@ -26,6 +26,7 @@ package com.codenjoy.dojo.chess.model;
 
 import com.codenjoy.dojo.chess.model.figures.Figure;
 import com.codenjoy.dojo.chess.model.figures.Level;
+import com.codenjoy.dojo.chess.services.GameSettings;
 import com.codenjoy.dojo.services.printer.BoardReader;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
@@ -44,10 +45,13 @@ public class Chess implements Field {
     private final int size;
     private Dice dice;
 
-    public Chess(Level level, Dice dice) {
+    private GameSettings settings;
+
+    public Chess(Level level, Dice dice, GameSettings settings) {
         this.dice = dice;
         size = level.getSize();
-        players = new LinkedList<Player>();
+        this.settings = settings;
+        players = new LinkedList<>();
         white = level.getFigures(true);
         black = level.getFigures(false);
     }
@@ -84,7 +88,7 @@ public class Chess implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Chess.this.size;
 
             @Override
@@ -93,7 +97,7 @@ public class Chess implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>(){{
                     addAll(white);
                     addAll(black);
@@ -109,5 +113,10 @@ public class Chess implements Field {
         } else {
             return black;
         }
+    }
+
+    @Override
+    public GameSettings settings() {
+        return settings;
     }
 }

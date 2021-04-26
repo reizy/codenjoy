@@ -24,16 +24,23 @@ package com.codenjoy.dojo.services;
 
 
 import com.codenjoy.dojo.services.classloader.GameLoader;
+import com.codenjoy.dojo.services.multiplayer.MultiplayerType;
 import com.codenjoy.dojo.services.nullobj.NullGameType;
 import com.codenjoy.dojo.services.printer.CharElements;
+import com.codenjoy.dojo.services.room.RoomService;
 import com.codenjoy.dojo.utils.ReflectUtils;
+import com.codenjoy.dojo.web.controller.Validator;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -43,6 +50,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+@Slf4j
 @Component("gameService")
 public class GameServiceImpl implements GameService {
 
@@ -50,6 +58,9 @@ public class GameServiceImpl implements GameService {
     public static final String ROOMS_SEPARATOR = "-";
 
     private Map<String, GameType> cache = new TreeMap<>();
+
+    @Autowired
+    protected RoomService roomService;
 
     @Value("${plugins.enable}")
     private boolean pluginsEnable;
@@ -69,7 +80,10 @@ public class GameServiceImpl implements GameService {
         // TODO так же надо будет для новозагруженной игры всех юзеров перезапустить
         for (Class<? extends GameType> clazz : allGames()) {
             GameType gameType = loadGameType(clazz);
-            cache.put(gameType.name(), gameType);
+            String name = gameType.name();
+            cache.put(name, gameType);
+            // создаем комнаты для каждой игры сразу
+            roomService.create(name, gameType);
         }
     }
 
@@ -80,14 +94,15 @@ public class GameServiceImpl implements GameService {
         result.sort(Comparator.comparing(Class::getName));
 
         result.remove(NullGameType.class);
-        result.remove(AbstractGameType.class);
-
-        remove(result,
-                it -> ConstructorUtils.getMatchingAccessibleConstructor(it) == null);
 
         if (pluginsEnable) {
             loadFromPlugins(result);
         }
+
+        // remove abstract and other stub/fake classes
+        remove(result,
+                it -> ConstructorUtils.getMatchingAccessibleConstructor(it) == null
+                        || Modifier.isAbstract(it.getModifiers()));
 
         if (excludeGames != null) {
             remove(result, it -> Stream.of(excludeGames)
@@ -114,19 +129,24 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public List<String> getGameNames() {
+    public List<String> getGames() {
         return new LinkedList<>(cache.keySet());
     }
 
     @Override
-    public List<String> getOnlyGameNames() {
-        return getGameNames().stream()
+    public List<String> getRooms() {
+        return new LinkedList<>(roomService.names());
+    }
+
+    @Override
+    public List<String> getOnlyGames() {
+        return getGames().stream()
                 .map(GameServiceImpl::removeNumbers)
                 .collect(Collectors.toList());
     }
 
-    public static String removeNumbers(String gameName) {
-        return gameName.split(ROOMS_SEPARATOR)[0];
+    public static String removeNumbers(String game) {
+        return game.split(ROOMS_SEPARATOR)[0];
     }
 
     @Override
@@ -167,16 +187,50 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public GameType getGame(String name) {
-        if (cache.containsKey(name)) {
-            return cache.get(name);
+    public GameType getGameType(String game) {
+        if (!exists(game)) {
+            return NullGameType.INSTANCE;
         }
 
-        return NullGameType.INSTANCE;
+        return cache.get(game);
     }
 
     @Override
-    public String getDefaultGame() {
-        return getGameNames().iterator().next();
+    public GameType getGameType(String game, String room) {
+        if (!exists(game) || Validator.isEmpty(room)) {
+            return NullGameType.INSTANCE;
+        }
+
+        GameType gameType = cache.get(game);
+
+        return roomService.create(room, gameType);
+    }
+
+    @Override
+    public String getDefaultRoom() {
+        return getRooms().iterator().next();
+    }
+
+    @Override
+    public boolean exists(String game) {
+        return !Validator.isEmpty(game)
+                && cache.containsKey(game);
+    }
+
+    /**
+     * @return Вовзращает сейв для этой игры по умолчанию с прогрессом
+     * (если он предусмотрен) на первом уровне.
+     */
+    @Override // TODO test me
+    public String getDefaultProgress(GameType gameType) {
+        try {
+            // TODO почему-то на проде тут NPE
+            MultiplayerType type = gameType.getMultiplayerType(gameType.getSettings());
+            JSONObject save = type.progress().saveTo(new JSONObject());
+            return save.toString().replace('"', '\'');
+        } catch (Exception e) {
+            log.error("Something wrong while getDefaultProgress", e);
+            return "{}";
+        }
     }
 }

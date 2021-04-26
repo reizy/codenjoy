@@ -23,24 +23,17 @@ package com.codenjoy.dojo.bomberman.services;
  */
 
 
-import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.PlayerScores;
-import com.codenjoy.dojo.services.settings.SettingsImpl;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.codenjoy.dojo.bomberman.services.GameSettings.Keys.*;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 
-/**
- * User: sanja
- * Date: 05.06.13
- * Time: 20:35
- */
 public class ScoresTest {
-    private PlayerScores scores;
 
-    private OptionGameSettings settings;
+    private PlayerScores scores;
+    private GameSettings settings;
 
     public void killWall() {
         scores.event(Events.KILL_DESTROY_WALL);
@@ -68,7 +61,7 @@ public class ScoresTest {
 
     @Before
     public void setup() {
-        settings = new OptionGameSettings(new SettingsImpl(), mock(Dice.class));
+        settings = new GameSettings();
         scores = new Scores(0, settings);
     }
 
@@ -76,45 +69,43 @@ public class ScoresTest {
     public void shouldCollectScores() {
         scores = new Scores(140, settings);
 
-        killWall();  //+10
-        killWall();  //+10
-        killWall();  //+10
-        killWall();  //+10
+        killWall();
+        killWall();
+        killWall();
+        killWall();
 
-        killYourself();  //-50
+        killYourself();
 
-        killMeatChopper();  //100
+        killMeatChopper();
 
-        killOtherHero(); //200
+        killOtherHero();
 
-        dropPerk(); //5
+        dropPerk();
 
-        winRound(); //1000
+        winRound();
 
         assertEquals(140
-                + 4*settings.killWallScore().getValue()
-                - settings.diePenalty().getValue()
-                + settings.catchPerkScore().getValue()
-                + settings.killOtherHeroScore().getValue()
-                + settings.killMeatChopperScore().getValue()
-                + settings.winRoundScore().getValue(), scores.getScore());
+                + 4*settings.integer(KILL_WALL_SCORE)
+                - settings.integer(DIE_PENALTY)
+                + settings.integer(CATCH_PERK_SCORE)
+                + settings.integer(KILL_OTHER_HERO_SCORE)
+                + settings.integer(KILL_MEAT_CHOPPER_SCORE)
+                + settings.integer(WIN_ROUND_SCORE), scores.getScore());
     }
 
     @Test
     public void shouldStillZeroAfterDead() {
-        killYourself();    //-50
+        killYourself();
 
         assertEquals(0, scores.getScore());
     }
 
     @Test
     public void shouldClearScore() {
-        killWall();    // +10
+        killWall();
 
         scores.clear();
 
         assertEquals(0, scores.getScore());
     }
-
-
 }

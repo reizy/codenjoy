@@ -10,12 +10,12 @@ package com.codenjoy.dojo.services;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -30,8 +30,12 @@ import com.codenjoy.dojo.services.controller.Controller;
 import com.codenjoy.dojo.services.controller.PlayerController;
 import com.codenjoy.dojo.services.controller.ScreenController;
 import com.codenjoy.dojo.services.dao.ActionLogger;
+import com.codenjoy.dojo.services.dao.Chat;
+import com.codenjoy.dojo.services.dao.PlayerGameSaver;
 import com.codenjoy.dojo.services.dao.Registration;
 import com.codenjoy.dojo.services.hero.HeroDataImpl;
+import com.codenjoy.dojo.services.joystick.NoActJoystick;
+import com.codenjoy.dojo.services.joystick.NoDirectionJoystick;
 import com.codenjoy.dojo.services.lock.LockedJoystick;
 import com.codenjoy.dojo.services.mocks.AISolverStub;
 import com.codenjoy.dojo.services.mocks.BoardStub;
@@ -43,6 +47,8 @@ import com.codenjoy.dojo.services.printer.BoardReader;
 import com.codenjoy.dojo.services.printer.CharElements;
 import com.codenjoy.dojo.services.printer.GraphicPrinter;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
+import com.codenjoy.dojo.services.room.RoomService;
+import com.codenjoy.dojo.services.semifinal.SemifinalService;
 import com.codenjoy.dojo.transport.screen.ScreenRecipient;
 import com.codenjoy.dojo.transport.screen.ScreenSender;
 import lombok.SneakyThrows;
@@ -55,6 +61,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.verification.VerificationMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -62,8 +69,8 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static com.codenjoy.dojo.services.PointImpl.pt;
 import static com.codenjoy.dojo.services.settings.SimpleParameter.v;
@@ -110,16 +117,25 @@ public class PlayerServiceImplTest {
     private SaveService saveService;
 
     @MockBean
+    private GameSaver saver;
+
+    @MockBean
     private Registration registration;
 
     @MockBean
     private GameService gameService;
 
     @MockBean
-    private Semifinal semifinal;
+    private Chat chat;
+
+    @MockBean
+    private SemifinalService semifinal;
 
     @MockBean
     private ActionLogger actionLogger;
+
+    @MockBean
+    private TimeService timeService;
 
     @SpyBean
     private PlayerGames playerGames;
@@ -133,19 +149,21 @@ public class PlayerServiceImplTest {
     @Autowired
     private PlayerServiceImpl playerService;
 
-    @Mock
-    private GameType gameType;
-    
+
     private InformationCollector informationCollector;
-    
+
     @Mock
     private GraphicPrinter printer;
     private List<Joystick> joysticks = new LinkedList<>();
     private List<GamePlayer> gamePlayers = new LinkedList<>();
-    private List<GameField> gameFields = new LinkedList<>();
+    private LinkedList<GameField> gameFields = new LinkedList<>();
     private List<Player> players = new LinkedList<>();
+    private List<String> ids = new LinkedList<>();
     private List<PlayerHero> heroesData = new LinkedList<>();
     private List<PlayerScores> playerScores = new LinkedList<>();
+    private Map<String, Integer> chatIds = new HashMap<>();
+    private Map<String, GameType> gameTypes = new HashMap<>();
+    private Consumer<GameType> gameTypePostSetup;
 
     @Before
     public void setUp() {
@@ -161,43 +179,28 @@ public class PlayerServiceImplTest {
 
         when(printer.print(any(), any())).thenReturn("1234");
 
-        when(gameService.getGame(anyString())).thenReturn(gameType);
+        when(saver.loadGame(any())).thenReturn(PlayerSave.NULL);
 
-        when(gameType.getBoardSize()).thenReturn(v(15));
-        when(gameType.getPlayerScores(anyInt())).thenAnswer(inv -> {
-            PlayerScores scores = mock(PlayerScores.class);
-            when(scores.getScore()).thenReturn(0);
-            playerScores.add(scores);
-            return scores;
-        });
-        when(gameType.createGame(anyInt())).thenAnswer(inv -> {
-            GameField field = mock(GameField.class);
-            gameFields.add(field);
-
-            when(field.reader()).thenReturn(mock(BoardReader.class));
-            return field;
-        });
         heroesData.addAll(Arrays.asList(heroData(1, 2), heroData(3, 4), heroData(5, 6), heroData(7, 8)));
-        when(gameType.createPlayer(any(EventListener.class), anyString()))
-                .thenAnswer(inv -> {
-                    Joystick joystick = mock(Joystick.class);
-                    joysticks.add(joystick);
+        when(gameService.getGameType(anyString())).thenAnswer(inv -> {
+            String game = inv.getArgument(0);
+            return getGameType(game, game);
+        });
+        when(gameService.getGameType(anyString(), anyString())).thenAnswer(inv -> {
+            String game = inv.getArgument(0);
+            String room = inv.getArgument(1);
+            when(roomService.game(room)).thenReturn(game);
+            GameType gameType = getGameType(game, room);
+            when(roomService.gameType(room)).thenReturn(gameType);
+            return gameType;
+        });
+        when(gameService.exists(anyString())).thenReturn(true);
 
-                    GamePlayer gamePlayer = mock(GamePlayer.class);
-                    gamePlayers.add(gamePlayer);
+        when(chat.getLastMessageIds()).thenReturn(chatIds);
 
-                    when(gamePlayer.getJoystick()).thenReturn(joystick);
-                    when(gamePlayer.getHero()).thenReturn(heroesData.get(gamePlayers.size() - 1));
-                    when(gamePlayer.isAlive()).thenReturn(true);
-                    return gamePlayer;
-                });
-        when(gameType.name()).thenReturn("game");
-        when(gameType.getPlots()).thenReturn(Elements.values());
-        when(gameType.getPrinterFactory()).thenReturn(PrinterFactory.get(printer));
-        when(gameType.getMultiplayerType()).thenReturn(MultiplayerType.SINGLE);
-
-        // по умолчанию все команаты будут активными
+        // по умолчанию все команаты будут активными и открытыми для регистрации
         when(roomService.isActive(anyString())).thenReturn(true);
+        when(roomService.isOpened(anyString())).thenReturn(true);
 
         doAnswer(inv -> {
             String id = inv.getArgument(0);
@@ -211,38 +214,84 @@ public class PlayerServiceImplTest {
         playerService.init();
     }
 
+    public GameType getGameType(String game, String room) {
+        if (!gameTypes.containsKey(room)) {
+            GameType gameType = mock(GameType.class);
+            setupGameType(gameType, game);
+            gameTypes.put(room, gameType);
+        }
+        return gameTypes.get(room);
+    }
+
+    public void setupGameType(GameType gameType, String game) {
+        when(gameType.name()).thenReturn(game);
+
+        when(gameType.getBoardSize(any())).thenReturn(v(15));
+
+        when(gameType.getPlayerScores(anyInt(), any())).thenAnswer(inv -> {
+            PlayerScores scores = mock(PlayerScores.class);
+            when(scores.getScore()).thenReturn(0);
+            playerScores.add(scores);
+            return scores;
+        });
+
+        when(gameType.createGame(anyInt(), any())).thenAnswer(inv -> {
+            GameField field = mock(GameField.class);
+            gameFields.add(field);
+            when(field.reader()).thenReturn(mock(BoardReader.class));
+            when(field.getSave()).thenReturn(new JSONObject(
+                    "{'save':'field" + gameFields.size() + "'}"));
+            return field;
+        });
+
+        when(gameType.createPlayer(any(EventListener.class), anyString(), any()))
+                .thenAnswer(inv -> {
+                    String id = inv.getArgument(1);
+                    ids.add(id);
+
+                    Joystick joystick = mock(Joystick.class);
+                    joysticks.add(joystick);
+
+                    GamePlayer gamePlayer = mock(GamePlayer.class);
+                    gamePlayers.add(gamePlayer);
+
+                    when(gamePlayer.getJoystick()).thenReturn(joystick);
+                    when(gamePlayer.getHero()).thenReturn(heroesData.get(gamePlayers.size() - 1));
+                    when(gamePlayer.isAlive()).thenReturn(true);
+                    return gamePlayer;
+                });
+
+        when(gameType.getPlots()).thenReturn(Elements.values());
+
+        when(gameType.getPrinterFactory()).thenReturn(PrinterFactory.get(printer));
+
+        spyMultiplayerType(gameType, MultiplayerType.SINGLE);
+
+        if (gameTypePostSetup != null) {
+            gameTypePostSetup.accept(gameType);
+        }
+    }
+
+    // оборачиваем progress в spy - мы будем потом верифаить на нем что вызывалось
+    public static void spyMultiplayerType(GameType gameType, MultiplayerType real) {
+        MultiplayerType type = spy(real);
+        when(type.progress()).thenAnswer(inv -> spy(inv.callRealMethod()));
+        when(gameType.getMultiplayerType(any())).thenReturn(type);
+    }
+
+    static class APlayerHero extends PlayerHero implements NoActJoystick, NoDirectionJoystick {
+        public APlayerHero(int x, int y) {
+            super(x, y);
+        }
+
+        @Override
+        public void tick() {
+            // do nothing
+        }
+    }
+
     private PlayerHero heroData(int x, int y) {
-        return new PlayerHero(pt(x, y)) {
-            @Override
-            public void down() {
-
-            }
-
-            @Override
-            public void up() {
-
-            }
-
-            @Override
-            public void left() {
-
-            }
-
-            @Override
-            public void right() {
-
-            }
-
-            @Override
-            public void act(int... p) {
-
-            }
-
-            @Override
-            public void tick() {
-
-            }
-        };
+        return new APlayerHero(x, y);
     }
 
     enum Elements implements CharElements {
@@ -268,20 +317,24 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldCreatePlayer() {
         // given
-        createPlayer(VASYA);
+        createPlayer(VASYA, "game", "room");
 
         // when
         Player player = playerService.get(VASYA);
 
         // then
-        assertEquals("game", player.getGameName());
+        assertEquals("game", player.getGame());
         assertEquals(VASYA, player.getId());
-        assertNull(player.getPassword());
-        assertNull(player.getCode());
+        assertEquals(null, player.getPassword());
+        assertEquals(null, player.getCode());
         assertEquals(VASYA_URL, player.getCallbackUrl());
-        assertSame(gameType, player.getGameType());
+        assertSame(gameType("room"), player.getGameType());
         assertNull(player.getMessage());
         assertEquals(0, player.getScore());
+    }
+
+    private GameType gameType(String room) {
+        return gameTypes.get(room);
     }
 
     @Test
@@ -293,11 +346,8 @@ public class PlayerServiceImplTest {
         playerService.closeRegistration();
 
         // then
-        Player player = createPlayer(VASYA);
-        assertSame(NullPlayer.INSTANCE, player);
-
-        player = playerService.get(VASYA);
-        assertSame(NullPlayer.INSTANCE, player);
+        assertNotCreated(createPlayer(VASYA));
+        assertNotCreated(playerService.get(VASYA));
 
         assertFalse(playerService.isRegistrationOpened());
 
@@ -307,11 +357,8 @@ public class PlayerServiceImplTest {
         // then
         assertTrue(playerService.isRegistrationOpened());
 
-        player = createPlayer(VASYA);
-        assertSame(VASYA, player.getId());
-
-        player = playerService.get(VASYA);
-        assertSame(VASYA, player.getId());
+        assertCreated(createPlayer(VASYA));
+        assertSame(VASYA, playerService.get(VASYA).getId());
     }
 
     @Test
@@ -361,12 +408,98 @@ public class PlayerServiceImplTest {
         when(roomService.isActive(room)).thenReturn(active);
     }
 
+    protected void setRegistrationOpened(String room, boolean opened) {
+        when(roomService.isOpened(room)).thenReturn(opened);
+    }
+
+    @Test
+    public void shouldNotCreateUsers_forRoomWhereRegistrationIsClosed_case1() {
+        // given
+        setRegistrationOpened("room1", false);
+
+        // when
+        assertNotCreated(createPlayer(VASYA, "game1", "room1"));
+        assertNotCreated(createPlayer(PETYA, "game1", "room1"));
+        assertCreated(createPlayer(KATYA, "game1", "room2"));
+        assertCreated(createPlayer(OLIA, "game3", "room3"));
+
+        // then
+        assertPlayers("[katya, olia]");
+
+        // when
+        setRegistrationOpened("room1", true);
+
+        assertCreated(createPlayer(VASYA, "game1", "room1"));
+        assertCreated(createPlayer(PETYA, "game1", "room1"));
+
+        // then
+        assertPlayers("[katya, olia, vasya, petya]");
+    }
+
+    @Test
+    public void shouldNotCreateUsers_forRoomWhereRegistrationIsClosed_case2() {
+        // given
+        setRegistrationOpened("room2", false);
+
+        // when
+        assertCreated(createPlayer(VASYA, "game1", "room1"));
+        assertCreated(createPlayer(PETYA, "game1", "room1"));
+        assertNotCreated(createPlayer(KATYA, "game1", "room2"));
+        assertCreated(createPlayer(OLIA, "game3", "room3"));
+
+        // then
+        assertPlayers("[vasya, petya, olia]");
+
+        // when
+        setRegistrationOpened("room2", true);
+
+        assertCreated(createPlayer(KATYA, "game1", "room2"));
+
+        // then
+        assertPlayers("[vasya, petya, olia, katya]");
+    }
+
+    private void assertCreated(Player player) {
+        assertNotSame(NullPlayer.INSTANCE, player);
+    }
+
+    private void assertNotCreated(Player player) {
+        assertSame(NullPlayer.INSTANCE, player);
+    }
+
+    @Test
+    public void shouldNotCreateUsers_forRoomWhereRegistrationIsClosed_case3() {
+        // given
+        setRegistrationOpened("room1", false);
+        setRegistrationOpened("room3", false);
+
+        // when
+        assertNotCreated(createPlayer(VASYA, "game1", "room1"));
+        assertNotCreated(createPlayer(PETYA, "game1", "room1"));
+        assertCreated(createPlayer(KATYA, "game1", "room2"));
+        assertNotCreated(createPlayer(OLIA, "game3", "room3"));
+
+        // then
+        assertPlayers("[katya]");
+
+        // when
+        setRegistrationOpened("room1", true);
+        setRegistrationOpened("room3", true);
+
+        assertCreated(createPlayer(VASYA, "game1", "room1"));
+        assertCreated(createPlayer(PETYA, "game1", "room1"));
+        assertCreated(createPlayer(OLIA, "game3", "room3"));
+
+        // then
+        assertPlayers("[katya, vasya, petya, olia]");
+    }
+
     @Test
     public void shouldRequestControl_fromAllPlayers_skipNonActiveRooms() {
         // given
-        Player vasia = createPlayer(VASYA, "room1", "game1");
-        Player petia = createPlayer(PETYA, "room2", "game1");
-        Player katya = createPlayer(KATYA, "room3", "game2");
+        Player vasia = createPlayer(VASYA, "game1", "room1");
+        Player petia = createPlayer(PETYA, "game1", "room2");
+        Player katya = createPlayer(KATYA, "game2", "room3");
 
         setActive("room1", false);
 
@@ -379,7 +512,7 @@ public class PlayerServiceImplTest {
     }
 
     @Test
-    public void shouldRequestControl_fromAllPlayers_withGlassState() throws IOException {
+    public void shouldRequestControl_fromAllPlayers_withGlassState() {
         // given
         createPlayer(VASYA);
         when(printer.print(any(), any())).thenReturn("1234");
@@ -393,10 +526,10 @@ public class PlayerServiceImplTest {
     }
 
     @Test
-    public void shouldSendAdditionalInfoToAllPlayers() throws IOException {
+    public void shouldSendAdditionalInfoToAllPlayers() {
         // given
-        createPlayer(VASYA);
-        createPlayer(PETYA);
+        createPlayer(VASYA, "game", "room1");
+        createPlayer(PETYA, "game", "room2");
 
         when(printer.print(any(), any()))
                 .thenReturn("1234")
@@ -413,23 +546,21 @@ public class PlayerServiceImplTest {
 
         assertEquals(
                 "{petya=PlayerData[" +
-                    "BoardSize:15, Board:'DCBA', GameName:'game', " +
+                    "BoardSize:15, Board:'DCBA', Game:'game', " +
                     "Score:234, Info:'', " +
-                    "Scores:'{'petya':234}', " +
-                    "HeroesData:'{" +
-                        "'coordinates':{'petya':{'coordinate':{'x':3,'y':4},'level':0,'multiplayer':false}}," +
-                        "'group':['petya']," +
-                        "'readableNames':{'petya':'readable_petya'}" +
-                        "}'], " +
+                    "Scores:'{petya=234}', " +
+                    "Coordinates:'{petya=HeroDataImpl(level=0, coordinate=[3,4], isMultiplayer=false, additionalData=null)}', " +
+                    "ReadableNames:'{petya=readable_petya}', " +
+                    "Group:[petya], " +
+                    "LastChatMessage:106558567], " +
                 "vasya=PlayerData[" +
-                    "BoardSize:15, Board:'ABCD', GameName:'game', " +
+                    "BoardSize:15, Board:'ABCD', Game:'game', " +
                     "Score:123, Info:'', " +
-                    "Scores:'{'vasya':123}', " +
-                    "HeroesData:'{" +
-                        "'coordinates':{'vasya':{'coordinate':{'x':1,'y':2},'level':0,'multiplayer':false}}," +
-                        "'group':['vasya']," +
-                        "'readableNames':{'vasya':'readable_vasya'}" +
-                        "}']}",
+                    "Scores:'{vasya=123}', " +
+                    "Coordinates:'{vasya=HeroDataImpl(level=0, coordinate=[1,2], isMultiplayer=false, additionalData=null)}', " +
+                    "ReadableNames:'{vasya=readable_vasya}', " +
+                    "Group:[vasya], " +
+                    "LastChatMessage:111979568]}",
                 data.toString().replaceAll("\"", "'"));
     }
 
@@ -496,7 +627,7 @@ public class PlayerServiceImplTest {
 
         //then
         assertEquals(NullPlayer.INSTANCE, playerService.get(VASYA));
-        assertNotSame(NullPlayer.INSTANCE, playerService.get(PETYA));
+        assertCreated(playerService.get(PETYA));
         assertEquals(1, playerGames.size());
     }
 
@@ -525,18 +656,21 @@ public class PlayerServiceImplTest {
     }
 
     private Player createPlayer(String id) {
-        String roomName = id + " room";
-        String gameName = id + " game";
-        return createPlayer(id, roomName, gameName);
+        return createPlayer(id, "game", "room");
     }
 
-    private Player createPlayer(String id, String roomName, String gameName) {
-        Player player = playerService.register(id, getCallbackUrl(id),
-                roomName, gameName);
+    private Player createPlayer(String id, String game, String room) {
+        Player player = playerService.register(id, game, room,
+                getCallbackUrl(id));
+        if (player == NullPlayer.INSTANCE) {
+            return player;
+        }
+
         players.add(player);
+        chatIds.put(room, Math.abs(id.hashCode()));
 
         if (player != NullPlayer.INSTANCE) {
-            verify(gameType, atLeastOnce()).createGame(anyInt());
+            verify(gameType(room), atLeastOnce()).createGame(anyInt(), any());
         }
 
         return player;
@@ -577,13 +711,13 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldCreatePlayerFromSavedPlayerGame_whenPlayerNotRegisterYet() {
         // given
-        PlayerSave save = new PlayerSave(VASYA, getCallbackUrl(VASYA), "room", "game", 100, null);
+        PlayerSave save = new PlayerSave(VASYA, getCallbackUrl(VASYA), "game", "room", 100, null);
 
         // when
         playerService.register(save);
 
         // then
-        verify(gameType).getPlayerScores(100);
+        verify(gameType("room")).getPlayerScores(eq(100), any());
         when(playerScores(0).getScore()).thenReturn(100);
 
         Player player = playerService.get(VASYA);
@@ -596,16 +730,16 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldUpdatePlayerFromSavedPlayerGame_whenPlayerAlreadyRegistered_whenOtherGameType() {
         // given
-        Player registeredPlayer = createPlayer(VASYA);
-        assertEquals(VASYA_URL, registeredPlayer.getCallbackUrl());
+        Player registered = createPlayer(VASYA, "game", "room");
+        assertEquals(VASYA_URL, registered.getCallbackUrl());
 
-        PlayerSave save = new PlayerSave(VASYA, getCallbackUrl(VASYA), "other_room", "other_game", 200, null);
+        PlayerSave save = new PlayerSave(VASYA, getCallbackUrl(VASYA), "other_game", "other_room", 200, null);
 
         // when
         playerService.register(save);
 
         // then
-        verify(gameType).getPlayerScores(200);
+        verify(gameType("other_room")).getPlayerScores(eq(200), any());
         when(playerScores(1).getScore()).thenReturn(200);
 
         Player player = playerService.get(VASYA);
@@ -618,18 +752,18 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldNotUpdatePlayerFromSavedPlayerGame_whenPlayerAlreadyRegistered_whenSameGameType() {
         // given
-        Player registeredPlayer = createPlayer(VASYA);
+        Player registeredPlayer = createPlayer(VASYA, "game", "room");
         assertEquals(VASYA_URL, registeredPlayer.getCallbackUrl());
         assertEquals(0, registeredPlayer.getScore());
 
-        PlayerSave save = new PlayerSave(VASYA, getCallbackUrl(VASYA), "room", "game", 200, null);
+        PlayerSave save = new PlayerSave(VASYA, getCallbackUrl(VASYA), "game", "room", 200, null);
 
         // when
         playerService.register(save);
 
         // then
-        verify(gameType).getPlayerScores(0);
-        when(playerScores(1).getScore()).thenReturn(0);
+        verify(gameType("room")).getPlayerScores(eq(0), any());
+        when(playerScores(0).getScore()).thenReturn(0);
 
         Player player = playerService.get(VASYA);
 
@@ -650,7 +784,7 @@ public class PlayerServiceImplTest {
         assertNotSame(NullPlayer.class, player.getClass());
         assertEquals(PETYA, player.getId());
         assertEquals(null, player.getPassword());
-        assertNull(player.getCode());
+        assertEquals(null, player.getCode());
         assertEquals(PETYA_URL, player.getCallbackUrl());
     }
 
@@ -662,7 +796,7 @@ public class PlayerServiceImplTest {
         // when, then
         checkInfo("");
     }
-    
+
     @Test
     public void shouldSendScoresAndLevelUpdateInfoInfoToPlayer_ifPositiveValue() {
         // given
@@ -746,16 +880,92 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldRemoveAll_forRoom() {
         // given
-        createPlayer(VASYA, "room1", "game1");
-        createPlayer(PETYA, "room1", "game1");
-        createPlayer(KATYA, "room2", "game1");
-        createPlayer(OLIA,  "room3", "game3");
+        createPlayer(VASYA, "game1", "room1");
+        createPlayer(PETYA, "game1", "room1");
+        createPlayer(KATYA, "game1", "room2");
+        createPlayer(OLIA, "game3", "room3");
 
         // when
         playerService.removeAll("room1");
 
         // then
         assertPlayers("[katya, olia]");
+    }
+
+    @Test
+    public void shouldGetAllInRoom() {
+        // given
+        createPlayer(VASYA, "game1", "room1");
+        createPlayer(PETYA, "game1", "room1");
+        createPlayer(KATYA, "game1", "room2");
+        createPlayer(OLIA, "game3", "room3");
+
+        // when then
+        assertEquals("[vasya, petya]",
+                playerService.getAllInRoom("room1").toString());
+
+        assertEquals("[katya]",
+                playerService.getAllInRoom("room2").toString());
+
+        assertEquals("[olia]",
+                playerService.getAllInRoom("room3").toString());
+
+        assertEquals("[]",
+                playerService.getAllInRoom("room4").toString());
+    }
+
+    @Test
+    public void shouldGetAll_forGame() {
+        // given
+        createPlayer(VASYA, "game1", "room1");
+        createPlayer(PETYA, "game1", "room1");
+        createPlayer(KATYA, "game1", "room2");
+        createPlayer(OLIA, "game3", "room3");
+
+        // when then
+        assertEquals("[vasya, petya, katya]",
+                playerService.getAll("game1").toString());
+
+        assertEquals("[olia]",
+                playerService.getAll("game3").toString());
+    }
+
+    @Test
+    public void shouldGetRoomCounts() {
+        // given
+        createPlayer(VASYA, "game1", "room1");
+        createPlayer(PETYA, "game1", "room1");
+        createPlayer(KATYA, "game1", "room2");
+        createPlayer(OLIA, "game3", "room3");
+
+        when(roomService.names()).thenReturn(Arrays.asList(
+                "room1", "room2", "room3", "room4"));
+
+        // when
+        Map<String, Integer> roomCounts = playerService.getRoomCounts();
+
+        // then
+        assertEquals("{room1=2, room2=1, room3=1, room4=0}",
+                roomCounts.toString());
+    }
+
+    @Test
+    public void shouldGetAnyGameWithPlayers() {
+        // given
+        createPlayer(VASYA, "game1", "room1");
+        createPlayer(PETYA, "game1", "room1");
+        createPlayer(KATYA, "game1", "room2");
+        createPlayer(OLIA, "game3", "room3");
+        gameService.getGameType("game4", "room4");
+
+        when(roomService.names()).thenReturn(Arrays.asList(
+                "room1", "room2", "room3", "room4"));
+
+        // when
+        GameType gameType = playerService.getAnyGameWithPlayers();
+
+        // then
+        assertEquals("game1", gameType.name());
     }
 
     private void assertPlayers(String expected) {
@@ -769,8 +979,8 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldTickForEachGames_whenSeparateBordersGameType() {
         // given
-        createPlayer(VASYA);
-        createPlayer(PETYA);
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
 
         Game game1 = createGame(gameField(VASYA));
         Game game2 = createGame(gameField(PETYA));
@@ -780,7 +990,7 @@ public class PlayerServiceImplTest {
         setup(game1);
         setup(game2);
 
-        when(gameType.getMultiplayerType()).thenReturn(MultiplayerType.SINGLE);
+        when(gameType("room").getMultiplayerType(any())).thenReturn(MultiplayerType.SINGLE);
 
         // when
         playerService.tick();
@@ -799,8 +1009,8 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldContinueTicks_whenException() {
         // given
-        createPlayer(VASYA);
-        createPlayer(PETYA);
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
 
         Game game1 = createGame(gameField(VASYA));
         Game game2 = createGame(gameField(PETYA));
@@ -813,7 +1023,7 @@ public class PlayerServiceImplTest {
         GameField field2 = game2.getField();
         doThrow(new RuntimeException()).when(field1).tick();
 
-        when(gameType.getMultiplayerType()).thenReturn(MultiplayerType.SINGLE);
+        when(gameType("room").getMultiplayerType(any())).thenReturn(MultiplayerType.SINGLE);
 
         // when
         playerService.tick();
@@ -839,8 +1049,8 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldTickForOneGame_whenSingleBordersGameType() {
         // given
-        createPlayer(VASYA);
-        createPlayer(PETYA);
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
 
         Game game1 = createGame(gameField(VASYA));
         Game game2 = createGame(gameField(PETYA));
@@ -852,7 +1062,7 @@ public class PlayerServiceImplTest {
         when(game2.getField()).thenReturn(field1);
         doThrow(new RuntimeException()).when(field1).tick();
 
-        when(gameType.getMultiplayerType()).thenReturn(MultiplayerType.MULTIPLE);   // тут отличия с прошлым тестом
+        when(gameType("room").getMultiplayerType(any())).thenReturn(MultiplayerType.MULTIPLE); // тут отличия с прошлым тестом
 
         // when
         playerService.tick();
@@ -912,8 +1122,8 @@ public class PlayerServiceImplTest {
     @Test
     public void shouldContinueTicks_whenException_caseMultiplayer() {
         // given
-        createPlayer(VASYA);
-        createPlayer(PETYA);
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
 
         Game game1 = createGame(gameField(VASYA));
         Game game2 = createGame(gameField(PETYA));
@@ -922,7 +1132,7 @@ public class PlayerServiceImplTest {
         setup(game1);
         setup(game2);
 
-        when(gameType.getMultiplayerType()).thenReturn(MultiplayerType.MULTIPLE); // тут отличия с прошлым тестом
+        when(gameType("room").getMultiplayerType(any())).thenReturn(MultiplayerType.MULTIPLE); // тут отличия с прошлым тестом
         GameField field1 = game1.getField();
         when(game2.getField()).thenReturn(field1);
 
@@ -930,7 +1140,7 @@ public class PlayerServiceImplTest {
         playerService.tick();
 
         // then
-        verify(field1, times(1)).quietTick();
+        verify(field1, once()).quietTick();
     }
 
     @Test
@@ -1228,43 +1438,297 @@ public class PlayerServiceImplTest {
         // given
         createPlayer(VASYA);
         createPlayer(PETYA);
-        
+
         // when
         playerService.cleanAllScores();
 
         // then
-        verify(playerScores(0)).clear();
-        verify(playerScores(1)).clear();
+        verify(playerScores(0), once()).clear();
+        verify(playerScores(1), once()).clear();
 
-        verify(gameField(VASYA)).clearScore();
-        verify(gameField(PETYA)).clearScore();
+        verify(gameField(VASYA), once()).clearScore();
+        verify(gameField(PETYA), once()).clearScore();
 
-        verify(semifinal).clean();
+        verify(playerGames.get(VASYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(PETYA).getGame().getProgress(), once()).reset();
+
+        verify(semifinal, once()).clean();
+    }
+
+    @Test
+    public void shouldCleanAllScores_alsoCleanSaved() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+        createPlayer(OLIA, "game", "room");
+
+        long time = 100L;
+
+        when(timeService.now()).thenReturn(time);
+        when(saver.getSavedList()).thenReturn(Arrays.asList(PETYA, OLIA, KATYA));
+        when(saver.loadGame(PETYA)).thenReturn(new PlayerSave(PETYA, "saved-url1", "game", "room", 123, "{}"));
+        when(saver.loadGame(OLIA)).thenReturn(new PlayerSave(OLIA, "saved-url2", "game", "room", 234, "{}"));
+        when(saver.loadGame(KATYA)).thenReturn(new PlayerSave(KATYA, "saved-url3", "game2", "room2", 345, "{}"));
+        when(gameService.getDefaultProgress(any())).thenReturn(
+                "{'data':'value1'}",
+                "{'data':'value2'}",
+                "{'data':'value3'}",
+                "{'data':'value4'}");
+
+        // when
+        playerService.cleanAllScores();
+
+        // then
+        verify(playerScores(0), once()).clear();
+        verify(playerScores(1), once()).clear();
+        verify(playerScores(2), once()).clear();
+
+        verify(gameField(VASYA), once()).clearScore();
+        verify(gameField(PETYA), once()).clearScore();
+        verify(gameField(OLIA), once()).clearScore();
+
+        verify(playerGames.get(VASYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(PETYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(OLIA).getGame().getProgress(), once()).reset();
+
+        verify(semifinal, once()).clean();
+
+        // clear saved scores
+        ArgumentCaptor<Player> player = ArgumentCaptor.forClass(Player.class);
+        ArgumentCaptor<String> save = ArgumentCaptor.forClass(String.class);
+        verify(saver, times(3)).saveGame(player.capture(), save.capture(), eq(time));
+        List<Player> players = player.getAllValues();
+        List<String> saves = save.getAllValues();
+
+        assertEquals("[petya, olia, katya]", players.toString());
+
+        Player player1 = players.get(0);
+        assertEquals("petya", player1.getId());
+        assertEquals("room", player1.getRoom());
+        assertEquals("game", player1.getGame());
+        assertEquals("saved-url1", player1.getCallbackUrl());
+        assertEquals(0, player1.getScore());
+
+        Player player2 = players.get(1);
+        assertEquals("olia", player2.getId());
+        assertEquals("room", player2.getRoom());
+        assertEquals("game", player2.getGame());
+        assertEquals("saved-url2", player2.getCallbackUrl());
+        assertEquals(0, player2.getScore());
+
+        Player player3 = players.get(2);
+        assertEquals("katya", player3.getId());
+        assertEquals("room2", player3.getRoom());
+        assertEquals("game2", player3.getGame());
+        assertEquals("saved-url3", player3.getCallbackUrl());
+        assertEquals(0, player3.getScore());
+
+        assertEquals("[{'data':'value1'}, {'data':'value2'}, {'data':'value3'}]", saves.toString());
+
+        // another way to clear saved scores for rest active players without save
+        ArgumentCaptor<List<PlayerGame>> playerGames = ArgumentCaptor.forClass(List.class);
+        verify(saver, times(1)).saveGames(playerGames.capture(), eq(time));
+        if (!playerGames.getAllValues().isEmpty()) {
+            assertEquals("[Save[time:100, id:vasya, url:http://vasya:1234, " +
+                            "game:game, room:room, score:0, save:{\"save\":\"field1\"}]]",
+                    playerGames.getValue().stream()
+                            .map(pg -> new PlayerGameSaver.Save(pg, String.valueOf(time)))
+                            .collect(toList())
+                            .toString());
+
+        }
+    }
+
+    @Test
+    public void shouldCleanScores() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+
+        // when
+        playerService.cleanScores(VASYA);
+
+        // then
+        verify(playerScores(0), once()).clear();
+        verify(playerScores(1), never()).clear();
+
+        verify(gameField(VASYA), once()).clearScore();
+        verify(gameField(PETYA), never()).clearScore();
+
+        verify(playerGames.get(VASYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(PETYA).getGame().getProgress(), never()).reset();
+
+        verify(semifinal, never()).clean();
+    }
+
+    @Test
+    public void shouldCleanScores_alsoCleanSaved() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+
+        long time = 100L;
+        when(timeService.now()).thenReturn(time);
+        when(saver.getSavedList()).thenReturn(Arrays.asList(VASYA, OLIA));
+        when(saver.loadGame(VASYA)).thenReturn(new PlayerSave(VASYA, "saved-url1", "game", "room", 123, "{}"));
+        when(saver.loadGame(OLIA)).thenReturn(new PlayerSave(OLIA, "saved-url2", "game2", "room2", 234, "{}"));
+        when(gameService.getDefaultProgress(any())).thenReturn(
+                "{'data':'value1'}",
+                "{'data':'value2'}",
+                "{'data':'value3'}",
+                "{'data':'value4'}");
+
+        // when
+        playerService.cleanScores(VASYA);
+
+        // then
+        verify(playerScores(0), once()).clear();
+        verify(playerScores(1), never()).clear();
+
+        verify(gameField(VASYA), once()).clearScore();
+        verify(gameField(PETYA), never()).clearScore();
+
+        verify(playerGames.get(VASYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(PETYA).getGame().getProgress(), never()).reset();
+
+        verify(semifinal, never()).clean();
+
+        // clear saved scores
+        ArgumentCaptor<Player> player = ArgumentCaptor.forClass(Player.class);
+        ArgumentCaptor<String> save = ArgumentCaptor.forClass(String.class);
+        verify(saver, times(1)).saveGame(player.capture(), save.capture(), eq(time));
+        List<Player> players = player.getAllValues();
+        List<String> saves = save.getAllValues();
+
+        assertEquals("[vasya]", players.toString());
+
+        Player player1 = players.get(0);
+        assertEquals("vasya", player1.getId());
+        assertEquals("room", player1.getRoom());
+        assertEquals("game", player1.getGame());
+        assertEquals("saved-url1", player1.getCallbackUrl());
+        assertEquals(0, player1.getScore());
+
+        assertEquals("[{'data':'value1'}]", saves.toString());
+
+        // another way to clear saved scores for rest active players without save
+        ArgumentCaptor<List<PlayerGame>> playerGames = ArgumentCaptor.forClass(List.class);
+        verify(saver, times(0)).saveGames(playerGames.capture(), eq(time));
+        if (!playerGames.getAllValues().isEmpty()) {
+            assertEquals("[]",
+                    playerGames.getValue().stream()
+                            .map(pg -> new PlayerGameSaver.Save(pg, String.valueOf(time)))
+                            .collect(toList())
+                            .toString());
+        }
     }
 
     @Test
     public void shouldCleanAllScores_forRoom() {
         // given
-        createPlayer(VASYA, "room1", "game1");
-        createPlayer(PETYA, "room1", "game1");
-        createPlayer(KATYA, "room2", "game1");
-        createPlayer(OLIA,  "room3", "game3");
+        createPlayer(VASYA, "game1", "room1");
+        createPlayer(PETYA, "game1", "room1");
+        createPlayer(KATYA, "game1", "room2");
+        createPlayer(OLIA, "game3", "room3");
 
         // when
         playerService.cleanAllScores("room1");
 
         // then
-        verify(playerScores(0)).clear();
-        verify(playerScores(1)).clear();
-        verifyNoMoreInteractions(playerScores(2));
-        verifyNoMoreInteractions(playerScores(3));
+        verify(playerScores(0), once()).clear();
+        verify(playerScores(1), once()).clear();
+        verify(playerScores(2), never()).clear();
+        verify(playerScores(3), never()).clear();
 
-        verify(gameField(VASYA)).clearScore();
-        verify(gameField(PETYA)).clearScore();
+        verify(gameField(VASYA), once()).clearScore();
+        verify(gameField(PETYA), once()).clearScore();
         verify(gameField(KATYA), never()).clearScore();
         verify(gameField(OLIA), never()).clearScore();
 
-        verify(semifinal).clean();
+        verify(playerGames.get(VASYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(PETYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(KATYA).getGame().getProgress(), never()).reset();
+        verify(playerGames.get(OLIA).getGame().getProgress(), never()).reset();
+
+        verify(semifinal, once()).clean("room1");
+    }
+
+    @Test
+    public void shouldCleanAllScores_forRoom_alsoCleanSaved() {
+        // given
+        createPlayer(VASYA, "game1", "room1");
+        createPlayer(PETYA, "game1", "room1");
+        createPlayer(KATYA, "game1", "room2");
+        createPlayer(OLIA, "game3", "room3");
+
+        long time = 100L;
+        when(timeService.now()).thenReturn(time);
+        when(saver.getSavedList("room1")).thenReturn(Arrays.asList(PETYA));
+        when(saver.getSavedList("room2")).thenReturn(Arrays.asList(KATYA));
+        when(saver.getSavedList("room3")).thenReturn(Arrays.asList(OLIA));
+        when(saver.loadGame(PETYA)).thenReturn(new PlayerSave(PETYA, "saved-url1", "game1", "room1", 123, "{}"));
+        when(saver.loadGame(KATYA)).thenReturn(new PlayerSave(KATYA, "saved-url2", "game1", "room2", 234, "{}"));
+        when(saver.loadGame(OLIA)).thenReturn(new PlayerSave(OLIA, "saved-url3", "game3", "room3", 345, "{}"));
+        when(gameService.getDefaultProgress(any())).thenReturn(
+                "{'data':'value1'}",
+                "{'data':'value2'}",
+                "{'data':'value3'}",
+                "{'data':'value4'}");
+
+        // when
+        playerService.cleanAllScores("room1");
+
+        // then
+        verify(playerScores(0), once()).clear();
+        verify(playerScores(1), once()).clear();
+        verify(playerScores(2), never()).clear();
+        verify(playerScores(3), never()).clear();
+
+        verify(gameField(VASYA), once()).clearScore();
+        verify(gameField(PETYA), once()).clearScore();
+        verify(gameField(KATYA), never()).clearScore();
+        verify(gameField(OLIA), never()).clearScore();
+
+        verify(playerGames.get(VASYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(PETYA).getGame().getProgress(), once()).reset();
+        verify(playerGames.get(KATYA).getGame().getProgress(), never()).reset();
+        verify(playerGames.get(OLIA).getGame().getProgress(), never()).reset();
+
+        verify(semifinal, once()).clean("room1");
+
+        // clear saved scores
+        ArgumentCaptor<Player> player = ArgumentCaptor.forClass(Player.class);
+        ArgumentCaptor<String> save = ArgumentCaptor.forClass(String.class);
+        verify(saver, times(1)).saveGame(player.capture(), save.capture(), eq(time));
+        List<Player> players = player.getAllValues();
+        List<String> saves = save.getAllValues();
+
+        assertEquals("[petya]", players.toString());
+
+        Player player1 = players.get(0);
+        assertEquals("petya", player1.getId());
+        assertEquals("room1", player1.getRoom());
+        assertEquals("game1", player1.getGame());
+        assertEquals("saved-url1", player1.getCallbackUrl());
+        assertEquals(0, player1.getScore());
+
+        assertEquals("[{'data':'value1'}]", saves.toString());
+
+        // another way to clear saved scores for rest active players without save
+        ArgumentCaptor<List<PlayerGame>> playerGames = ArgumentCaptor.forClass(List.class);
+        verify(saver, times(1)).saveGames(playerGames.capture(), eq(time));
+        if (!playerGames.getAllValues().isEmpty()) {
+            assertEquals("[Save[time:100, id:vasya, url:http://vasya:1234, " +
+                            "game:game1, room:room1, score:0, save:{\"save\":\"field1\"}]]",
+                    playerGames.getValue().stream()
+                            .map(pg -> new PlayerGameSaver.Save(pg, String.valueOf(time)))
+                            .collect(toList())
+                            .toString());
+        }
+    }
+
+    private VerificationMode once() {
+        return times(1);
     }
 
     private PlayerScores playerScores(int index) {
@@ -1276,7 +1740,7 @@ public class PlayerServiceImplTest {
         createPlayer(VASYA);
         createPlayer(PETYA);
 
-        assertEquals(VASYA, playerService.getRandom(gameType.name()).getId());
+        assertEquals(VASYA, playerService.getRandom("game").getId());
     }
 
     @Test
@@ -1301,38 +1765,259 @@ public class PlayerServiceImplTest {
 
         // when
         List<PlayerInfo> infos = new LinkedList<>();
-        infos.add(new PlayerInfo("new-vasya", "new-pass1", "new-url1", "new-game"));
-        infos.add(new PlayerInfo("new-petya", "new-pass2", "new-url2", "new-game"));
+        infos.add(new PlayerInfo(VASYA, "new-code1", "new-url1", "game") {{
+            setEmail("new-email1");
+            setReadableName("new-readableName1");
+        }});
+        infos.add(new PlayerInfo(PETYA, "new-code2", "new-url2", "game") {{
+            setEmail("new-email2");
+            setReadableName("new-readableName2");
+        }});
         playerService.updateAll(infos);
 
         // then
-        List<Player> all = playerService.getAll();
-        assertUpdatedVasyaAndPetya(all);
+        assertUpdated("[vasya, petya]", playerService.getAll());
+    }
+
+    @Test
+    public void shouldUpdate_mainCase() {
+        // given
+        createPlayer(VASYA);
+        createPlayer(PETYA);
+
+        // when
+        playerService.update(new PlayerInfo(VASYA, "new-code1", "new-url1", "game") {{
+            setEmail("new-email1");
+            setReadableName("new-readableName1");
+        }});
+        playerService.update(new PlayerInfo(PETYA, "new-code2", "new-url2", "game") {{
+            setEmail("new-email2");
+            setReadableName("new-readableName2");
+        }});
+
+        // then
+        assertUpdated("[vasya, petya]", playerService.getAll());
+    }
+
+    @Test
+    public void shouldUpdate_changeRoom_caseNewRoom_sameGame_chooseGame() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+
+        assertEquals("[vasya, petya]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[vasya, petya]",
+                playerService.getAllInRoom("room").toString());
+
+        // when
+        playerService.update(new PlayerInfo(VASYA, null, null, null,
+                "otherRoom", "game", null, true));
+
+        // then
+        assertEquals("[vasya, petya]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[vasya]",
+                playerService.getAllInRoom("otherRoom").toString());
+    }
+
+    @Test
+    public void shouldUpdate_changeRoom_caseNewRoom_sameGame_notSetGame() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+
+        assertEquals("[vasya, petya]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[vasya, petya]",
+                playerService.getAllInRoom("room").toString());
+
+        // when
+        String game = null; // мы не установили игру
+        playerService.update(new PlayerInfo(VASYA, null, null, null,
+                "otherRoom", game, null, true));
+
+        // then
+        assertEquals("[vasya, petya]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[vasya]",
+                playerService.getAllInRoom("otherRoom").toString());
+    }
+
+    @Test
+    public void shouldUpdate_changeRoom_caseExistingRoom_sameGame_chooseGame() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+        createPlayer(OLIA, "game", "otherRoom");
+
+        assertEquals("[vasya, petya, olia]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[vasya, petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[olia]",
+                playerService.getAllInRoom("otherRoom").toString());
+
+        // when
+        playerService.update(new PlayerInfo(VASYA, null, null, null,
+                "otherRoom", "game", null, true));
+
+        // then
+        assertEquals("[vasya, petya, olia]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[vasya, olia]",
+                playerService.getAllInRoom("otherRoom").toString());
+    }
+
+    @Test
+    public void shouldUpdate_changeRoom_caseExistingRoom_sameGame_notSetGame() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+        createPlayer(OLIA, "game", "otherRoom");
+
+        assertEquals("[vasya, petya, olia]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[vasya, petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[olia]",
+                playerService.getAllInRoom("otherRoom").toString());
+
+        // when
+        String game = null; // мы не установили игру
+        playerService.update(new PlayerInfo(VASYA, null, null, null,
+                "otherRoom", game, null, true));
+
+        // then
+        assertEquals("[vasya, petya, olia]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[vasya, olia]",
+                playerService.getAllInRoom("otherRoom").toString());
+    }
+
+    @Test
+    public void shouldUpdate_changeRoom_caseNewRoom_otherGame() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+
+        assertEquals("[vasya, petya]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[vasya, petya]",
+                playerService.getAllInRoom("room").toString());
+
+        // when
+        playerService.update(new PlayerInfo(VASYA, null, null, null,
+                "otherRoom", "otherGame", null, true));
+
+        // then
+        assertEquals("[petya]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[vasya]",
+                playerService.getAll("otherGame").toString());
+
+        assertEquals("[petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[vasya]",
+                playerService.getAllInRoom("otherRoom").toString());
+    }
+
+    @Test
+    public void shouldUpdate_changeRoom_caseExistingRoom_otherGame() {
+        // given
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+        createPlayer(OLIA, "otherGame", "otherRoom");
+
+        assertEquals("[vasya, petya]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[olia]",
+                playerService.getAll("otherGame").toString());
+
+        assertEquals("[vasya, petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[olia]",
+                playerService.getAllInRoom("otherRoom").toString());
+
+        // when
+        playerService.update(new PlayerInfo(VASYA, null, null, null,
+                "otherRoom", "otherGame", null, true));
+
+        // then
+        assertEquals("[petya]",
+                playerService.getAll("game").toString());
+
+        assertEquals("[olia, vasya]",
+                playerService.getAll("otherGame").toString());
+
+        assertEquals("[petya]",
+                playerService.getAllInRoom("room").toString());
+
+        assertEquals("[olia, vasya]",
+                playerService.getAllInRoom("otherRoom").toString());
     }
 
     @Test
     public void shouldSendPlayerNameToGame() {
         // given
-        createPlayer(VASYA);
-        createPlayer(PETYA);
+        createPlayer(VASYA, "game", "room");
+        createPlayer(PETYA, "game", "room");
+        createPlayer(OLIA, "game", "otherRoom");
+        createPlayer(KATYA, "otherGame", "otherRoom2");
 
         // when then
-        // TODO implement
+        assertEquals("[vasya, petya, olia, katya]", players.toString());
+        assertEquals("[vasya, petya, olia, katya]", ids.toString());
     }
 
-    private void assertUpdatedVasyaAndPetya(List<Player> all) {
-        assertEquals("[new-vasya, new-petya]", all.toString());
+    private void assertUpdated(String expected, List<Player> all) {
+        assertEquals(expected, all.toString());
 
         Player player1 = all.get(0);
         assertEquals("new-url1", player1.getCallbackUrl());
-        assertNull(player1.getCode());
-        assertEquals("game", player1.getGameName());
+        assertEquals(null, player1.getCode());
+        assertEquals("game", player1.getGame());
+        assertEquals("new-email1", player1.getEmail());
+        verify(registration).updateEmail(VASYA, "new-email1");
+        assertEquals("new-readableName1", player1.getReadableName());
+        verify(registration).updateReadableName(VASYA, "new-readableName1");
         assertEquals(null, player1.getPassword());
 
         Player player2 = all.get(1);
         assertEquals("new-url2", player2.getCallbackUrl());
-        assertNull(player2.getCode());
-        assertEquals("game", player1.getGameName());
+        assertEquals(null, player2.getCode());
+        assertEquals("game", player1.getGame());
+        assertEquals("new-email2", player2.getEmail());
+        verify(registration).updateEmail(PETYA, "new-email2");
+        assertEquals("new-readableName2", player2.getReadableName());
+        verify(registration).updateReadableName(PETYA, "new-readableName2");
         assertEquals(null, player2.getPassword());
     }
 
@@ -1344,14 +2029,22 @@ public class PlayerServiceImplTest {
 
         // when
         List<PlayerInfo> infos = new LinkedList<>();
-        infos.add(new PlayerInfo("new-vasya", "new-pass1", "new-url1", "new-game"));
-        infos.add(new PlayerInfo("new-petya", "new-pass2", "new-url2", "new-game"));
-        infos.add(new PlayerInfo(null, "new-pass2", "new-url2", "new-game"));
+        infos.add(new PlayerInfo(VASYA, "new-pass1", "new-url1", "game") {{
+            setEmail("new-email1");
+            setReadableName("new-readableName1");
+        }});
+        infos.add(new PlayerInfo(PETYA, "new-pass2", "new-url2", "game") {{
+            setEmail("new-email2");
+            setReadableName("new-readableName2");
+        }});
+        infos.add(new PlayerInfo(null, "new-pass3", "new-url3", "game") {{
+            setEmail("new-email3");
+            setReadableName("new-readableName3");
+        }});
         playerService.updateAll(infos);
 
         // then
-        List<Player> all = playerService.getAll();
-        assertUpdatedVasyaAndPetya(all);
+        assertUpdated("[vasya, petya]", playerService.getAll());
     }
 
     @Test
@@ -1361,7 +2054,7 @@ public class PlayerServiceImplTest {
         createPlayer(PETYA);
 
         List<PlayerInfo> infos = new LinkedList<>();
-        infos.add(new PlayerInfo("new-vasya", "new-pass1", "new-url1", "new-game"));
+        infos.add(new PlayerInfo("new-vasya", "new-pass1", "new-url1", "game"));
 
         try {
             // when
@@ -1369,7 +2062,7 @@ public class PlayerServiceImplTest {
             fail();
         } catch (Exception e) {
             // then
-            assertEquals("java.lang.IllegalArgumentException: Diff players count", e.toString());
+            assertEquals("java.lang.IllegalArgumentException: Player not found by id: new-vasya", e.toString());
         }
 
         List<Player> all = playerService.getAll();
@@ -1381,12 +2074,12 @@ public class PlayerServiceImplTest {
 
         Player player1 = all.get(0);
         assertEquals(VASYA_URL, player1.getCallbackUrl());
-        assertNull(player1.getCode());
+        assertEquals(null, player1.getCode());
         assertEquals(null, player1.getPassword());
 
         Player player2 = all.get(1);
         assertEquals(PETYA_URL, player2.getCallbackUrl());
-        assertNull(player2.getCode());
+        assertEquals(null, player2.getCode());
         assertEquals(null, player2.getPassword());
     }
 
@@ -1397,7 +2090,7 @@ public class PlayerServiceImplTest {
         Player player2 = createPlayer(PETYA);
 
         // when
-        List<PlayerInfo> infos = new LinkedList<PlayerInfo>(){{
+        List<PlayerInfo> infos = new LinkedList<>(){{
             add(new PlayerInfo(player1){{
                 setData("{\"some\":\"data1\"}");
             }});
@@ -1425,12 +2118,12 @@ public class PlayerServiceImplTest {
         Player player2 = createPlayer(PETYA);
 
         // when
-        List<PlayerInfo> infos = new LinkedList<PlayerInfo>(){{
+        List<PlayerInfo> infos = new LinkedList<>(){{
             add(new PlayerInfo(player1){{
                 setData("{\"some\":\"data1\"}");
             }});
             add(new PlayerInfo(player2){{
-                setData("{}"); // same
+                setData(gameFields.getLast().getSave().toString()); // same
             }});
         }};
         playerService.updateAll(infos);
@@ -1449,7 +2142,7 @@ public class PlayerServiceImplTest {
         Player player4 = createPlayer(OLIA);
 
         // when
-        List<PlayerInfo> infos = new LinkedList<PlayerInfo>(){{
+        List<PlayerInfo> infos = new LinkedList<>(){{
             add(new PlayerInfo(player1){{
                 setData("{\"some\":\"data1\"}");
             }});
@@ -1514,23 +2207,25 @@ public class PlayerServiceImplTest {
         WebSocketRunner.ATTEMPTS = 0;
         WebSocketRunner.TIMEOUT = 100;
 
-        when(gameType.getAI()).thenReturn((Class)AISolverStub.class);
-        when(gameType.getBoard()).thenReturn((Class)BoardStub.class);
+        gameTypePostSetup = gameType -> {
+            when(gameType.getAI()).thenReturn(AISolverStub.class);
+            when(gameType.getBoard()).thenReturn(BoardStub.class);
+        };
 
-        String gameName = createPlayer(VASYA).getGameName();
+        String game = createPlayer(VASYA, "game", "room").getGame();
 
-        verify(gameType, times(1)).getAI();
-        verify(gameType, times(1)).getBoard();
+        verify(gameType("room"), times(1)).getAI();
+        verify(gameType("room"), times(1)).getBoard();
 
         // when
         playerService.reloadAI(VASYA);
 
         // then
-        verify(gameType, times(2)).getAI();
-        verify(gameType, times(2)).getBoard();
+        verify(gameType("room"), times(2)).getAI();
+        verify(gameType("room"), times(2)).getBoard();
 
         PlayerGame playerGame = playerGames.get(VASYA);
-        assertEquals(gameName, playerGame.getPlayer().getGameName());
+        assertEquals(game, playerGame.getPlayer().getGame());
         Player player = playerGame.getPlayer();
         assertEquals(VASYA, player.getId());
         assertNotNull(VASYA, player.getAi());
@@ -1539,19 +2234,22 @@ public class PlayerServiceImplTest {
     @Test
     public void testLoadPlayersFromSaveAndLoadAI() {
         // given
-        when(gameType.getAI()).thenReturn((Class)AISolverStub.class);
-        when(gameType.getBoard()).thenReturn((Class)BoardStub.class);
-        PlayerSave save = new PlayerSave(VASYA_AI, getCallbackUrl(VASYA_AI), "room", "game", 100, null);
+        gameTypePostSetup = gameType -> {
+            when(gameType.getAI()).thenReturn(AISolverStub.class);
+            when(gameType.getBoard()).thenReturn(BoardStub.class);
+        };
+
+        PlayerSave save = new PlayerSave(VASYA_AI, getCallbackUrl(VASYA_AI), "game", "room", 100, null);
 
         // when
         playerService.register(save);
 
         // then
-        verify(gameType).getAI();
-        verify(gameType).getBoard();
+        verify(gameType("room")).getAI();
+        verify(gameType("room")).getBoard();
 
         PlayerGame playerGame = playerGames.get(VASYA_AI);
-        assertEquals("game", playerGame.getPlayer().getGameName());
+        assertEquals("game", playerGame.getPlayer().getGame());
         Player player = playerGame.getPlayer();
         assertEquals(VASYA_AI, player.getId());
         assertNotNull(VASYA, player.getAi());

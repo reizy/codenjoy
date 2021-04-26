@@ -28,6 +28,7 @@ import com.codenjoy.dojo.services.jdbc.SqliteConnectionThreadPoolFactory;
 import com.codenjoy.dojo.services.multiplayer.GameField;
 import com.codenjoy.dojo.services.multiplayer.MultiplayerType;
 import com.codenjoy.dojo.services.printer.BoardReader;
+import com.codenjoy.dojo.services.room.RoomService;
 import lombok.SneakyThrows;
 import org.junit.After;
 import org.junit.Before;
@@ -46,7 +47,7 @@ import static org.mockito.Mockito.when;
 
 public class ActionLoggerTest {
 
-    private static ActionLogger logger;
+    private ActionLogger logger;
     private ExecutorService executor;
     private RoomService roomService;
     private PlayerGames playerGames;
@@ -102,9 +103,8 @@ public class ActionLoggerTest {
         waitFor();
 
         // then
-        assertLogs("BoardLog(time=101, playerId=player1, gameType=game1, score=123, board=player1Board:101, message=null, command=[])\n" +
-                   "BoardLog(time=101, playerId=player2, gameType=game2, score=234, board=player2Board:101, message=null, command=[])",
-                logger.getAll());
+        assertAllLogs("[BoardLog(time=101, playerId=player1, game=game1, score=123, board=player1Board:101, message=null, command=[]), \n" +
+                "BoardLog(time=101, playerId=player2, game=game2, score=234, board=player2Board:101, message=null, command=[])]");
     }
 
     private void allRoomsAreActive() {
@@ -142,8 +142,7 @@ public class ActionLoggerTest {
         waitFor();
 
         // then
-        assertLogs("",
-                logger.getAll());
+        assertAllLogs("[]");
     }
 
     private void givenPlayers() {
@@ -151,12 +150,12 @@ public class ActionLoggerTest {
         addPlayer(playerGames, "player2Board", 234, "player2", "room2", "game2");
     }
 
-    private void addPlayer(PlayerGames playerGames, String board, int scoreValue, String id, String roomName, String gameName) {
+    private void addPlayer(PlayerGames playerGames, String board, int scoreValue, String id, String room, String game) {
         PlayerScores score = getScore(scoreValue);
-        Player player = new Player(id, "127.0.0.1", PlayerTest.mockGameType(gameName), score, null);
+        Player player = new Player(id, "127.0.0.1", PlayerTest.mockGameType(game), score, null);
         player.setEventListener(mock(InformationCollector.class));
 
-        TestUtils.Env env = TestUtils.getPlayerGame(playerGames, player, roomName,
+        TestUtils.Env env = TestUtils.getPlayerGame(playerGames, player, room,
                 inv -> {
                     GameField field = mock(GameField.class);
                     when(field.reader()).thenReturn(mock(BoardReader.class));
@@ -188,8 +187,7 @@ public class ActionLoggerTest {
         waitFor();
 
         // then
-        assertLogs("BoardLog(time=101, playerId=player1, gameType=game1, score=123, board=player1Board:101, message=null, command=[])",
-                logger.getAll());;
+        assertAllLogs("[BoardLog(time=101, playerId=player1, game=game1, score=123, board=player1Board:101, message=null, command=[])]");
     }
 
     @Test
@@ -206,11 +204,24 @@ public class ActionLoggerTest {
         waitFor();
 
         // then
+        assertAllLogs("[BoardLog(time=101, playerId=player1, game=game1, score=123, board=player1Board:101, message=null, command=[]), \n" +
+                "BoardLog(time=101, playerId=player2, game=game2, score=234, board=player2Board:101, message=null, command=[]), \n" +
+                "BoardLog(time=102, playerId=player1, game=game1, score=123, board=player1Board:102, message=null, command=[]), \n" +
+                "BoardLog(time=102, playerId=player2, game=game2, score=234, board=player2Board:102, message=null, command=[]), \n" +
+                "BoardLog(time=103, playerId=player1, game=game1, score=123, board=player1Board:103, message=null, command=[]), \n" +
+                "BoardLog(time=103, playerId=player2, game=game2, score=234, board=player2Board:103, message=null, command=[]), \n" +
+                "BoardLog(time=104, playerId=player1, game=game1, score=123, board=player1Board:104, message=null, command=[]), \n" +
+                "BoardLog(time=104, playerId=player2, game=game2, score=234, board=player2Board:104, message=null, command=[])]");
+
         assertEquals(104,
                 logger.getLastTime("player1"));
 
         assertEquals(104,
                 logger.getLastTime("player2"));
+    }
+
+    public void assertAllLogs(String expected) {
+        assertEquals(expected, logger.getAll().toString().replace(", BoardLog", ", \nBoardLog"));
     }
 
     @Test
@@ -234,46 +245,46 @@ public class ActionLoggerTest {
         waitFor();
 
         // then
-        assertLogs("BoardLog(time=101, playerId=player1, gameType=game1, score=123, board=player1Board:101, message=null, command=[])\n" +
-                   "BoardLog(time=102, playerId=player1, gameType=game1, score=123, board=player1Board:102, message=null, command=[])\n" +
-                   "BoardLog(time=103, playerId=player1, gameType=game1, score=123, board=player1Board:103, message=null, command=[])\n" +
-                   "BoardLog(time=104, playerId=player1, gameType=game1, score=123, board=player1Board:104, message=null, command=[])\n" +
+        assertLogs("BoardLog(time=101, playerId=player1, game=game1, score=123, board=player1Board:101, message=null, command=[])\n" +
+                   "BoardLog(time=102, playerId=player1, game=game1, score=123, board=player1Board:102, message=null, command=[])\n" +
+                   "BoardLog(time=103, playerId=player1, game=game1, score=123, board=player1Board:103, message=null, command=[])\n" +
+                   "BoardLog(time=104, playerId=player1, game=game1, score=123, board=player1Board:104, message=null, command=[])\n" +
 
-                   "BoardLog(time=105, playerId=player1, gameType=game1, score=123, board=player1Board:105, message=null, command=[])\n" +
+                   "BoardLog(time=105, playerId=player1, game=game1, score=123, board=player1Board:105, message=null, command=[])\n" +
 
-                   "BoardLog(time=106, playerId=player1, gameType=game1, score=123, board=player1Board:106, message=null, command=[])\n" +
-                   "BoardLog(time=107, playerId=player1, gameType=game1, score=123, board=player1Board:107, message=null, command=[])\n" +
-                   "BoardLog(time=108, playerId=player1, gameType=game1, score=123, board=player1Board:108, message=null, command=[])\n" +
-                   "BoardLog(time=109, playerId=player1, gameType=game1, score=123, board=player1Board:109, message=null, command=[])",
+                   "BoardLog(time=106, playerId=player1, game=game1, score=123, board=player1Board:106, message=null, command=[])\n" +
+                   "BoardLog(time=107, playerId=player1, game=game1, score=123, board=player1Board:107, message=null, command=[])\n" +
+                   "BoardLog(time=108, playerId=player1, game=game1, score=123, board=player1Board:108, message=null, command=[])\n" +
+                   "BoardLog(time=109, playerId=player1, game=game1, score=123, board=player1Board:109, message=null, command=[])",
                 logger.getBoardLogsFor("player1", 105, 4));
 
-        assertLogs("BoardLog(time=103, playerId=player2, gameType=game2, score=234, board=player2Board:103, message=null, command=[])\n" +
-                   "BoardLog(time=104, playerId=player2, gameType=game2, score=234, board=player2Board:104, message=null, command=[])\n" +
+        assertLogs("BoardLog(time=103, playerId=player2, game=game2, score=234, board=player2Board:103, message=null, command=[])\n" +
+                   "BoardLog(time=104, playerId=player2, game=game2, score=234, board=player2Board:104, message=null, command=[])\n" +
 
-                   "BoardLog(time=105, playerId=player2, gameType=game2, score=234, board=player2Board:105, message=null, command=[])\n" +
+                   "BoardLog(time=105, playerId=player2, game=game2, score=234, board=player2Board:105, message=null, command=[])\n" +
 
-                   "BoardLog(time=106, playerId=player2, gameType=game2, score=234, board=player2Board:106, message=null, command=[])\n" +
-                   "BoardLog(time=107, playerId=player2, gameType=game2, score=234, board=player2Board:107, message=null, command=[])",
+                   "BoardLog(time=106, playerId=player2, game=game2, score=234, board=player2Board:106, message=null, command=[])\n" +
+                   "BoardLog(time=107, playerId=player2, game=game2, score=234, board=player2Board:107, message=null, command=[])",
                 logger.getBoardLogsFor("player2", 105, 2));
 
-        assertLogs("BoardLog(time=101, playerId=player2, gameType=game2, score=234, board=player2Board:101, message=null, command=[])\n" +
+        assertLogs("BoardLog(time=101, playerId=player2, game=game2, score=234, board=player2Board:101, message=null, command=[])\n" +
 
-                    "BoardLog(time=102, playerId=player2, gameType=game2, score=234, board=player2Board:102, message=null, command=[])\n" +
+                    "BoardLog(time=102, playerId=player2, game=game2, score=234, board=player2Board:102, message=null, command=[])\n" +
 
-                    "BoardLog(time=103, playerId=player2, gameType=game2, score=234, board=player2Board:103, message=null, command=[])\n" +
-                    "BoardLog(time=104, playerId=player2, gameType=game2, score=234, board=player2Board:104, message=null, command=[])\n" +
-                    "BoardLog(time=105, playerId=player2, gameType=game2, score=234, board=player2Board:105, message=null, command=[])\n" +
-                    "BoardLog(time=106, playerId=player2, gameType=game2, score=234, board=player2Board:106, message=null, command=[])",
+                    "BoardLog(time=103, playerId=player2, game=game2, score=234, board=player2Board:103, message=null, command=[])\n" +
+                    "BoardLog(time=104, playerId=player2, game=game2, score=234, board=player2Board:104, message=null, command=[])\n" +
+                    "BoardLog(time=105, playerId=player2, game=game2, score=234, board=player2Board:105, message=null, command=[])\n" +
+                    "BoardLog(time=106, playerId=player2, game=game2, score=234, board=player2Board:106, message=null, command=[])",
                 logger.getBoardLogsFor("player2", 102, 4));
 
-        assertLogs("BoardLog(time=106, playerId=player2, gameType=game2, score=234, board=player2Board:106, message=null, command=[])\n" +
-                    "BoardLog(time=107, playerId=player2, gameType=game2, score=234, board=player2Board:107, message=null, command=[])\n" +
-                    "BoardLog(time=108, playerId=player2, gameType=game2, score=234, board=player2Board:108, message=null, command=[])\n" +
+        assertLogs("BoardLog(time=106, playerId=player2, game=game2, score=234, board=player2Board:106, message=null, command=[])\n" +
+                    "BoardLog(time=107, playerId=player2, game=game2, score=234, board=player2Board:107, message=null, command=[])\n" +
+                    "BoardLog(time=108, playerId=player2, game=game2, score=234, board=player2Board:108, message=null, command=[])\n" +
 
-                    "BoardLog(time=109, playerId=player2, gameType=game2, score=234, board=player2Board:109, message=null, command=[])\n" +
+                    "BoardLog(time=109, playerId=player2, game=game2, score=234, board=player2Board:109, message=null, command=[])\n" +
 
-                    "BoardLog(time=110, playerId=player2, gameType=game2, score=234, board=player2Board:110, message=null, command=[])\n" +
-                    "BoardLog(time=111, playerId=player2, gameType=game2, score=234, board=player2Board:111, message=null, command=[])",
+                    "BoardLog(time=110, playerId=player2, game=game2, score=234, board=player2Board:110, message=null, command=[])\n" +
+                    "BoardLog(time=111, playerId=player2, game=game2, score=234, board=player2Board:111, message=null, command=[])",
                 logger.getBoardLogsFor("player2", 109, 3));
 
 

@@ -23,39 +23,30 @@ package com.codenjoy.dojo.sokoban.services;
  */
 
 
-import com.codenjoy.dojo.sokoban.model.items.Field;
-import com.codenjoy.dojo.sokoban.model.itemsImpl.Hero;
-import com.codenjoy.dojo.sokoban.services.Events;
 import com.codenjoy.dojo.services.EventListener;
 import com.codenjoy.dojo.services.multiplayer.GamePlayer;
-import java.util.logging.Level;
+import com.codenjoy.dojo.sokoban.model.Field;
+import com.codenjoy.dojo.sokoban.model.items.Hero;
+
 import java.util.logging.Logger;
 
 import static java.util.logging.Logger.getLogger;
 
-/**
- * Класс игрока. Тут кроме героя может подсчитываться очки.
- * Тут же ивенты передабтся лиснеру фреймворка.
- */
 public class Player extends GamePlayer<Hero, Field> {
-    Logger log = getLogger(Player.class.getName());
+
+    private static Logger log = getLogger(Player.class.getName());
 
     public Hero hero;
-    private String name;
 
-    public Player(EventListener listener, String name) {
-        super(listener);
-        this.name = name;
-        if (!Storage.levels.containsKey(name)){
-            Storage.levels.put(name,1);}
+    public Player(EventListener listener, GameSettings settings) {
+        super(listener, settings);
     }
 
     public void event(Events event) {
         switch (event) {
-            case LOOSE:
+            case LOSE:
                 break;
             case WIN:
-                increaseLevel(1);
                 break;
         }
 
@@ -77,24 +68,4 @@ public class Player extends GamePlayer<Hero, Field> {
         return hero != null && hero.isAlive();
     }
 
-
-
-    private void increaseLevel(int value) {
-        int lvl = Storage.levels.get(this.name);
-        if (lvl<=(Storage.MAX_VALUE-value)){
-        Storage.levels.put(this.name,lvl+value);
-        log.log(Level.INFO, String.format("reached lvl:%d\t max limit:%d", lvl + value, Storage.MAX_VALUE));
-        }
-        else {
-            log.log(Level.WARNING,"reached max limit: {}",Storage.MAX_VALUE);
-        }
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 }

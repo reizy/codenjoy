@@ -22,30 +22,34 @@ package com.codenjoy.dojo.battlecity.model;
  * #L%
  */
 
+import com.codenjoy.dojo.battlecity.services.GameSettings;
 import com.codenjoy.dojo.services.Direction;
+import com.codenjoy.dojo.services.Point;
+
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.SLIPPERINESS;
 
 public class Sliding {
 
-    public final int slipperiness;
-    private final Field field;
-    
+    private Field field;
     private int tick;
     private Direction before;
 
-    public Sliding(Field field) {
+    private GameSettings settings;
+
+    public Sliding(Field field, Direction before, GameSettings settings) {
         this.field = field;
-        this.slipperiness = field.slipperiness();
+        this.before = before;
+        this.settings = settings;
     }
 
-    public Direction act(Tank tank) {
-        if (!field.isIce(tank)) {
-            tick = 0;
-            return before = tank.getDirection();
-        }
+    private int slipperiness() {
+        return settings.integer(SLIPPERINESS);
+    }
 
-        if (tick == slipperiness) {
+    public Direction affect(Direction current) {
+        if (tick == slipperiness()) {
             tick = 0;
-            before = tank.getDirection();
+            before = current;
         } else {
             // ignore current direction because sliding
         }
@@ -55,7 +59,13 @@ public class Sliding {
         return before;
     }
 
+    public boolean active(Tank tank) {
+        return field.isIce(tank)
+                && slipperiness() != 0
+                && !tank.prizes().contains(Elements.PRIZE_NO_SLIDING);
+    }
+
     public void stop() {
-        tick = slipperiness;
+        tick = slipperiness();
     }
 }

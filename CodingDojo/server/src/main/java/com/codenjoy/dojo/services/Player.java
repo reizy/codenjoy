@@ -49,8 +49,8 @@ public class Player implements ScreenRecipient, Closeable {
     private String code;
     private String data;
     private String callbackUrl;
-    private String gameName;
-    private String roomName;
+    private String game;
+    private String room;
     private String password;
     private String passwordConfirmation;
     private PlayerScores scores;
@@ -70,6 +70,14 @@ public class Player implements ScreenRecipient, Closeable {
         this.gameType = gameType;
         this.scores = scores;
         this.info = info;
+    }
+
+    public Player(PlayerSave playerSave) {
+        id = playerSave.getId();
+        callbackUrl = playerSave.getCallbackUrl();
+        game = playerSave.getGame();
+        room = playerSave.getRoom();
+        score = playerSave.getScore();
     }
 
     @Override
@@ -124,13 +132,13 @@ public class Player implements ScreenRecipient, Closeable {
         return info.getMessage();
     }
 
-    public String getGameName() {
-        return (gameType != null) ? gameType.name() : gameName;
+    public String getGame() {
+        return (gameType != null) ? gameType.name() : game;
     }
 
     // TODO test me
-    public String getGameNameOnly() {
-        return removeNumbers(getGameName());
+    public String getGameOnly() {
+        return removeNumbers(getGame());
     }
 
     @Override
@@ -147,6 +155,11 @@ public class Player implements ScreenRecipient, Closeable {
     @Override
     public String toString() {
         return id;
+    }
+
+    public void dropPassword() {
+        this.password = null;
+        this.passwordConfirmation = null;
     }
 
 }

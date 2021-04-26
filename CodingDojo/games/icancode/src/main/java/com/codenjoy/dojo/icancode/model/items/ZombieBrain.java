@@ -28,14 +28,19 @@ import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.algs.DeikstraFindWay;
 
 import java.util.List;
+import java.util.Objects;
 
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 
 public class ZombieBrain {
 
     public Direction whereToGo(Point zombie, Field field) {
-        List<Point> heroes = field.getLevel().getItems(HeroItem.class).stream()
-                .map(item -> item.getCell()).collect(toList());
+        List<Point> heroes =
+                field.getLevel().getItems(HeroItem.class).stream()
+                        .map(item -> item.getCell())
+                        .filter(not(Objects::isNull))
+                        .collect(toList());
         if (heroes.isEmpty()) {
             return null;
         }
@@ -57,13 +62,10 @@ public class ZombieBrain {
     private DeikstraFindWay.Possible possible(Field field) {
         return new DeikstraFindWay.Possible() { // TODO test me
             @Override
-            public boolean possible(Point point) {
-                int x = point.getX();
-                int y = point.getY();
-
-                if (field.isBarrier(x, y)) return false;
-                if (field.isAt(x, y, Hole.class)) return false;
-                if (field.isAt(x, y, Box.class)) return false;
+            public boolean possible(Point pt) {
+                if (field.isBarrier(pt)) return false;
+                if (field.isAt(pt, Hole.class)) return false;
+                if (field.isAt(pt, Box.class)) return false;
 
                 return true;
             }

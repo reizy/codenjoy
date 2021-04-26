@@ -22,8 +22,9 @@ package com.codenjoy.dojo.battlecity.services;
  * #L%
  */
 
-
 import com.codenjoy.dojo.services.PlayerScores;
+
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.*;
 
 public class Scores implements PlayerScores {
 
@@ -46,19 +47,31 @@ public class Scores implements PlayerScores {
     }
 
     @Override
-    public void event(Object object) {
-        if (!(object instanceof Events))
-            return;
+    public void event(Object event) {
+        score += scoreFor(settings, event);
+        score = Math.max(0, score);
+    }
+
+    public static int scoreFor(GameSettings settings, Object object) {
+        if (!(object instanceof Events)) {
+            return 0;
+        }
         Events event = (Events)object;
+
         if (event.isKillYourTank()) {
-            score -= settings.killYourTankPenalty().getValue();
-        } else if (event.isKillOtherHeroTank()) {
-            score += settings.killOtherHeroTankScore().getValue() * event.getAmount();
-        } else if (event.isKillOtherAITank()) {
-            score += settings.killOtherAITankScore().getValue();
+            return - settings.integer(KILL_YOUR_TANK_PENALTY);
         }
 
-        score = Math.max(0, score);
+        // TODO тут множится количество очков от убийств, надо отключатор в сеттинги выделить
+        if (event.isKillOtherHeroTank()) {
+            return settings.integer(KILL_OTHER_HERO_TANK_SCORE) * event.getAmount();
+        }
+
+        if (event.isKillOtherAITank()) {
+            return settings.integer(KILL_OTHER_AI_TANK_SCORE);
+        }
+
+        return 0;
     }
 
     @Override

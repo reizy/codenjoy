@@ -40,89 +40,73 @@ function runProgram(program, robot) {
 
 // ========================== game setup ==========================
 
-if (typeof game == 'undefined') {
-    game = {};
-    game.demo = true;
-    game.code = 123;
-    game.playerId = 'userId';
-    game.readableName = 'Stiven Pupkin';
-    initLayout = function(game, html, context, transformations, scripts, onLoad) {
+if (typeof setup == 'undefined') {
+    setup = {};
+    setup.demo = true;
+    setup.code = 123;
+    setup.playerId = 'userId';
+    setup.readableName = 'Stiven Pupkin';
+    initLayout = function(setup, html, context, transformations, scripts, onLoad) {
         onLoad();
     }
 }
 
-var gameName = localStorage.getItem('gameType'); // check KEYS constants in register.js
+setup.setupSprites();
 
-var onlyControls = window.location.href.includes("controlsOnly=true");
-if (onlyControls) {
-    game.drawCanvases = false;
-    game.enableHeader = false;
-    game.enableFooter = false;
-    gameName = 'JavaScript';
-} else {
-    game.enableHeader = true;
-    game.enableFooter = true;
-}
-
-if (gameName == 'JavaScript') {
-    game.enableBefunge = false;
-    game.sprites = 'robot';
-} else if (gameName == 'eKids') {
-    game.enableBefunge = true;
-    game.sprites = 'ekids';
-} else if (gameName == 'Befunge') {
-    game.enableBefunge = true;
-    game.sprites = 'robot';
-} else {
-    gameName = 'Contest';
-    game.enableBefunge = false;
-    game.sprites = 'robot';
-    game.onlyLeaderBoard = true;
-}
-
-game.isDrawByOrder = (game.sprites == 'ekids');
-game.enableDonate = false;
-game.enableJoystick = false;
-game.enablePlayerInfo = false;
-game.enablePlayerInfoLevel = false;
-game.enableLeadersTable = false;
-game.enableChat = false;
-game.enableInfo = false;
-game.enableHotkeys = true;
-game.enableForkMe = false;
-game.enableAdvertisement = false;
-game.showBody = false;
-game.debug = false;
+setup.enableDonate = false;
+setup.enableJoystick = false;
+setup.enablePlayerInfo = false;
+setup.enablePlayerInfoLevel = false;
+setup.enableLeadersTable = false;
+setup.enableChat = false;
+setup.enableInfo = false;
+setup.enableHotkeys = true;
+setup.enableForkMe = false;
+setup.enableAdvertisement = false;
+setup.showBody = false;
+setup.debug = false;
 
 // ========================== leaderboard page ==========================
 
 var initHelpLink = function() {
-    if (gameName == 'eKids') {
+    if (setup.gameMode == MODE_EKIDS) {
         $('#help-link').hide();
         return; // TODO написать нормально мануал и убрать это
     }
-    var pageName = gameName.split(' ').join('-').toLowerCase();
-    $('#help-link').attr('href', '/codenjoy-contest/resources/icancode/landing-' + pageName + '.html')
+    var pageName = setup.gameMode.split(' ').join('-').toLowerCase();
+    $('#help-link').attr('href', setup.contextPath + '/resources/icancode/landing-' + pageName + '.html')
 }
 var initAdditionalLink = function() {
-    if (game.onlyLeaderBoard) {
-        $('#additional-link').attr('href', '/codenjoy-contest/resources/user/icancode-servers.zip')
+    if (setup.onlyLeaderBoard) {
+        $('#additional-link').attr('href', setup.contextPath + '/resources/user/icancode-servers.zip')
         $('#additional-link').text('Get client')
     }
 }
+var initLoginLogoutLink = function() {
+    if (!!setup.code) {
+        var link = setup.contextPath + '/process_logout';
+        $('#login-logout-link').attr('href', link);
+        $('#login-logout-link').html('Logout');
+    } else {
+        var link = setup.contextPath + '/login?game=icancode';
+        $('#login-logout-link').attr('href', link);
+        $('#login-logout-link').html('Login');
+    }
+}
 
-game.onBoardAllPageLoad = function(showProgress) {
-    initLayout(game.gameName, 'leaderboard.html', game.contextPath,
+setup.onBoardAllPageLoad = function(showProgress) {
+    initLayout(setup.game, 'leaderboard.html', setup.contextPath,
         null,
         [],
         function() {
             boardAllPageLoad(!!showProgress);
             initHelpLink();
             initAdditionalLink();
+            initLoginLogoutLink();
         });
 }
 
-game.drawBoard = function(drawer) {
+setup.drawBoard = function(drawer) {
     drawer.clear();
     drawer.drawBack();
     drawer.drawLayers();
@@ -147,14 +131,14 @@ game.drawBoard = function(drawer) {
 
 var controller;
 
-if (game.onlyLeaderBoard) {
-    game.onBoardPageLoad = function() {
+if (setup.onlyLeaderBoard) {
+    setup.onBoardPageLoad = function() {
         var showProgress = true;
-        game.onBoardAllPageLoad(showProgress);
+        setup.onBoardAllPageLoad(showProgress);
     }
 } else {
-    game.onBoardPageLoad = function() {
-        initLayout(game.gameName, 'board.html', game.contextPath,
+    setup.onBoardPageLoad = function() {
+        initLayout(setup.game, 'board.html', setup.contextPath,
             null,
             [],
             function() {
@@ -162,11 +146,12 @@ if (game.onlyLeaderBoard) {
                     boardPageLoad();
                     initHelpLink();
                     initAdditionalLink();
+                    initLoginLogoutLink();
                 }
             });
     }
 }
 
-if (game.demo) {
-    game.onBoardPageLoad();
+if (setup.demo) {
+    setup.onBoardPageLoad();
 }

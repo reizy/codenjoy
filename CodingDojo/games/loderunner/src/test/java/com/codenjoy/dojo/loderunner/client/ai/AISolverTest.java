@@ -10,12 +10,12 @@ package com.codenjoy.dojo.loderunner.client.ai;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -23,15 +23,18 @@ package com.codenjoy.dojo.loderunner.client.ai;
  */
 
 
-import com.codenjoy.dojo.services.Direction;
 import com.codenjoy.dojo.loderunner.client.Board;
 import com.codenjoy.dojo.services.Dice;
+import com.codenjoy.dojo.services.Direction;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.algs.DeikstraFindWay;
+import com.codenjoy.dojo.utils.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static com.codenjoy.dojo.services.PointImpl.pt;
 import static org.junit.Assert.assertEquals;
@@ -93,16 +96,16 @@ public class AISolverTest {
                 " ☼  ☼  ☼  ☼  ☼  ☼ \n" +
                 "                  \n" +
                 "                  \n" +
-                " ☼  H++►++*++*  ☼ \n" +
-                "    +             \n" +
-                "    +             \n" +
+                " ☼  H→←►→←.→←.  ☼ \n" +
+                "    ↓             \n" +
+                "    ↑             \n" +
                 " ☼  H  #  #  #  ☼ \n" +
-                "    +             \n" +
-                "    +             \n" +
-                " ☼  H+ *  *  $  ☼ \n" +
-                "    +  +  +  +    \n" +
-                "    +             \n" +
-                " ☼  H++*++*++*  ☼ \n" +
+                "    ↓             \n" +
+                "    ↑             \n" +
+                " ☼  H→ .  .  $  ☼ \n" +
+                "    ↓  ↓  ↓  ↓    \n" +
+                "    ↑             \n" +
+                " ☼  H→←.→←.→←.  ☼ \n" +
                 "                  \n" +
                 "                  \n" +
                 " ☼  ☼  ☼  ☼  ☼  ☼ \n" +
@@ -121,7 +124,7 @@ public class AISolverTest {
                 "☼☼###☼##☼## ☼" +
                 "☼☼###☼$     ☼" +
                 "☼☼☼☼☼☼☼☼☼☼☼☼☼",
-                "[LEFT, UP, UP, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, DOWN, DOWN, DOWN, DOWN, DOWN, DOWN, RIGHT, RIGHT, RIGHT, DOWN, DOWN, LEFT, LEFT, LEFT, LEFT, LEFT]");
+                "[LEFT, UP, UP, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, DOWN, DOWN, DOWN, DOWN, RIGHT, DOWN, DOWN, RIGHT, RIGHT, DOWN, DOWN, LEFT, LEFT, LEFT, LEFT, LEFT]");
 
         assertW("☼☼☼☼☼☼☼☼☼☼" +
                 "☼    H   ☼" +
@@ -137,16 +140,16 @@ public class AISolverTest {
                 " ☼  ☼  ☼  ☼  ☼  ☼  ☼  ☼  ☼  ☼ \n" +
                 "                              \n" +
                 "                              \n" +
-                " ☼  *  *  *  * +H+ *  *  *  ☼ \n" +
-                "    +  +  +  +  +  +  +  +    \n" +
-                "                +             \n" +
-                " ☼  * +*++*++*++H++~++~++~  ☼ \n" +
-                "    +  +              +  +    \n" +
-                "       +                      \n" +
-                " ☼  * +H  #  #  #  #  *  $  ☼ \n" +
-                "    +  +              +  +    \n" +
-                "       +                      \n" +
-                " ☼  *++Y++*++*++*++*++*++*  ☼ \n" +
+                " ☼  .  .  .  . ←H→ .  .  .  ☼ \n" +
+                "    ↓  ↓  ↓  ↓  ↓  ↓  ↓  ↓    \n" +
+                "                ↑             \n" +
+                " ☼  . ←.→←.→←.→←H→←~→←~→←~  ☼ \n" +
+                "    ↓  ↓              ↓  ↓    \n" +
+                "       ↑                      \n" +
+                " ☼  . ←H  #  #  #  #  .  $  ☼ \n" +
+                "    ↓  ↓              ↓  ↓    \n" +
+                "       ↑                      \n" +
+                " ☼  .→←Y→←.→←.→←.→←.→←.→←.  ☼ \n" +
                 "                              \n" +
                 "                              \n" +
                 " ☼  ☼  ☼  ☼  ☼  ☼  ☼  ☼  ☼  ☼ \n" +
@@ -355,39 +358,17 @@ public class AISolverTest {
      * @param expected ожидаемая карта возможных движений из каждой клетки
      */
     private void assertW(String boardString, String expected) {
-        DeikstraFindWay way = new DeikstraFindWay();
         Board board = (Board) new Board().forString(boardString);
         AISolver solver = new AISolver(dice);
         solver.getDirections(board);
-        Map<Point, List<Direction>> possibleWays = solver.getWay().getPossibleWays();
+        Map<Point, List<Direction>> possibleWays = solver.getWay().getBasic().toMap();
 
-        char[][] chars = new char[board.size() * 3][board.size() * 3];
-        for (int x = 0; x < chars.length; x++) {
-            Arrays.fill(chars[x], ' ');
-        }
+        String actual = TestUtils.drawPossibleWays(3,
+                possibleWays,
+                board.size(),
+                pt -> board.getAt(pt).getChar());
 
-        for (int x = 0; x < board.size(); x++) {
-            for (int y = 0; y < board.size(); y++) {
-                int cx = x*3 + 1;
-                int cy = y*3 + 1;
-
-                char ch = board.getAt(x, y).getChar();
-                chars[cx][cy] = (ch == ' ')?'*':ch;
-                for (Direction direction : possibleWays.get(pt(x, y))) {
-                    chars[direction.changeX(cx)][direction.changeY(cy)] = '+';
-                }
-            }
-        }
-
-        StringBuffer buffer = new StringBuffer();
-        for (int x = 0; x < chars.length; x++) {
-            for (int y = 0; y < chars.length; y++) {
-                buffer.append(chars[y][chars.length - 1 - x]);
-            }
-            buffer.append('\n');
-        }
-
-        assertEquals(expected, buffer.toString());
+        assertEquals(expected, actual);
     }
 
     /**
@@ -399,10 +380,11 @@ public class AISolverTest {
     private void assertB(String boardString, Point from, String expected) {
         Board board = (Board) new Board().forString(boardString);
         AISolver solver = new AISolver(dice);
+        DeikstraFindWay.Possible possible = solver.possible(board);
+
         List<Direction> actual = new LinkedList<>();
-        for (Direction direction : Arrays.asList(Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT)) {
-            boolean possible = solver.possible(board).check(board.size(), from, direction);
-            if (possible) {
+        for (Direction direction : Direction.getValues()) {
+            if (possible.check(board.size(), from, direction)) {
                 actual.add(direction);
             }
         }
@@ -417,6 +399,7 @@ public class AISolverTest {
     private void assertC(String boardString, String expected) {
         Board board = (Board) new Board().forString(boardString);
         List<Direction> command = new AISolver(dice).getDirections(board);
+
         assertEquals(expected, command.toString());
     }
 }

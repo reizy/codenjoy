@@ -23,15 +23,13 @@ package com.codenjoy.dojo.hex.model;
  */
 
 
+import com.codenjoy.dojo.hex.services.GameSettings;
 import com.codenjoy.dojo.services.BoardUtils;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.printer.BoardReader;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.codenjoy.dojo.services.PointImpl.pt;
 import static java.util.stream.Collectors.toList;
@@ -44,10 +42,13 @@ public class Hex implements Field {
     private int size;
     private Dice dice;
 
-    public Hex(Level level, Dice dice) {
+    private GameSettings settings;
+
+    public Hex(Level level, Dice dice, GameSettings settings) {
         this.dice = dice;
         walls = level.getWalls();
         size = level.getSize();
+        this.settings = settings;
         players = new LinkedList<>();
     }
 
@@ -108,7 +109,7 @@ public class Hex implements Field {
                         transitions.get(player).add(otherHero);
 
                         otherPlayer.getHeroes().remove(otherHero);
-                        otherPlayer.loose(1);
+                        otherPlayer.lose(1);
                     }
                 }
             }
@@ -184,8 +185,8 @@ public class Hex implements Field {
     }
 
     @Override
-    public Point getFreeRandom() {
-        return BoardUtils.getFreeRandom(size, dice, pt -> isFree(pt));
+    public Optional<Point> freeRandom() {
+        return BoardUtils.freeRandom(size, dice, pt -> isFree(pt));
     }
 
     @Override
@@ -269,7 +270,7 @@ public class Hex implements Field {
 
 
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Hex.this.size;
 
             @Override
@@ -278,12 +279,17 @@ public class Hex implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>() {{
                     addAll(Hex.this.getHeroes());
                     addAll(Hex.this.getWalls());
                 }};
             }
         };
+    }
+
+    @Override
+    public GameSettings settings() {
+        return settings;
     }
 }

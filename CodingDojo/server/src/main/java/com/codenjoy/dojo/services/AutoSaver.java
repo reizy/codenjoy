@@ -23,7 +23,7 @@ package com.codenjoy.dojo.services;
  */
 
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -31,14 +31,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Component
+@RequiredArgsConstructor
 public class AutoSaver extends Suspendable implements Tickable {
 
-    public static final int TICKS = 30;
+    @Value("${game.save.ticks}")
+    private int ticks = 30;
 
     @Value("${game.save.load-on-start}")
     private boolean loadOnStart = true;
 
-    @Autowired private SaveService save;
+    private final SaveService save;
 
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -47,6 +49,10 @@ public class AutoSaver extends Suspendable implements Tickable {
     @Value("${game.save.auto}")
     public void setActive(boolean active) {
         super.setActive(active);
+    }
+
+    public int ticks() {
+        return ticks;
     }
 
     @Override
@@ -63,7 +69,7 @@ public class AutoSaver extends Suspendable implements Tickable {
         }
 
         count++;
-        if (count % TICKS == (TICKS - 1)) {
+        if (count % ticks == (ticks - 1)) {
             // executor.submit потому что sqlite тормозит при сохранении
             executor.submit(() -> save.saveAll());
         }

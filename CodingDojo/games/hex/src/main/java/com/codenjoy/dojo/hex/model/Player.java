@@ -24,6 +24,7 @@ package com.codenjoy.dojo.hex.model;
 
 
 import com.codenjoy.dojo.hex.services.Event;
+import com.codenjoy.dojo.hex.services.GameSettings;
 import com.codenjoy.dojo.services.EventListener;
 import com.codenjoy.dojo.services.Joystick;
 import com.codenjoy.dojo.services.Point;
@@ -31,12 +32,7 @@ import com.codenjoy.dojo.services.Tickable;
 import com.codenjoy.dojo.services.joystick.DirectionActJoystick;
 import com.codenjoy.dojo.services.multiplayer.GamePlayer;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static com.codenjoy.dojo.services.PointImpl.pt;
+import java.util.Optional;
 
 public class Player extends GamePlayer<Hero, Field> implements Tickable {
 
@@ -46,11 +42,11 @@ public class Player extends GamePlayer<Hero, Field> implements Tickable {
     private Heroes heroes;
     private Hero newHero;
     private Elements element;
-    private int loose;
+    private int lose;
     private int win;
 
-    public Player(EventListener listener) {
-        super(listener);
+    public Player(EventListener listener, GameSettings settings) {
+        super(listener, settings);
         alive = false;
         heroes = new Heroes();
     }
@@ -67,8 +63,12 @@ public class Player extends GamePlayer<Hero, Field> implements Tickable {
     @Override
     public void newHero(Field field) {
         this.field = field;
-        Point pt = field.getFreeRandom();
-        Hero hero = new Hero(pt, element);
+        Optional<Point> pt = field.freeRandom();
+        if (pt.isEmpty()) {
+            // TODO вот тут надо как-то сообщить плееру, борде и самому серверу, что нет место для героя
+            throw new RuntimeException("Not enough space for Hero");
+        }
+        Hero hero = new Hero(pt.get(), element);
         hero.init(field);
         heroes.clear();
         heroes.add(hero, this);
@@ -135,7 +135,7 @@ public class Player extends GamePlayer<Hero, Field> implements Tickable {
         if (newHero == hero) {
             boolean remove = heroes.remove(hero);
             if (remove) {
-                loose(1);
+                lose(1);
             }
             newHero = null;
         }
@@ -183,8 +183,8 @@ public class Player extends GamePlayer<Hero, Field> implements Tickable {
         this.element = element;
     }
 
-    public void loose(int count) {
-        loose += count;
+    public void lose(int count) {
+        lose += count;
     }
 
     public void win(int count) {
@@ -192,9 +192,9 @@ public class Player extends GamePlayer<Hero, Field> implements Tickable {
     }
 
     public void fireEvents() {
-        if (loose > 0) {
-            listener.event(new Event(Event.EventEnum.LOOSE, loose));
-            loose = 0;
+        if (lose > 0) {
+            listener.event(new Event(Event.EventEnum.LOSE, lose));
+            lose = 0;
         }
 
         if (win > 0) {

@@ -33,12 +33,12 @@ public class Events {
         return new Events(score);
     }
 
-    public static Events LOOSE() {
+    public static Events LOSE() {
         return new Events();
     }
 
     public enum Type {
-        WIN, LOOSE;
+        WIN, LOSE;
 
     }
     private Type type;
@@ -51,7 +51,7 @@ public class Events {
     }
 
     public Events() {
-        type = Type.LOOSE;
+        type = Type.LOSE;
         this.score = 0;
     }
 
@@ -90,5 +90,11 @@ public class Events {
 
         result = 31 * result + score;
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Event{%s=%s}",
+                type, score);
     }
 }

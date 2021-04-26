@@ -36,8 +36,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @UtilityClass
 public class TestUtils {
@@ -52,7 +51,7 @@ public class TestUtils {
 
     public static Env getPlayerGame(PlayerGames playerGames,
                                     Player player,
-                                    String roomName,
+                                    String room,
                                     Answer<Object> getGame,
                                     MultiplayerType type, 
                                     PlayerSave save, 
@@ -72,16 +71,20 @@ public class TestUtils {
             }
         }
 
-        when(gameType.getMultiplayerType()).thenReturn(type);
-        when(gameType.createGame(anyInt())).thenAnswer(getGame);
+        if (gameType instanceof RoomGameType) {
+            gameType = ((RoomGameType)gameType).getWrapped();
+        }
+
+        when(gameType.getMultiplayerType(any())).thenReturn(type);
+        doAnswer(getGame).when(gameType).createGame(anyInt(), any());
         PrinterFactory printerFactory = mock(PrinterFactory.class);
         when(gameType.getPrinterFactory()).thenReturn(printerFactory);
         when(printerFactory.getPrinter(any(BoardReader.class), any()))
                 .thenAnswer(inv1 -> printer);
-        when(gameType.createPlayer(any(EventListener.class), anyString()))
+        when(gameType.createPlayer(any(EventListener.class), anyString(), any()))
                 .thenAnswer(inv -> gamePlayer);
 
-        PlayerGame playerGame = playerGames.add(player, roomName, save);
+        PlayerGame playerGame = playerGames.add(player, room, save);
         Env result = new Env();
         result.gamePlayer = gamePlayer;
         result.gameType = gameType;

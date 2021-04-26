@@ -28,9 +28,11 @@ import java.util.Map;
 
 public interface GameService {
 
-    List<String> getGameNames();
+    List<String> getGames();
 
-    List<String> getOnlyGameNames();
+    List<String> getRooms();
+
+    List<String> getOnlyGames();
 
     Map<String, List<String>> getSpritesNames();
     
@@ -38,7 +40,14 @@ public interface GameService {
 
     Map<String, List<String>> getSprites();
 
-    GameType getGame(String name);
+    GameType getGameType(String game);
 
-    String getDefaultGame();
+    // TODO из названия как-то неочевидно, что создается рума если ее не существовало раннее
+    GameType getGameType(String game, String room);
+
+    String getDefaultRoom();
+
+    boolean exists(String game);
+
+    String getDefaultProgress(GameType gameType);
 }

@@ -25,6 +25,7 @@ package com.codenjoy.dojo.utils;
 
 import com.codenjoy.dojo.client.AbstractBoard;
 import com.codenjoy.dojo.client.local.LocalGameRunner;
+import com.codenjoy.dojo.services.EventListener;
 import com.codenjoy.dojo.services.*;
 import com.codenjoy.dojo.services.algs.DeikstraFindWay;
 import com.codenjoy.dojo.services.multiplayer.GameField;
@@ -33,16 +34,25 @@ import com.codenjoy.dojo.services.multiplayer.LevelProgress;
 import com.codenjoy.dojo.services.multiplayer.Single;
 import com.codenjoy.dojo.services.printer.CharElements;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
+import com.codenjoy.dojo.services.settings.Settings;
+import com.codenjoy.dojo.utils.events.MockitoJunitTesting;
+import com.codenjoy.dojo.utils.events.Testing;
 import lombok.experimental.UtilityClass;
 
-import java.util.List;
-import java.util.function.BiConsumer;
+import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
+import static com.codenjoy.dojo.services.PointImpl.pt;
+
+import static com.codenjoy.dojo.services.PointImpl.pt;
 
 @UtilityClass
 public class TestUtils {
 
     public static final int COUNT_NUMBERS = 3;
+
+    private static Testing TESTING = null;
 
     public static String injectN(String expected) {
         int size = (int) Math.sqrt(expected.length());
@@ -57,19 +67,141 @@ public class TestUtils {
     public static String inject(String string, int position, String substring) {
         StringBuilder result = new StringBuilder();
         for (int index = 1; index < string.length() / position + 1; index++) {
-            result.append(string.substring((index - 1)*position, index*position)).append(substring);
+            result.append(string, (index - 1)*position, index*position).append(substring);
         }
-        result.append(string.substring((string.length() / position) * position, string.length()));
+        result.append(string.substring((string.length() / position) * position));
         return result.toString();
     }
 
-    public static Game  buildGame(GameType gameType, EventListener listener, PrinterFactory factory) {
-        GameField gameField = gameType.createGame(LevelProgress.levelsStartsFrom1);
-        GamePlayer gamePlayer = gameType.createPlayer(listener, null);
+    public static List<Game> getGames(int players, GameType runner, PrinterFactory factory, Supplier<EventListener> listener) {
+        GameField field = TestUtils.buildField(runner);
+        List<Game> games = new LinkedList<>();
+        for (int i = 0; i < players; i++) {
+            games.add(TestUtils.buildSingle(runner, field, listener.get(), factory));
+        }
+        return games;
+    }
+
+    public static Game buildGame(GameType gameType, EventListener listener, PrinterFactory factory) {
+        GameField gameField = buildField(gameType);
+        return buildSingle(gameType, gameField, listener, factory);
+    }
+
+    public static Game buildSingle(GameType gameType, GameField gameField, EventListener listener, PrinterFactory factory) {
+        Settings settings = gameType.getSettings();
+        GamePlayer gamePlayer = gameType.createPlayer(listener, null, settings);
         Game game = new Single(gamePlayer, factory);
         game.on(gameField);
         game.newGame();
         return game;
+    }
+
+    public static String getWay(String inputBoard,
+                                Function<Character, CharElements> elements,
+                                Function<AbstractBoard, DeikstraFindWay.Possible> possible)
+    {
+        AbstractBoard board = getBoard(elements);
+        board = (AbstractBoard) board.forString(inputBoard);
+
+        Map<Point, List<Direction>> ways = new DeikstraFindWay().getPossibleWays(board.size(), possible.apply(board)).toMap();
+
+        Map<Point, List<Direction>> map = new TreeMap<>();
+        for (Map.Entry<Point, List<Direction>> entry : ways.entrySet()) {
+            List<Direction> value = entry.getValue();
+            if (!value.isEmpty()) {
+                map.put(entry.getKey(), value);
+            }
+        }
+
+        return map.toString().replace("], [", "],\n[");
+    }
+
+    public static AbstractBoard getBoard(Function<Character, CharElements> elements) {
+        return new AbstractBoard() {
+                @Override
+                public CharElements valueOf(char ch) {
+                    return elements.apply(ch);
+                }
+
+                @Override
+                protected int inversionY(int y) {
+                    return size - 1 - y;
+                }
+            };
+    }
+
+    public static String drawPossibleWays(int delta,
+                                          Map<Point, List<Direction>> possibleWays,
+                                          int size,
+                                          Function<Point, Character> getAt)
+    {
+        char[][] chars = new char[size * delta][size * delta];
+        for (int x = 0; x < chars.length; x++) {
+            Arrays.fill(chars[x], ' ');
+        }
+
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
+                int cx = x * delta + 1;
+                int cy = y * delta + 1;
+
+                char ch = getAt.apply(pt(x, y));
+                chars[cx][cy] = (ch == ' ') ? '.' : ch;
+                try {
+                    for (Direction direction : possibleWays.get(pt(x, y))) {
+                        chars[direction.changeX(cx)][direction.changeY(cy)] = directionChar(direction);
+                    }
+                } catch (NullPointerException e) {
+                    // do nothing
+                }
+            }
+        }
+
+        return toString(chars);
+    }
+
+    private static char directionChar(Direction direction) {
+        switch (direction) {
+            case UP: return '↑';
+            case LEFT: return '←';
+            case RIGHT: return '→';
+            case DOWN: return '↓';
+            default: throw new IllegalArgumentException();
+        }
+    }
+
+    public static String drawShortestWay(Point from,
+                                         List<Direction> shortestWay,
+                                         int size,
+                                         Function<Point, Character> getAt)
+    {
+        Map<Point, List<Direction>> map = new HashMap<>();
+
+        Point current = from;
+        while (!shortestWay.isEmpty()) {
+            Direction direction = shortestWay.remove(0);
+            map.put(current, Arrays.asList(direction));
+            current = direction.change(current);
+        }
+
+        return drawPossibleWays(2, map, size, getAt);
+    }
+
+    private static String toString(char[][] chars) {
+        StringBuffer buffer = new StringBuffer();
+        for (int x = 0; x < chars.length; x++) {
+            for (int y = 0; y < chars.length; y++) {
+                buffer.append(chars[y][chars.length - 1 - x]);
+            }
+            buffer.append('\n');
+        }
+
+        return buffer.toString();
+    }
+
+    public static GameField buildField(GameType gameType) {
+        Settings settings = gameType.getSettings();
+        return gameType.createGame(LevelProgress.levelsStartsFrom1, settings);
     }
 
     public static String printWay(String expected,
@@ -105,26 +237,33 @@ public class TestUtils {
      * проверяем порционно, потому что в 'mvn test'
      * не видно на больших данных, где именно отличие и это проблема в отладке
      * @param allFirst true - если проверяем все сразу, false - если сперва порционно тик за тиком
-     * @param assertor так как assertEquals нельзя использовать в prod code, а этот класс нельзя переместить в test и затянуть потом как дупенденси, тут лямбда )
      * @param expectedAll что должно быть
      * @param actualAll что реально пришло
      */
-    public static void assertSmoke(boolean allFirst, BiConsumer<Object, Object> assertor, String expectedAll, String actualAll) {
+    public static void assertSmoke(boolean allFirst, String expectedAll, String actualAll) {
         String[] expected = expectedAll.split(LocalGameRunner.SEP);
         String[] actual = actualAll.split(LocalGameRunner.SEP);
 
         if (allFirst) {
-            assertor.accept(expectedAll, actualAll);
+            assertEquals(expectedAll, actualAll);
         }
 
         for (int i = 0; i < Math.min(expected.length, actual.length); i++) {
-            assertor.accept(expected[i], actual[i]);
+            assertEquals(expected[i], actual[i]);
         }
-        assertor.accept(expected.length, actual.length);
+        assertEquals(expected.length, actual.length);
 
         if (!allFirst) {
-            assertor.accept(expectedAll, actualAll);
+            assertEquals(expectedAll, actualAll);
         }
+    }
+
+    private static void assertEquals(Object o1, Object o2) {
+        if (TESTING == null) {
+            // это тут потому что статика пытается сразу загрузить классы, которых нет
+            TESTING = new MockitoJunitTesting();
+        }
+        TESTING.assertEquals(o1, o2);
     }
 
 }

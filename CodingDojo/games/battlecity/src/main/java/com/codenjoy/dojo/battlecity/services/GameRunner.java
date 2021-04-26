@@ -29,60 +29,50 @@ import com.codenjoy.dojo.battlecity.model.Battlecity;
 import com.codenjoy.dojo.battlecity.model.Elements;
 import com.codenjoy.dojo.battlecity.model.Player;
 import com.codenjoy.dojo.battlecity.model.levels.Level;
-import com.codenjoy.dojo.battlecity.model.levels.LevelImpl;
 import com.codenjoy.dojo.client.ClientBoard;
 import com.codenjoy.dojo.client.Solver;
-import com.codenjoy.dojo.services.*;
+import com.codenjoy.dojo.services.AbstractGameType;
+import com.codenjoy.dojo.services.EventListener;
+import com.codenjoy.dojo.services.PlayerScores;
 import com.codenjoy.dojo.services.multiplayer.GameField;
 import com.codenjoy.dojo.services.multiplayer.GamePlayer;
 import com.codenjoy.dojo.services.multiplayer.MultiplayerType;
 import com.codenjoy.dojo.services.printer.CharElements;
 import com.codenjoy.dojo.services.settings.Parameter;
 
+import static com.codenjoy.dojo.services.round.RoundSettings.Keys.ROUNDS_PLAYERS_PER_ROOM;
+import static com.codenjoy.dojo.services.round.RoundSettings.Keys.ROUNDS_ENABLED;
 import static com.codenjoy.dojo.services.settings.SimpleParameter.v;
 
-public class GameRunner extends AbstractGameType implements GameType {
+public class GameRunner extends AbstractGameType<GameSettings> {
 
-    private GameSettings gameSettings;
-
-    public GameRunner() {
-        gameSettings = getGameSettings();
+    @Override
+    public GameSettings getSettings() {
+        return new GameSettings();
     }
 
     @Override
-    public PlayerScores getPlayerScores(Object score) {
-        return new Scores((Integer) score, gameSettings);
+    public PlayerScores getPlayerScores(Object score, GameSettings settings) {
+        return new Scores(Integer.valueOf(score.toString()), settings);
     }
 
     @Override
-    public GameField createGame(int levelNumber) {
-        Level level = getLevel();
-        Battlecity game = new Battlecity(level.size(), getDice(),
-                gameSettings.spawnAiPrize(),
-                gameSettings.hitKillsAiPrize(),
-                gameSettings.prizeOnField(),
-                gameSettings.prizeWorking(),
-                gameSettings.aiTicksPerShoot(),
-                gameSettings.slipperiness());
+    public GameField createGame(int levelNumber, GameSettings settings) {
+        Level level = settings.level(getDice());
+        Battlecity game = new Battlecity(level.size(), getDice(), settings);
 
         game.addBorder(level.getBorders());
         game.addWall(level.getWalls());
-        game.addAiTanks(level.getAiTanks(
-                gameSettings.aiTicksPerShoot().getValue()));
+        game.addAiTanks(level.getAiTanks());
         game.addRiver(level.getRivers());
         game.addTree(level.getTrees());
         game.addIce(level.getIce());
         return game;
     }
 
-    public Level getLevel() {
-        return new LevelImpl(getMap(), getDice());
-    }
-
     @Override
-    public Parameter<Integer> getBoardSize() {
-        // TODO взять size из другого места
-        return v(getLevel().size());
+    public Parameter<Integer> getBoardSize(GameSettings settings) {
+        return v(settings.level(getDice()).size());
     }
 
     @Override
@@ -106,56 +96,19 @@ public class GameRunner extends AbstractGameType implements GameType {
     }
 
     @Override
-    public MultiplayerType getMultiplayerType() {
-        return MultiplayerType.MULTIPLE;
+    public MultiplayerType getMultiplayerType(GameSettings settings) {
+        if (settings.bool(ROUNDS_ENABLED)) {
+            return MultiplayerType.TEAM.apply(
+                    settings.integer(ROUNDS_PLAYERS_PER_ROOM),
+                    MultiplayerType.DISPOSABLE);
+        } else {
+            return MultiplayerType.MULTIPLE;
+        }
     }
 
     @Override
-    public GamePlayer createPlayer(EventListener listener, String playerId) {
-        return new Player(listener,
-                getDice(),
-                gameSettings.tankTicksPerShoot());
+    public GamePlayer createPlayer(EventListener listener, String playerId, GameSettings settings) {
+        return new Player(listener, settings);
     }
 
-    public String getMap() {
-        return
-                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
-                "☼ ¿    ¿    ¿        ¿    ¿    ¿ ☼" +
-                "☼                                ☼" +
-                "☼  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ☼" +
-                "☼ #╬╬╬# ╬╬╬ #╬╬╬##╬╬╬# ╬╬╬ #╬╬╬# ☼" +
-                "☼ #╬╬╬# ╬╬╬ #╬╬╬##╬╬╬# ╬╬╬ #╬╬╬# ☼" +
-                "☼ #╬╬╬# ╬╬╬ #╬╬╬##╬╬╬# ╬╬╬ #╬╬╬# ☼" +
-                "☼ #╬╬╬# ╬╬╬ #╬╬╬☼☼╬╬╬# ╬╬╬ #╬╬╬# ☼" +
-                "☼ #╬╬╬# ╬╬╬ #╬╬╬☼☼╬╬╬# ╬╬╬ #╬╬╬# ☼" +
-                "☼ #╬╬╬# ╬╬╬ #╬╬╬  ╬╬╬# ╬╬╬ #╬╬╬# ☼" +
-                "☼ #╬╬╬# ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬ #╬╬╬# ☼" +
-                "☼ #╬╬╬# ╬╬╬            ╬╬╬ #╬╬╬# ☼" +
-                "☼  ╬╬╬  ╬╬╬   ~    ~   ╬╬╬  ╬╬╬  ☼" +
-                "☼  ~~~       ╬╬╬  ╬╬╬       ~~~  ☼" +
-                "☼  ~~        ╬╬╬  ╬╬╬        ~~  ☼" +
-                "☼     ╬╬╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬╬╬     ☼" +
-                "☼☼☼   ╬╬╬╬╬            ╬╬╬╬╬   ☼☼☼" +
-                "☼ ~~          %%%%%%          ~~ ☼" +
-                "☼           ~╬╬╬%%╬╬╬~           ☼" +
-                "☼  ╬╬╬  ╬╬╬ ~╬╬╬%%╬╬╬~ ╬╬╬  ╬╬╬  ☼" +
-                "☼  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ╬╬╬  ☼" +
-                "☼  ╬╬╬~ ╬╬╬  ╬╬╬╬╬╬╬╬  ╬╬╬ ~╬╬╬  ☼" +
-                "☼  ╬╬╬  ╬╬╬  ╬╬╬╬╬╬╬╬  ╬╬╬  ╬╬╬  ☼" +
-                "☼ %╬╬╬  ╬╬╬  ╬╬╬%%╬╬╬  ╬╬╬  ╬╬╬% ☼" +
-                "☼ %╬╬╬  ╬╬╬~ ╬╬╬%%╬╬╬ ~╬╬╬  ╬╬╬% ☼" +
-                "☼ %╬╬╬  ╬╬╬~ ╬╬╬%%╬╬╬ ~╬╬╬  ╬╬╬% ☼" +
-                "☼ %╬╬╬ ~╬╬╬  ╬╬╬%%╬╬╬  ╬╬╬~ ╬╬╬% ☼" +
-                "☼ %╬╬╬  %%%            %%%  ╬╬╬% ☼" +
-                "☼  ╬╬╬  %%%    ~~~~    %%%  ╬╬╬  ☼" +
-                "☼  ╬╬╬  %%%  ╬╬╬╬╬╬╬╬  %%%  ╬╬╬  ☼" +
-                "☼  ╬╬╬       ╬╬╬╬╬╬╬╬       ╬╬╬  ☼" +
-                "☼            ╬╬    ╬╬            ☼" +
-                "☼  %%%%%%    ╬╬    ╬╬    %%%%%%  ☼" +
-                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
-    }
-
-    protected GameSettings getGameSettings() {
-        return new OptionGameSettings(settings, getDice());
-    }
 }

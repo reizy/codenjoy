@@ -30,20 +30,33 @@ import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Direction;
 import com.codenjoy.dojo.services.Point;
 
-import static com.codenjoy.dojo.services.StateUtils.filterOne;
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.AI_TICKS_PER_SHOOT;
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.TICKS_STUCK_BY_RIVER;
 
 public class AITank extends Tank {
 
     public static final int MAX = 10;
-    private final int ticksPerShoot;
+
+    private Dice dice;
     public boolean dontShoot = false;
     private int act;
+    private int count;
 
-    public AITank(Point pt, Direction direction,
-                  int ticksPerShoot, Dice dice)
-    {
-        super(pt, direction, dice, 1);
-        this.ticksPerShoot = ticksPerShoot;
+    public AITank(Point pt, Direction direction, Dice dice) {
+        super(pt, direction);
+        this.dice = dice;
+        this.count = 0;
+        setActive(true);
+        setAlive(true);
+    }
+
+    @Override
+    protected int ticksPerShoot() {
+        return settings().integer(AI_TICKS_PER_SHOOT);
+    }
+
+    public int ticksStuckByRiver() {
+        return settings().integer(TICKS_STUCK_BY_RIVER);
     }
 
     @Override
@@ -54,13 +67,19 @@ public class AITank extends Tank {
         Point pt;
         do {
             pt = direction.change(this);
-
-            // !field.isRiver(pt) потому что мы хотим сделать так, чтобы боты пытались
-            // пройти через речку но не могли - это даст иллюзию, что
-            // они пытаются отстреливаться через воду
-            if (field.isBarrier(pt) && !field.isRiver(pt)) {
+            if (field.isBarrier(pt)) {
                 direction = Direction.random(dice);
             }
+
+            if (count == ticksStuckByRiver()) {
+                direction = Direction.random(dice);
+                count = 0;
+            }
+
+            if (field.isRiver(pt)) {
+                count++;
+            }
+
         } while (field.isBarrier(pt) && c++ < MAX);
 
         moving = true;
@@ -68,21 +87,26 @@ public class AITank extends Tank {
         super.move();
     }
 
+    @Override
+    public void die() {
+        setAlive(false);
+    }
+
     private void shootIfReady() {
         if (dontShoot) {
             return;
         }
 
-        if (act++ % ticksPerShoot == 0) {
+        if (act++ % ticksPerShoot() == 0) {
             act();
         }
     }
 
     @Override
     public Elements state(Player player, Object... alsoAtPoint) {
-        Tree tree = filterOne(alsoAtPoint, Tree.class);
+        Elements tree = player.getHero().treeState(this, alsoAtPoint);
         if (tree != null) {
-            return Elements.TREE;
+            return tree;
         }
 
         if (!isAlive()) {

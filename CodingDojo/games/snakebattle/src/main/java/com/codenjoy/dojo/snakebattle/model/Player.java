@@ -25,18 +25,18 @@ package com.codenjoy.dojo.snakebattle.model;
 
 import com.codenjoy.dojo.services.EventListener;
 import com.codenjoy.dojo.services.round.RoundGamePlayer;
-import com.codenjoy.dojo.services.settings.Parameter;
 import com.codenjoy.dojo.snakebattle.model.board.Field;
 import com.codenjoy.dojo.snakebattle.model.hero.Hero;
+import com.codenjoy.dojo.snakebattle.services.GameSettings;
 
 public class Player extends RoundGamePlayer<Hero, Field> {
 
-    public Player(EventListener listener, Parameter<Boolean> roundsEnabled) {
-        super(listener, roundsEnabled);
+    public Player(EventListener listener, GameSettings settings) {
+        super(listener, settings);
     }
 
     public Hero getHero() {
-        return (Hero)hero;
+        return hero;
     }
 
     public void setHero(Hero hero) {
@@ -44,7 +44,13 @@ public class Player extends RoundGamePlayer<Hero, Field> {
         hero.setPlayer(this);
     }
 
-    public void newHero(Field field) {
+    public void start(int round, Object startEvent) {
+        super.start(round, startEvent);
+        // hero.clear(); TODO test me
+    }
+
+    @Override
+    public void initHero(Field field) {
         hero = new Hero(field.getFreeStart());
         hero.setPlayer(this);
         hero.init(field);

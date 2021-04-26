@@ -27,22 +27,19 @@ import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Direction;
 import com.codenjoy.dojo.services.Point;
 
-public class AITankPrize extends AITank {
+import static com.codenjoy.dojo.battlecity.services.GameSettings.Keys.*;
 
-    private final int CHANGE_EVERY_TICKS = 4;
-    private final int vitality;
+public class AITankPrize extends AITank {
 
     private int damage;
     private int ticks;
+    private boolean wounded;
 
-    public AITankPrize(Point pt, Direction direction,
-                       int vitality, int ticksPerShoot,
-                       Dice dice)
-    {
-        super(pt, direction, ticksPerShoot, dice);
-        this.vitality = vitality;
+    public AITankPrize(Point pt, Direction direction, Dice dice) {
+        super(pt, direction, dice);
         damage = 0;
         ticks = 0;
+        wounded = false;
     }
 
     @Override
@@ -50,21 +47,35 @@ public class AITankPrize extends AITank {
         super.tick();
 
         ticks++;
+        wounded = false;
     }
 
     public void kill(Bullet bullet) {
         damage++;
+        wounded = true;
 
-        if (damage == vitality) {
+        if (damage == vitality()) {
             damage = 0;
             super.kill(bullet);
         }
     }
 
+    private int vitality() {
+        return settings().integer(KILL_HITS_AI_PRIZE);
+    }
+
+    private int changeEveryTicks() {
+        return settings().integer(AI_PRIZE_SPRITE_CHANGE_TICKS);
+    }
+
     @Override
     public Elements subState() {
-        if (ticks % CHANGE_EVERY_TICKS == 0) {
+        if (ticks % changeEveryTicks() == 0 && !wounded) {
             return Elements.AI_TANK_PRIZE;
+        }
+
+        if (wounded) {
+            return Elements.BANG;
         }
         return null;
     }

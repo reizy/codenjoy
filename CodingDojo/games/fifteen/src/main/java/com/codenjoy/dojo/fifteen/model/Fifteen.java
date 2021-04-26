@@ -23,9 +23,11 @@ package com.codenjoy.dojo.fifteen.model;
  */
 
 import com.codenjoy.dojo.fifteen.services.Events;
+import com.codenjoy.dojo.fifteen.services.GameSettings;
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.printer.BoardReader;
+import com.codenjoy.dojo.services.settings.SettingsReader;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -34,6 +36,7 @@ import java.util.List;
 import static com.codenjoy.dojo.services.PointImpl.pt;
 
 public class Fifteen implements Field {
+
     private final Level level;
     private List<Player> players;
 
@@ -43,10 +46,13 @@ public class Fifteen implements Field {
     private int size;
     private Dice dice;
 
-    public Fifteen(Level level, Dice dice) {
+    private GameSettings settings;
+
+    public Fifteen(Level level, Dice dice, GameSettings settings) {
         this.level = level;
         this.dice = dice;
         size = level.getSize();
+        this.settings = settings;
         players = new LinkedList<>();
     }
 
@@ -136,7 +142,7 @@ public class Fifteen implements Field {
 
     @Override
     public BoardReader reader() {
-        return new BoardReader() {
+        return new BoardReader<Player>() {
             private int size = Fifteen.this.size;
 
             @Override
@@ -145,7 +151,7 @@ public class Fifteen implements Field {
             }
 
             @Override
-            public Iterable<? extends Point> elements() {
+            public Iterable<? extends Point> elements(Player player) {
                 return new LinkedList<Point>() {{
                     addAll(Fifteen.this.getWalls());
                     addAll(Fifteen.this.getHeroes());
@@ -153,5 +159,10 @@ public class Fifteen implements Field {
                 }};
             }
         };
+    }
+
+    @Override
+    public GameSettings settings() {
+        return settings;
     }
 }

@@ -24,7 +24,8 @@ package com.codenjoy.dojo.web.controller;
 
 
 import com.codenjoy.dojo.services.PlayerInfo;
-import com.codenjoy.dojo.services.SemifinalSettings;
+import com.codenjoy.dojo.services.round.RoundSettingsImpl;
+import com.codenjoy.dojo.services.semifinal.SemifinalSettingsImpl;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -37,12 +38,14 @@ public class AdminSettings {
     private List<PlayerInfo> players;
     private List<Object> games;
     private List<Object> parameters;
-    private String gameName;
+    private String game;
+    private String room;
     private String generateNameMask;
     private String generateCount;
-    private String generateRoomName;
+    private String generateRoom;
     private String timerPeriod;
     private String progress;
-    private SemifinalSettings semifinal;
+    private SemifinalSettingsImpl semifinal;
+    private RoundSettingsImpl rounds;
 
 }

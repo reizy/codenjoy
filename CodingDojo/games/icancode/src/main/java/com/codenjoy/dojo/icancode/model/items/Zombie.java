@@ -23,15 +23,24 @@ package com.codenjoy.dojo.icancode.model.items;
  */
 
 import com.codenjoy.dojo.icancode.model.*;
+import com.codenjoy.dojo.icancode.services.GameSettings;
 import com.codenjoy.dojo.services.Direction;
+import com.codenjoy.dojo.services.Point;
 import com.codenjoy.dojo.services.Tickable;
+
+import static com.codenjoy.dojo.icancode.model.Elements.*;
+import static com.codenjoy.dojo.icancode.services.GameSettings.Keys.WALK_EACH_TICKS;
 
 public class Zombie extends FieldItem implements Tickable {
 
-    public static int WALK_EACH_TICKS = 2;
-    public static ZombieBrain BRAIN = new ZombieBrain();
+    private ZombieBrain brain;
     private int ticks = 0;
     private boolean die;
+
+    public Zombie(Elements gender) {
+        super(gender);
+        die = false;
+    }
 
     public Zombie(boolean gender) {
         super(getElement(gender));
@@ -39,13 +48,13 @@ public class Zombie extends FieldItem implements Tickable {
     }
 
     private static Elements getElement(boolean gender) {
-        return (gender) ? Elements.MALE_ZOMBIE : Elements.FEMALE_ZOMBIE;
+        return (gender) ? MALE_ZOMBIE : FEMALE_ZOMBIE;
     }
 
     @Override
     public Elements state(Player player, Object... alsoAtPoint) {
         if (die) {
-            return Elements.ZOMBIE_DIE;
+            return ZOMBIE_DIE;
         }
         return super.state(player, alsoAtPoint);
     }
@@ -54,38 +63,44 @@ public class Zombie extends FieldItem implements Tickable {
     public void action(Item item) {
         if (die) return;
 
-        HeroItem heroItem = getIf(item, HeroItem.class);
-        if (heroItem == null) {
-            return;
-        }
-
-        Hero hero = heroItem.getHero();
-        if (!hero.isFlying()) {
-            removeFromCell();
-            hero.dieOnZombie();
-        }
+        check(item, HeroItem.class)
+                .ifPresent(heroItem -> {
+                    Hero hero = heroItem.getHero();
+                    if (!hero.isFlying()) {
+                        removeFromCell();
+                        hero.dieOnZombie();
+                    }
+                });
     }
 
     @Override
     public void tick() {
         if (die) {
+            Cell cell = getCell();
             removeFromCell();
-        }
-
-        if (ticks++ % WALK_EACH_TICKS == 0) {
+            field.dropNextPerk().ifPresent(cell::add);
             return;
         }
 
-        Direction direction = BRAIN.whereToGo(getCell(), field);
+        if (ticks++ % field.settings().integer(WALK_EACH_TICKS) == 0) {
+            return;
+        }
+
+        Direction direction = brain().whereToGo(getCell(), field);
         if (direction == null) {
             return;
         }
-        int newX = direction.changeX(getCell().getX());
-        int newY = direction.changeY(getCell().getY());
+        Point to = direction.change(getCell());
 
-        if (!field.isBarrier(newX, newY) && !field.isAt(newX, newY, Zombie.class)) {
-            field.move(this, newX, newY);
+        if (!field.isBarrier(to) && !field.isAt(to, Zombie.class)) {
+            field.move(this, to);
         }
+    }
+
+    private ZombieBrain brain() {
+        return (brain == null)
+                ? brain = ((GameSettings)field.settings()).zombieBrain()
+                : brain;
     }
 
     public void die() {

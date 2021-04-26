@@ -24,8 +24,11 @@ package com.codenjoy.dojo.web.controller;
 
 import com.codenjoy.dojo.CodenjoyContestApplication;
 import com.codenjoy.dojo.config.meta.SQLiteProfile;
+import com.codenjoy.dojo.services.GameType;
 import com.codenjoy.dojo.services.Player;
+import com.codenjoy.dojo.services.PlayerService;
 import com.codenjoy.dojo.services.dao.Registration;
+import com.codenjoy.dojo.services.room.RoomService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,6 +48,7 @@ import java.util.HashMap;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -69,6 +73,12 @@ public class RegistrationValidatorTest {
     @SpyBean
     private Validator commonValidator;
 
+    @Autowired
+    private RoomService roomService;
+
+    @Autowired
+    private PlayerService playerService;
+
     private Player player;
     private Errors errors;
 
@@ -80,8 +90,12 @@ public class RegistrationValidatorTest {
             setReadableName("Readable Name");
             setPassword("12345");
             setPasswordConfirmation("12345");
-            setGameName("dummy");
+            setGame("dummy");
+            setRoom("room");
         }};
+        roomService.removeAll();
+        roomService.create("room", mock(GameType.class));
+        playerService.openRegistration();
     }
 
     @Test
@@ -103,6 +117,30 @@ public class RegistrationValidatorTest {
         
         // then
         assertError(errors, "readableName", "registration.nickname.invalid");
+    }
+
+    @Test
+    public void shouldValidateRoomRegistrationIsActive() {
+        // given
+        roomService.setOpened("room", false);
+
+        // when
+        validator.validate(player, errors);
+
+        // then
+        assertError(errors, "email", "registration.room.closed");
+    }
+
+    @Test
+    public void shouldValidateSiteRegistrationIsActive() {
+        // given
+        playerService.closeRegistration();
+
+        // when
+        validator.validate(player, errors);
+
+        // then
+        assertError(errors, "email", "registration.closed");
     }
 
     @Test
@@ -175,13 +213,13 @@ public class RegistrationValidatorTest {
         // given
         String invalidGameName = "invalidGame";
         when(commonValidator.isGameName(invalidGameName, Validator.CANT_BE_NULL)).thenReturn(false);
-        player.setGameName(invalidGameName);
+        player.setGame(invalidGameName);
 
         // when
         validator.validate(player, errors);
 
         // then
-        assertError(errors, "gameName", "registration.game.invalid");
+        assertError(errors, "game", "registration.game.invalid");
     }
 
     private void assertError(Errors errors, String field, String expectedCode) {
