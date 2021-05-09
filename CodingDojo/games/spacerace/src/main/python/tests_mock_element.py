@@ -29,3 +29,5 @@ class ElementMock:
     name: str = ""
     id: int = 0
 
+    def __hash__(self):
+        return hash(self.char)

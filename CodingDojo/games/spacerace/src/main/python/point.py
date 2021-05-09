@@ -28,6 +28,9 @@ class Point:
     x:int
     y:int
 
+    def __hash__(self):
+        return self.y*200 + self.x
+
 @dataclass
 class PointExtended(Point):
     element: object

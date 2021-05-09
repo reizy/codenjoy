@@ -39,8 +39,12 @@ class Elements(Enum):
         self.id = id
         self.char = char
 
+    def __hash__(self):
+        return hash(self.char)
+        
     def getByChar(char):
         return __Elements__[char]
+
 
 __Elements__ = dict(map(lambda element : (element.char, element), Elements))
 

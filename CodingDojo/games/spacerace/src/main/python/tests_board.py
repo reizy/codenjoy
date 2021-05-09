@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-
 ###
 # #%L
 # Codenjoy - it's a dojo-like platform from developers to developers.
@@ -31,14 +30,26 @@ from elements import Elements
 from neighbour_type import NeighbourType
 
 class BoardTests(unittest.TestCase):
-
+ 
+    def test_get_all_extend_ShouldReturnValidDictionary(self):
+        boardString = "1234"
+        expected = dict([
+            (Point(0,0), ElementMock("1")),
+            (Point(1,0), ElementMock("2")),
+            (Point(0,1), ElementMock("3")),
+            (Point(1,1), ElementMock("4"))
+        ])
+        board = Board(boardString, lambda c: ElementMock(c))
+        actual = board.get_all_extend()
+        self.assertDictEqual(actual, expected)
+   
     def test_get_size_ShouldReturnCorrectValue(self):
         board = Board("123456789", None) 
-        self.assertEqual(board.get_size(), 3)
+        self.assertEqual(board.size, 3)
         board = Board("1234", None)
-        self.assertEqual(board.get_size(), 2)
+        self.assertEqual(board.size, 2)
         board = Board("1234123\n412341234", None)
-        self.assertEqual(board.get_size(), 4)
+        self.assertEqual(board.size, 4)
 
     def test_find_all_ShouldReturnRightCoordinates(self):
         board = Board("123456789", None) 
@@ -54,7 +65,7 @@ class BoardTests(unittest.TestCase):
         #multiple elements in arrayList
         point578 = board.find_all( *[ElementMock("5"), ElementMock("7"), ElementMock("8")])
         self.assertEqual(point578, [Point(1, 1), Point(0,2), Point(1, 2)])
-   
+
     def test_getAt_ShouldReturnRightValue(self):
         boardString ="    5    "
         noneElement = ElementMock(" ", "None", 0)
@@ -87,7 +98,6 @@ class BoardTests(unittest.TestCase):
         self.assertTrue(board.is_at(1, 1, fiveElement, oneElement))
         self.assertFalse(board.is_at(1, 1, oneElement))
 
-
     def test_get_barriers_ShouldReturnBariers(self):
         boardString = "111   353"
         oneElement = ElementMock("1")
@@ -103,7 +113,7 @@ class BoardTests(unittest.TestCase):
         self.assertTrue(board.is_barrier_at(0, 0))
         self.assertTrue(board.is_barrier_at(2, 2))
         self.assertFalse(board.is_barrier_at(1, 1))
-    
+   
     def test_is_at_ShouldReturnCorrectValue(self):
         boardString = "*7*7 7*7*"
         board = Board(boardString, Elements.getByChar, Elements.WALL)

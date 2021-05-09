@@ -38,9 +38,18 @@ class Board:
         self._createElement = createElementFunction
         self._barierElements = barierElements
 
-    def get_size(self):
+    @property
+    def size(self):
         ''' Returns board size '''
         return self._size
+
+    def get_all_extend(self):
+        result = []
+        for i, c in enumerate(self._string):
+            point = self._strpos2pt(i)
+            element = self._createElement(c)
+            result.append((point, element))
+        return dict(result)
 
     def find_all(self, *elements):
         """ Returns the list of points for the given element type."""
