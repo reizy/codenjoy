@@ -31,9 +31,5 @@ class Point:
     def __hash__(self):
         return self.y*200 + self.x
 
-@dataclass
-class PointExtended(Point):
-    element: object
-
 if __name__ == '__main__':
     raise RuntimeError("This module is not expected to be ran from CLI")

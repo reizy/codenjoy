@@ -35,7 +35,7 @@ class Solver:
     def __init__(self):
         ''' initialize globals here '''
 
-    def get(self, board):
+    def get(self, board: Board):
         """ The method that should be implemented."""
         _command = Direction.STOP.withAct()
         return _command
