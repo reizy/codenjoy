@@ -57,9 +57,12 @@ class Api:
             Logger.logCommand(answer)
             ws.send(answer.to_string())
             
-        except any as error:
-            Logger.log("Error: ", error)
-            ws.send("")
+        except Exception as error:
+            Logger.log("Error occured:", error)
+
+        except:
+            Logger.log("Undefined error")
+
 
     def connect(self):
         Logger.log('Opening...')
