@@ -91,7 +91,6 @@ var Board = function (board, Element, pointClass) {
         return board.charAt(xyl.getLength(x, y));
     };
 
-
     var isNear = function (x, y, element) {
         if (pt(x, y).isOutOf(size)) {
             return false;
@@ -108,7 +107,6 @@ var Board = function (board, Element, pointClass) {
 
     var size = boardSize();
     var xyl = new LengthToXY(size);
-
 
     var isBarrierAt = function (x, y) {
         return isAt(x, y, Element.BORDER);
@@ -136,7 +134,6 @@ var Board = function (board, Element, pointClass) {
         return result;
     };
 
-
     var getBorders = function () {
         return findAll(Element.WALL);
     };
@@ -162,11 +159,8 @@ var Board = function (board, Element, pointClass) {
         isNear: isNear, //public boolean isNear(int x, int y, Element element);
         isBarrierAt: isBarrierAt, // public boolean isBarrierAt(int x, int y);
 
-
         toString: toString
     }
-
-
 };
 
 if(module) module.exports = Board;
