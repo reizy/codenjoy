@@ -27,7 +27,7 @@ from elements import Elements
 
 class ElementsTests(unittest.TestCase):
     def test_getByShar_ShouldMapToTheRightElement_WhenCharDefined(self):
-        chars = " 7☺☻+0♣x*☼"
+        chars = " 7☺☻+0♣x*$☼"
         elements = list(Elements)
         self.assertEqual(len(chars), len(elements),"Chars and elements counts are not equal")
         sequence = list(zip(chars, elements))

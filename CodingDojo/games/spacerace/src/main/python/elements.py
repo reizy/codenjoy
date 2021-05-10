@@ -33,7 +33,8 @@ class Elements(Enum):
     BOMB        = (6, '♣')
     EXPLOSION   = (7, 'x')
     BULLET      = (8, '*')
-    WALL        = (9, '☼')
+    GOLD        = (9, '$')
+    WALL        = (10,'☼')
 
     def __init__(self, id: int, char: str):
         self.id = id

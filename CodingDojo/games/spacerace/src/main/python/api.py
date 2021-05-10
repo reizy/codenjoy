@@ -56,13 +56,12 @@ class Api:
             answer = self.solver.get(board)
             Logger.logCommand(answer)
             ws.send(answer.to_string())
-            
+ 
         except Exception as error:
-            Logger.log("Error occured:", error)
+            Logger.log("Error occured:", error)    
 
         except:
             Logger.log("Undefined error")
-
 
     def connect(self):
         Logger.log('Opening...')

@@ -24,7 +24,7 @@
 
 import unittest
 import random
-from point import Point, PointExtended
+from point import Point
 
 class PointTests(unittest.TestCase):
     
@@ -46,28 +46,6 @@ class PointTests(unittest.TestCase):
         self.assertNotEqual(pointA, pointC)
         self.assertNotEqual(pointA, pointD)
         self.assertNotEqual(pointD, pointC)
-
-class PointExtendTest(unittest.TestCase):
-    def test_dataAccess(self):
-        x = random.randint(-2e6, 2e6)
-        y = random.randint(-2e6, 2e6)
-        point = PointExtended(x, y, "element")
-        self.assertEqual(point.x, x)
-        self.assertEqual(point.y, y)
-        self.assertEqual(point.element, "element")
-
-    def test_equivalence(self):
-        x = random.randint(-2e6, 2e6)
-        y = random.randint(-2e6, 2e6)
-        pointA = PointExtended(x, y, "element")
-        pointB = Point(x, y)
-        pointC = Point(x + 1, y)
-        pointD = Point(x, y + 1)
-        self.assertNotEqual(pointB, pointA)
-        self.assertNotEqual(pointA, pointC)
-        self.assertNotEqual(pointA, pointD)
-        self.assertNotEqual(pointD, pointC)
-
 
 if __name__=="__main__":
     unittest.main()
