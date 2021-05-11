@@ -21,12 +21,13 @@
  */
 namespace SpaceRace.Api
 {
-    public enum RacerAction
+    public enum Actions
     {
         Left,
         Right,
         Up,
         Down,
+        Stop,
         Act,
         Suicide
     }

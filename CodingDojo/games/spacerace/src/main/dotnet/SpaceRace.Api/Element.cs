@@ -21,17 +21,18 @@
  */
 namespace SpaceRace.Api
 {
-    public enum BoardElement : short
+    public enum Element : short
     {
-        None = (short)' ',
-        Wall = (short) '☼',
-        Hero = (short)'☺',
-        OtherHero = (short)'☻',
-        DeadHero = (short)'+',
+        None       = (short)' ',
+        Wall       = (short)'☼',
+        Hero       = (short)'☺',
+        OtherHero  = (short)'☻',
+        DeadHero   = (short)'+',
         BulletPack = (short)'7',
-        Stone = (short)'0',
-        Bomb = (short)'♣',
-        Explosion = (short)'x',
-        Bullet = (short)'*'
+        Stone      = (short)'0',
+        Bomb       = (short)'♣',
+        Explosion  = (short)'x',
+        Gold       = (short)'$',
+        Bullet     = (short)'*'
     }
 }

@@ -25,18 +25,17 @@ namespace SpaceRace
 {
     class Program
     {
-        const string ServerAddress = "http://localhost:8080/codenjoy-contest/board/player/t5x9j3cku9wfmxnu67jl?code=2863467953483706002&game=spacerace";
-
         static void Main(string[] args)
         {
             // creating and starting a bot instance
-            using var bot = new MySpaceRaceBot(ServerAddress);
+            var bot = new Solver();
+            using var api = new Api.Api(Configuration.ConnectionString, Configuration.ReconnectionIntervalMS, bot);
 
             // waiting for any key
             Console.ReadKey();
 
             // on any key - asking AI client to stop.
-            bot.InitiateExit();
+            api.Stop();
         }
     }
 }

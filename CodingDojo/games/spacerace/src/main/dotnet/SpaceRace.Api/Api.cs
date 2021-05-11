@@ -22,21 +22,25 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using SpaceRace.Api.Interfaces;
 using WebSocketSharp;
 
 namespace SpaceRace.Api
 {
-    public abstract class SpaceRaceBase : IDisposable
+    public class Api : IDisposable
     {
-        private const string ResponsePrefix = "board=";
-        private const int ReconnectionIntervalMs = 1000;
+        private const string BoardPrefix = "board=";
+        private readonly ISolver _solver;
+        private readonly int _reconnectionIntervalMs = 1000;
         private int _tryCount = 0;
         private readonly WebSocket _socket;
-        protected readonly CancellationTokenSource _cts;
+        private readonly CancellationTokenSource _cts;
         private bool _disposedValue;
 
-        protected SpaceRaceBase(string url)
+        public Api(string url, int reconnectionInterval, ISolver solver)
         {
+            _reconnectionIntervalMs = reconnectionInterval;
+            _solver = solver;
             var _server = url.Replace("http", "ws").Replace("board/player/", "ws?user=").Replace("?code=", "&code=");
             _cts = new CancellationTokenSource();
             _socket = new WebSocket(_server);
@@ -47,6 +51,11 @@ namespace SpaceRace.Api
             _ = ConnectWithReconnectionAsync(_cts.Token);
         }
 
+        public void Stop()
+        {
+            _cts.Cancel();
+        }
+        
         /// <summary>
         /// Starts connecting to server with retries.
         /// On success connection continues to check connection status.
@@ -64,7 +73,7 @@ namespace SpaceRace.Api
                         Connect();
                     }
 
-                    await Task.Delay(ReconnectionIntervalMs, ct);
+                    await Task.Delay(_reconnectionIntervalMs, ct);
                 }
             });
         }
@@ -100,35 +109,19 @@ namespace SpaceRace.Api
             {
                 var response = e.Data;
 
-                if (!response.StartsWith(ResponsePrefix))
+                if (!response.StartsWith(BoardPrefix))
                 {
                     Console.WriteLine("Something strange is happening on the server... Response:\n{0}", response);
                     _cts.Cancel();
                 }
                 else
                 {
-                    var boardString = response.Substring(ResponsePrefix.Length);
+                    var boardString = response.Substring(BoardPrefix.Length);
 
-                    var action = DoMove(new GameBoard(boardString));
+                    var command = _solver.Get(new Board(boardString));
 
-                    ((WebSocket)sender).Send(action);
+                    ((WebSocket)sender).Send(command.ToString());
                 }
-            }
-        }
-
-        protected abstract string DoMove(GameBoard gameBoard);
-
-        protected static string RacerActionToString(RacerAction action)
-        {
-            switch (action)
-            {
-                case RacerAction.Left: return "left";
-                case RacerAction.Right: return "right";
-                case RacerAction.Up: return "up";
-                case RacerAction.Down: return "down";
-                case RacerAction.Act: return "act";
-                case RacerAction.Suicide: return "act(0)";
-                default: return "stop";
             }
         }
 

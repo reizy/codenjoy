@@ -25,9 +25,9 @@ using System.Linq;
 
 namespace SpaceRace.Api
 {
-    public class GameBoard
+    public class Board
     {
-        public GameBoard(string boardString)
+        public Board(string boardString)
         {
             BoardString = boardString.Replace("\n", "");
         }
@@ -41,30 +41,30 @@ namespace SpaceRace.Api
         /// </summary>
         /// <param name="elements"></param>
         /// <returns></returns>
-        public List<BoardPoint> FindAll(params BoardElement[] elements) =>
-            EnumeratePoints(new HashSet<BoardElement>(elements))
+        public List<Point> FindAll(params Element[] elements) =>
+            EnumeratePoints(new HashSet<Element>(elements))
             .ToList();
 
         /// <summary>
         /// Returns the point where your hero is.
         /// </summary>
-        public BoardPoint GetMyPosition() => EnumeratePoints(BoardElement.Hero).Single();
+        public Point GetMyPosition() => EnumeratePoints(Element.Hero).Single();
 
         /// <summary>
-        /// Returns a BoardElement object at coordinates x,y.
+        /// Returns a Element object at coordinates x,y.
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        public BoardElement GetAt(int x, int y) => (BoardElement)BoardString[GetShiftByPoint(x, y)];
+        public Element GetAt(int x, int y) => (Element)BoardString[GetShiftByPoint(x, y)];
 
         /// <summary>
-        /// Returns True if BoardElement is at x,y coordinates.
+        /// Returns True if Element is at x,y coordinates.
         /// </summary>
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="element"></param>
         /// <returns></returns>
-        public bool HasElementAt(int x, int y, BoardElement element)
+        public bool HasElementAt(int x, int y, Element element)
         {
             if (IsOutOfBoard(x, y))
             {
@@ -80,37 +80,37 @@ namespace SpaceRace.Api
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public bool IsBarrierAt(int x, int y) => HasElementAt(x, y, BoardElement.Wall);
+        public bool IsBarrierAt(int x, int y) => HasElementAt(x, y, Element.Wall);
 
         /// <summary>
         /// Returns False if your hero still alive.
         /// </summary>
         /// <returns></returns>
-        public bool IsHeroDead() => BoardString.Contains((char)BoardElement.DeadHero);
+        public bool IsHeroDead() => BoardString.Contains((char)Element.DeadHero);
 
         /// <summary>
         /// Return the list of points for other heroes.
         /// </summary>
         /// <returns></returns>
-        public List<BoardPoint> GetEnemyPositions() => EnumeratePoints(BoardElement.OtherHero).ToList();
+        public List<Point> GetEnemyPositions() => EnumeratePoints(Element.OtherHero).ToList();
 
         /// <summary>
         /// Returns the list of points for other heroes.
         /// </summary>
         /// <returns></returns>
-        public List<BoardPoint> GetOtherHeroPositions() => EnumeratePoints(BoardElement.OtherHero).ToList();
+        public List<Point> GetOtherHeroPositions() => EnumeratePoints(Element.OtherHero).ToList();
 
         /// <summary>
         /// Returns the list of walls element Points.
         /// </summary>
         /// <returns></returns>
-        public List<BoardPoint> GetWallPositions() => EnumeratePoints(BoardElement.Wall).ToList();
+        public List<Point> GetWallPositions() => EnumeratePoints(Element.Wall).ToList();
 
         /// <summary>
         /// Returns the list of barriers Points.
         /// </summary>
         /// <returns></returns>
-        public List<BoardPoint> GetBarriers() => EnumeratePoints(BoardElement.Wall).ToList();
+        public List<Point> GetBarriers() => EnumeratePoints(Element.Wall).ToList();
 
         /// <summary>
         /// Check if near exists element of chosen type.
@@ -119,12 +119,12 @@ namespace SpaceRace.Api
         /// <param name="y"></param>
         /// <param name="element"></param>
         /// <returns></returns>
-        public bool IsNearToElement(int x, int y, BoardElement element)
+        public bool IsNearToElement(int x, int y, Element element)
         {
             if (IsOutOfBoard(x, y))
                 return false;
 
-            return EnumerateNeighbors(new BoardPoint(x, y))
+            return EnumerateNeighbors(new Point(x, y))
                 .Any(neighbor => HasElementAt(neighbor, element));
         }
 
@@ -134,7 +134,7 @@ namespace SpaceRace.Api
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public bool HasEnemyAt(int x, int y) => HasElementAt(x, y, BoardElement.OtherHero);
+        public bool HasEnemyAt(int x, int y) => HasElementAt(x, y, Element.OtherHero);
 
         /// <summary>
         /// Returns True if other hero exists in current point.
@@ -142,7 +142,7 @@ namespace SpaceRace.Api
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public bool HasOtherHeroAt(int x, int y) => HasElementAt(x, y, BoardElement.OtherHero);
+        public bool HasOtherHeroAt(int x, int y) => HasElementAt(x, y, Element.OtherHero);
 
         /// <summary>
         /// Returns True if wall exists in current point.
@@ -150,7 +150,7 @@ namespace SpaceRace.Api
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public bool HasWallAt(int x, int y) => HasElementAt(x, y, BoardElement.Wall);
+        public bool HasWallAt(int x, int y) => HasElementAt(x, y, Element.Wall);
 
         /// <summary>
         /// Counts the number of occurrences of element nearby.
@@ -159,12 +159,12 @@ namespace SpaceRace.Api
         /// <param name="y"></param>
         /// <param name="element"></param>
         /// <returns></returns>
-        public int GetCountElementsNearToPoint(int x, int y, BoardElement element)
+        public int GetCountElementsNearToPoint(int x, int y, Element element)
         {
             if (IsOutOfBoard(x, y))
                 return 0;
 
-            return EnumerateNeighbors(new BoardPoint(x, y))
+            return EnumerateNeighbors(new Point(x, y))
                 .Count(neighbor => HasElementAt(neighbor, element));
         }
 
@@ -176,7 +176,7 @@ namespace SpaceRace.Api
             }
         }
 
-        private IEnumerable<BoardPoint> EnumerateNeighbors(BoardPoint point)
+        private IEnumerable<Point> EnumerateNeighbors(Point point)
         {
             yield return point.ShiftLeft();
             yield return point.ShiftRight();
@@ -184,27 +184,27 @@ namespace SpaceRace.Api
             yield return point.ShiftBottom();
         }
 
-        private IEnumerable<BoardPoint> EnumeratePoints(BoardElement element) => Enumerable
+        private IEnumerable<Point> EnumeratePoints(Element element) => Enumerable
             .Range(0, BoardString.Length)
-            .Where(i => element == (BoardElement)BoardString[i])
+            .Where(i => element == (Element)BoardString[i])
             .Select(GetPointByShift);
 
-        private IEnumerable<BoardPoint> EnumeratePoints(HashSet<BoardElement> elements) => Enumerable
+        private IEnumerable<Point> EnumeratePoints(HashSet<Element> elements) => Enumerable
             .Range(0, BoardString.Length)
-            .Where(i => elements.Contains((BoardElement)BoardString[i]))
+            .Where(i => elements.Contains((Element)BoardString[i]))
             .Select(GetPointByShift);
 
-        private bool HasElementAt(int x, int y, IEnumerable<BoardElement> elements)
+        private bool HasElementAt(int x, int y, IEnumerable<Element> elements)
             => elements.Any(elem => HasElementAt(x, y, elem));
 
-        private bool HasElementAt(BoardPoint point, params BoardElement[] elements)
+        private bool HasElementAt(Point point, params Element[] elements)
         {
             return elements.Any(elem => HasElementAt(point.X, point.Y, elem));
         }
 
         private int GetShiftByPoint(int x, int y) => y * Size + x;
 
-        private BoardPoint GetPointByShift(int shift) => new BoardPoint(shift % Size, shift / Size);
+        private Point GetPointByShift(int shift) => new Point(shift % Size, shift / Size);
 
         private bool IsOutOfBoard(int x, int y) => x >= Size || y >= Size || x < 0 || y < 0;
     }
