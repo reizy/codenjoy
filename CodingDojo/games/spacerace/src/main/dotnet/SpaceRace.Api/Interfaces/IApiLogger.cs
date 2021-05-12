@@ -21,8 +21,9 @@
  */
 namespace SpaceRace.Api.Interfaces
 {
-    public interface ISolver
+    public interface IApiLogger : ILogger
     {
-        IDirection Get(Board board);
+        void LogBoard(Board board);
+        void LogResult(IDirection direction);
     }
 }

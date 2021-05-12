@@ -20,6 +20,7 @@
  * #L%
  */
 using System;
+using SpaceRace.Api;
 
 namespace SpaceRace
 {
@@ -28,8 +29,13 @@ namespace SpaceRace
         static void Main(string[] args)
         {
             // creating and starting a bot instance
-            var bot = new Solver();
-            using var api = new Api.Api(Configuration.ConnectionString, Configuration.ReconnectionIntervalMS, bot);
+            var logger = new Logger();
+            var bot = new Solver(logger);
+            using var api = new Api.Api(
+                Configuration.ConnectionString, 
+                Configuration.ReconnectionIntervalMS, 
+                bot,
+                logger);
 
             // waiting for any key
             Console.ReadKey();

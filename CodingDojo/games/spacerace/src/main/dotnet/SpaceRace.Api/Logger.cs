@@ -19,10 +19,29 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-namespace SpaceRace.Api.Interfaces
+using System;
+using SpaceRace.Api.Interfaces;
+
+namespace SpaceRace.Api
 {
-    public interface ISolver
+    public class Logger : IApiLogger
     {
-        IDirection Get(Board board);
+        public void Log(params object[] messages)
+        {
+            foreach (var message in messages)
+            {
+                Console.WriteLine($"{message}");
+            }
+        }
+
+        public void LogBoard(Board board)
+        {
+            Console.WriteLine($"{board}");
+        }
+
+        public void LogResult(IDirection direction)
+        {
+            Console.WriteLine($"{direction}");
+        }
     }
 }

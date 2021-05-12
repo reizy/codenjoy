@@ -22,19 +22,37 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace SpaceRace.Api
 {
     public class Board
     {
+        private Dictionary<Point, Element> _boardAsDictionary = null; 
+        
         public Board(string boardString)
         {
             BoardString = boardString.Replace("\n", "");
+            Size = (int) Math.Sqrt(BoardString.Length);
         }
 
         public string BoardString { get; }
 
-        public int Size => (int)Math.Sqrt(BoardString.Length);
+        public int Size { get; }
+
+        /// <summary>
+        /// Transform game board to dictionary Point -> Element. Useable to LINQ and lists manipulations
+        /// </summary>
+        /// <returns>board as a dictionary</returns>
+        public Dictionary<Point, Element> GetAllExtend()
+        {
+            return _boardAsDictionary ?? (_boardAsDictionary = Enumerable
+                .Range(0, BoardString.Length)
+                .ToDictionary(
+                    GetPointByShift,
+                    i => (Element) BoardString[i]
+                ));
+        }
 
         /// <summary>
         /// Returns the list of points for the given element type.
@@ -168,12 +186,17 @@ namespace SpaceRace.Api
                 .Count(neighbor => HasElementAt(neighbor, element));
         }
 
-        public void PrintBoard()
+        public override string ToString()
         {
+            var sb = new StringBuilder();
+            sb.Append("Board:\n");
             for (int i = 0; i < Size; i++)
             {
-                Console.WriteLine(BoardString.Substring(i * Size, Size));
+                sb.Append(BoardString.Substring(i * Size, Size));
+                sb.Append("\n");
             }
+
+            return sb.ToString();
         }
 
         private IEnumerable<Point> EnumerateNeighbors(Point point)

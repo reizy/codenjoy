@@ -31,15 +31,18 @@ namespace SpaceRace
     /// </summary>
     internal class Solver : ISolver
     {
+        private ILogger Logger { get; }
+
+        public Solver(ILogger logger)
+        {
+            Logger = logger;
+        }
+        
         /// <summary>
         /// Called each game tick to make decision what to do (next move)
         /// </summary>
         public IDirection Get(Board board)
         {
-            //Just print current state (board) to console
-            Console.Clear();
-            board.PrintBoard();
-
             //TODO: Implement your logic here
             Random random = new Random(Environment.TickCount);
             var movements = new List<IDirection>()
