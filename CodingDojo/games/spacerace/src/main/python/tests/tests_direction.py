@@ -24,6 +24,8 @@
 
 import unittest
 import random
+from util_import import set_imports
+set_imports()
 from direction import Direction
 from point import Point
 

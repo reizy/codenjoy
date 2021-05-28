@@ -1,10 +1,8 @@
-#! /usr/bin/env python3
-
 ###
 # #%L
 # Codenjoy - it's a dojo-like platform from developers to developers.
 # %%
-# Copyright (C) 2018 Codenjoy
+# Copyright (C) 2018 - 2021 Codenjoy
 # %%
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as
@@ -21,20 +19,24 @@
 # <http://www.gnu.org/licenses/gpl-3.0.html>.
 # #L%
 ###
+from logger import Logger
+from form import Form
+from cancel_token import CancellationToken
 
-import unittest
-from tests_board import BoardTests
-from tests_configuration import ConfigurationTests
-from tests_direction import DirectionTests
-from tests_elements import ElementsTests
-from tests_point import PointTests
+class CompositeLogger:
+    def __init__(self, token: CancellationToken) -> None:
+        self.logger = Logger()
+        self.form = Form(token)
+        self.form.show()
 
-testsSuite = unittest.TestSuite()
-testsSuite.addTests(unittest.makeSuite(BoardTests))
-testsSuite.addTests(unittest.makeSuite(ConfigurationTests))
-testsSuite.addTests(unittest.makeSuite(DirectionTests))
-testsSuite.addTests(unittest.makeSuite(ElementsTests))
-testsSuite.addTests(unittest.makeSuite(PointTests))
+    def log(self, *args):
+        self.logger.log(*args)
+        self.form.log(*args)
 
-runner = unittest.TextTestRunner(verbosity=2)
-runner.run(testsSuite)
+    def log_board(self,board):
+        self.logger.log_board(board)
+        self.form.log_board(board)
+
+    def log_command(self, command):
+        self.logger.log_command(command)
+        self.form.log_direction(command)

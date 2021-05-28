@@ -1,10 +1,8 @@
-#! /usr/bin/env python3
-
 ###
 # #%L
 # Codenjoy - it's a dojo-like platform from developers to developers.
 # %%
-# Copyright (C) 2018 Codenjoy
+# Copyright (C) 2018 - 2021 Codenjoy
 # %%
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as
@@ -21,14 +19,10 @@
 # <http://www.gnu.org/licenses/gpl-3.0.html>.
 # #L%
 ###
+import os,sys,inspect
 
-class Logger:
-    def log(self, *args):
-        for arg in args:
-            print(arg)
-
-    def log_board(self,board):
-        print(board.to_string())
-
-    def log_command(self, command):
-        print(command.to_string())
+def set_imports():
+    currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    parentdir = os.path.dirname(currentdir)
+    if not sys.path.__contains__(parentdir):
+        sys.path.insert(0,parentdir) 

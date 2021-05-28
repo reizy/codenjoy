@@ -21,22 +21,34 @@
 # <http://www.gnu.org/licenses/gpl-3.0.html>.
 # #L%
 ###
-from enum import Enum
 
-class NeighbourType(Enum):
-    ''' 
-      X   X 
-        O
-      X   X
-    '''
-    CROSS = 1     
+import unittest
+import random
+from util_import import set_imports
+set_imports()
+from point import Point
+
+
+class PointTests(unittest.TestCase):
     
-    ''' 
-        X
-      X O X
-        X
-    '''
-    DIAMOND = 2
+    def test_dataAccess(self):
+        x = random.randint(-2e6, 2e6)
+        y = random.randint(-2e6, 2e6)
+        point = Point(x, y)
+        self.assertEqual(point.x, x)
+        self.assertEqual(point.y, y)
 
-if __name__ == "__main__":
-    raise RuntimeError("This module is not expected to be ran from CLI")
+    def test_equivalence(self):
+        x = random.randint(-2e6, 2e6)
+        y = random.randint(-2e6, 2e6)
+        pointA = Point(x, y)
+        pointB = Point(x, y)
+        pointC = Point(x + 1, y)
+        pointD = Point(x, y + 1)
+        self.assertEqual(pointA, pointB)
+        self.assertNotEqual(pointA, pointC)
+        self.assertNotEqual(pointA, pointD)
+        self.assertNotEqual(pointD, pointC)
+
+if __name__=="__main__":
+    unittest.main()

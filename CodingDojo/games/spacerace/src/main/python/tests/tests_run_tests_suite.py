@@ -22,11 +22,21 @@
 # #L%
 ###
 
-class CallBack:
+import unittest
+from tests_board import BoardTests
+from tests_configuration import ConfigurationTests
+from tests_direction import DirectionTests
+from tests_elements import ElementsTests
+from tests_point import PointTests
+from assets_tests import AssetsTests
 
-    def __init__(self, obj, method):
-        self._obj = obj
-        self._method = method
+testsSuite = unittest.TestSuite()
+testsSuite.addTests(unittest.makeSuite(BoardTests))
+testsSuite.addTests(unittest.makeSuite(ConfigurationTests))
+testsSuite.addTests(unittest.makeSuite(DirectionTests))
+testsSuite.addTests(unittest.makeSuite(ElementsTests))
+testsSuite.addTests(unittest.makeSuite(PointTests))
+testsSuite.addTests(unittest.makeSuite(AssetsTests))
 
-    def __call__(self, *args):
-        self._method(self._obj, *args)
+runner = unittest.TextTestRunner(verbosity=2)
+runner.run(testsSuite)

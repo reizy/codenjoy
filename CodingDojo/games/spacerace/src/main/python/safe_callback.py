@@ -22,16 +22,21 @@
 # #L%
 ###
 
-import unittest
-from configuration import Configuration
+from logger import Logger
 
-class ConfigurationTests(unittest.TestCase):
+logger = Logger()
 
-    def test_connectionString_ShouldBeStr(self):
-        self.assertIsInstance(Configuration().connectionString, str)
     
-    def test_connectionTimeout_ShouldBeInt(self):
-        self.assertIsInstance(Configuration().connectionTimeout, int)
 
-if __name__ == "__main__":
-    unittest.main()
+def safe_callback():
+    def wrapper(func):
+        def execute(*args):
+            try:
+                func(*args)
+            except Exception as ex:
+                logger.log(str(ex))
+            except:
+                pass
+        return execute   
+    return wrapper
+

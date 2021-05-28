@@ -32,9 +32,10 @@ from direction import Direction
 class Solver:
     """ This class should contain the movement generation algorithm."""
 
-    def __init__(self):
+    def __init__(self, logger):
         ''' initialize globals here '''
-
+        self.logger = logger
+        
     def get(self, board: Board):
         """ The method that should be implemented."""
         _command = Direction.STOP.withAct()

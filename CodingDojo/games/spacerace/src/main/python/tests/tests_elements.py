@@ -23,6 +23,8 @@
 ###
 
 import unittest
+from util_import import set_imports
+set_imports()
 from elements import Elements
 
 class ElementsTests(unittest.TestCase):

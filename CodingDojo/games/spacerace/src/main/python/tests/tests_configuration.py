@@ -23,29 +23,17 @@
 ###
 
 import unittest
-import random
-from point import Point
+from util_import import set_imports
+set_imports()
+from configuration import Configuration
 
-class PointTests(unittest.TestCase):
+class ConfigurationTests(unittest.TestCase):
+
+    def test_connectionString_ShouldBeStr(self):
+        self.assertIsInstance(Configuration().connectionString, str)
     
-    def test_dataAccess(self):
-        x = random.randint(-2e6, 2e6)
-        y = random.randint(-2e6, 2e6)
-        point = Point(x, y)
-        self.assertEqual(point.x, x)
-        self.assertEqual(point.y, y)
+    def test_connectionTimeout_ShouldBeInt(self):
+        self.assertIsInstance(Configuration().connectionTimeout, int)
 
-    def test_equivalence(self):
-        x = random.randint(-2e6, 2e6)
-        y = random.randint(-2e6, 2e6)
-        pointA = Point(x, y)
-        pointB = Point(x, y)
-        pointC = Point(x + 1, y)
-        pointD = Point(x, y + 1)
-        self.assertEqual(pointA, pointB)
-        self.assertNotEqual(pointA, pointC)
-        self.assertNotEqual(pointA, pointD)
-        self.assertNotEqual(pointD, pointC)
-
-if __name__=="__main__":
+if __name__ == "__main__":
     unittest.main()

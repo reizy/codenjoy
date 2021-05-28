@@ -22,12 +22,13 @@
 ###
 
 import unittest
+from util_import import set_imports
+set_imports()
 
 from tests_mock_element import ElementMock
 from point import Point
 from board import Board
 from elements import Elements
-from neighbour_type import NeighbourType
 
 class BoardTests(unittest.TestCase):
  
@@ -113,26 +114,6 @@ class BoardTests(unittest.TestCase):
         self.assertTrue(board.is_barrier_at(0, 0))
         self.assertTrue(board.is_barrier_at(2, 2))
         self.assertFalse(board.is_barrier_at(1, 1))
-   
-    def test_is_at_ShouldReturnCorrectValue(self):
-        boardString = "*7*7 7*7*"
-        board = Board(boardString, Elements.getByChar, Elements.WALL)
-        self.assertTrue(board.is_near(1, 1, [NeighbourType.DIAMOND], Elements.getByChar("7")))
-        self.assertTrue(board.is_near(1, 1, [NeighbourType.CROSS], Elements.getByChar("*")))
-        self.assertTrue(board.is_near(1, 1, [NeighbourType.DIAMOND], Elements.getByChar("*"), Elements.getByChar("7")))
-        self.assertTrue(board.is_near(1, 1, [NeighbourType.CROSS], Elements.getByChar("*"), Elements.getByChar("7")))
-        self.assertFalse(board.is_near(1, 1, [NeighbourType.DIAMOND], Elements.getByChar("*")))
-        self.assertFalse(board.is_near(1, 1, [NeighbourType.CROSS], Elements.getByChar("7")))
-        self.assertTrue(board.is_near(1, 1, [NeighbourType.DIAMOND, NeighbourType.CROSS], Elements.getByChar("*")))
-        self.assertFalse(board.is_near(1, 1, [NeighbourType.DIAMOND, NeighbourType.CROSS]))
-
-    def test_count_near_ShouldReturnCorrectValue(self):
-        boardString = "123456789"
-        board = Board(boardString, lambda c: ElementMock(c))
-        self.assertEqual(board.count_near(1, 1, [NeighbourType.DIAMOND], ElementMock("2")), 1)
-        self.assertEqual(board.count_near(1, 1, [NeighbourType.CROSS], ElementMock("2")), 0)
-        self.assertEqual(board.count_near(1, 1, [NeighbourType.DIAMOND, NeighbourType.CROSS], ElementMock("2")), 1)
-        self.assertEqual(board.count_near(1, 1, [NeighbourType.CROSS], ElementMock("1"), ElementMock("2"),ElementMock("3")), 2)
-
+  
 if __name__ == "__main__":
     unittest.main()
