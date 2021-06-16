@@ -1,0 +1,65 @@
+﻿/*-
+ * #%L
+ * Codenjoy - it's a dojo-like platform from developers to developers.
+ * %%
+ * Copyright (C) 2018 - 2021 Codenjoy
+ * %%
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/gpl-3.0.html>.
+ * #L%
+ */
+const CellType = require("./Enums/CellType");
+const Cell = require("./Models/cell");
+
+class BoardStringParser {
+    characterToCellType = [];
+
+    constructor() {
+        for (let cellTypeKey in CellType) {
+            this.characterToCellType[CellType[cellTypeKey]] = cellTypeKey;
+        }
+    }
+
+    /**
+     * @param {string} boardString
+     * @return {Cell[]}
+     */
+    parse(boardString) {
+        const boardSize = Math.sqrt(boardString.length);
+
+        if (boardSize % 1 !== 0) {
+            throw "The map is not square";
+        }
+
+        const cells = [];
+        for (let coordinateY = 0; coordinateY < boardSize; coordinateY++) {
+            for (let coordinateX = 0; coordinateX < boardSize; coordinateX++) {
+                const cellChar = boardString[coordinateY * boardSize + coordinateX];
+                const cell = new Cell(
+                    cellChar in this.characterToCellType
+                        ? this.characterToCellType[cellChar]
+                        : CellType.Unknown,
+                    coordinateX,
+                    coordinateY
+                );
+
+                cells.push(cell);
+            }
+        }
+
+        return cells;
+    }
+}
+
+module.exports = BoardStringParser;
