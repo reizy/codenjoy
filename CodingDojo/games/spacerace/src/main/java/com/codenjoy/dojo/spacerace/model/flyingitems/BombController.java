@@ -38,8 +38,10 @@ import com.codenjoy.dojo.spacerace.services.Events;
 
 public class BombController extends FlyingItemController<Bomb> {
 
+    public static final int APPEAR_PERIOD = 4;
+
     public BombController(Spacerace game, List<Bomb> container, List<Explosion> explosions) {
-        super(game, (x) -> new Bomb(x, game.size()), container, Events.DESTROY_BOMB, explosions, 4);
+        super(game, (x) -> new Bomb(x, game.size()), container, Events.DESTROY_BOMB, explosions, APPEAR_PERIOD);
     }
 
     @Override

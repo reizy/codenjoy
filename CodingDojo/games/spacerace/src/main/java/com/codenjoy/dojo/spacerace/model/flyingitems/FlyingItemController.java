@@ -64,6 +64,7 @@ public abstract class FlyingItemController<T extends FlyingItem> {
     public void create(List<Integer> emptyFrontPoints) {
         counter++;
         if (counter >= appearPeriod) {
+            counter = 0;
             if (emptyFrontPoints.size() == 0) {
                 throw new RuntimeException("Извините не нашли пустого места");
             }
@@ -72,9 +73,9 @@ public abstract class FlyingItemController<T extends FlyingItem> {
             if (i == -1)
                 return;
             Integer x = emptyFrontPoints.remove(i);
-            T newItem = supplier.apply(x + 1);
+            T newItem = supplier.apply(x);
             container.add(newItem);
-            counter = 0;
+
 
         }
     }

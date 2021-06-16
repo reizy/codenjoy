@@ -35,8 +35,10 @@ import com.codenjoy.dojo.spacerace.services.Events;
 
 public class StoneController extends FlyingItemController<Stone> {
 
+    public static final int APPEAR_PERIOD = 3;
+
     public StoneController(Spacerace game, List<Stone> container, List<Explosion> explosions) {
-        super(game, (x) -> new Stone(x, game.size()), container, Events.DESTROY_STONE, explosions, 3);
+        super(game, (x) -> new Stone(x, game.size()), container, Events.DESTROY_STONE, explosions, APPEAR_PERIOD);
     }
 
     @Override
