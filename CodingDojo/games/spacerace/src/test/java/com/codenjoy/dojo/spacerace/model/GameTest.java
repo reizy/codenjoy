@@ -143,7 +143,13 @@ public class GameTest {
 
         charger = new BulletCharger(settings);
     }
+    private void newBulletPackForHeroWithGivenTimer(int i) {
+        SettingsReader settings = new GameSettings()
+                .integer(TICKS_TO_RECHARGE, i)
+                .integer(BULLETS_COUNT, 10);
 
+        charger = new BulletCharger(settings);
+    }
     @Test
     public void shouldNoBulletsAfterFireWithEmptyBulletCharger() {
 
@@ -245,7 +251,63 @@ public class GameTest {
                 "☼   ☼");
     }
 
+    @Test
+    public void shouldRecargeByTimer() {
 
+        final int timeToRecharge = 15;
+        newBulletPackForHeroWithGivenTimer(timeToRecharge);
+        //Given
+        givenFl("☼   ☼" +
+                "☼   ☼" +
+                "☼ ☺ ☼" +
+                "☼   ☼" +
+                "☼   ☼");
+
+        //when
+        diceNew();
+
+        
+        for (int i = 0; i < timeToRecharge; i++) {
+            hero.act();
+            game.tick();
+            //Then
+            assertE("☼   ☼" +
+                    "☼   ☼" +
+                    "☼ ☺ ☼" +
+                    "☼   ☼" +
+                    "☼   ☼");
+        }
+
+        //then no bullets
+        assertE("☼   ☼" +
+                "☼   ☼" +
+                "☼ ☺ ☼" +
+                "☼   ☼" +
+                "☼   ☼");
+
+        //When
+        hero.act();
+        game.tick(); // a new bullet
+
+        //then
+        assertE("☼   ☼" +
+                "☼ * ☼" +
+                "☼ ☺ ☼" +
+                "☼   ☼" +
+                "☼   ☼");
+
+        //When
+        hero.act();
+        game.tick(); // no new bullet
+
+        //then
+        assertE("☼ * ☼" +
+                "☼   ☼" +
+                "☼ ☺ ☼" +
+                "☼   ☼" +
+                "☼   ☼");
+
+    }
 
     // есть карта со мной
     @Test
@@ -1070,6 +1132,100 @@ public class GameTest {
                 "☼    ☼" +
                 "☼    ☼" +
                 "☼  + ☼" +
+                "☼    ☼");
+    }
+    @Test
+    public void shouldNoJumpOverStone() {
+        // given
+        givenFl("☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼  ☺ ☼" +
+                "☼    ☼");
+
+        diceNew();
+        game.tick();
+        game.tick();
+        diceNew(2);
+        game.tick();
+        game.tick();
+
+        // then
+        assertE("☼    ☼" +
+                "☼  0 ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼  ☺ ☼" +
+                "☼    ☼");
+
+        game.tick();
+        game.tick();
+
+        // then
+        assertE("☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼  0 ☼" +
+                "☼  ☺ ☼" +
+                "☼    ☼");
+
+        hero.up();
+        game.tick();
+
+        // then
+        assertE("☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼  + ☼" +
+                "☼    ☼" +
+                "☼    ☼");
+    }
+    @Test
+    public void shouldNoGoOnStone() {
+        // given
+        givenFl("☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼  ☺ ☼" +
+                "☼    ☼");
+
+        diceNew();
+        game.tick();
+        game.tick();
+        diceNew(1);
+        game.tick();
+        game.tick();
+
+        // then
+        assertE("☼    ☼" +
+                "☼ 0  ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼  ☺ ☼" +
+                "☼    ☼");
+
+        game.tick();
+        game.tick();
+        game.tick();
+        // then
+        assertE("☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼ 0☺ ☼" +
+                "☼    ☼");
+
+        hero.left();
+        game.tick();
+
+        // then
+        assertE("☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼    ☼" +
+                "☼ +  ☼" +
                 "☼    ☼");
     }
 
