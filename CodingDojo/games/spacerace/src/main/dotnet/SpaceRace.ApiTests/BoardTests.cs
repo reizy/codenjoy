@@ -54,6 +54,40 @@ namespace SpaceRace.Api.Tests
 
             board.GetAllExtend().Should().BeEquivalentTo(expectedResult);
         }
+        [TestMethod()]
+        public void FindAllAllTest()
+        {
+
+            var boardRepresentation = new Dictionary<Point, Element>
+            {
+                {new Point(0, 0), Element.Wall},
+                {new Point(1, 0), Element.None},
+                {new Point(2, 0), Element.OtherHero},
+                {new Point(0, 1), Element.Wall},
+                {new Point(1, 1), AutoFixture.Create<Element>()},
+                {new Point(2, 1), Element.Bomb},
+                {new Point(0, 2), Element.Wall},
+                {new Point(1, 2), Element.OtherHero},
+                {new Point(2, 2), Element.Stone}
+            };
+
+            var expectedWalls = boardRepresentation
+                .Where(x => x.Value == Element.Wall)
+                .Select(x => x.Key).ToList();
+
+            var expectedBombsAndStones = boardRepresentation
+                .Where(x => x.Value == Element.Bomb || x.Value == Element.Stone)
+                .Select(x => x.Key).ToList();
+            
+            var boardString = string.Concat(boardRepresentation.Values.Select(x => (char)x));
+
+            var board = new Board(boardString);
+            
+            board.FindAll(Element.Wall)
+                .Should().BeEquivalentTo(expectedWalls);
+            board.FindAll(Element.Stone, Element.Bomb)
+                .Should().BeEquivalentTo(expectedBombsAndStones);
+        }
 
         [TestMethod()]
         public void BoardTest()

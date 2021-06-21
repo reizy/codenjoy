@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using SpaceRace.Api;
 using SpaceRace.Api.Interfaces;
+using System.Linq;
 
 namespace SpaceRace
 {
@@ -44,16 +45,36 @@ namespace SpaceRace
         public IDirection Get(Board board)
         {
             //TODO: Implement your logic here
+
+            // board examples
+            Logger.Log("Board size: " + board.Size);
+            var allExtend = board.GetAllExtend();
+            var otherHerroes = allExtend.Where(extendedPoint => extendedPoint.Value == Element.OtherHero);
+            var otherHeroesString = otherHerroes
+                .Select(extendedPoint => $"{{X:{extendedPoint.Key.X}, Y:{extendedPoint.Key.Y}}}").Aggregate((x, s) => s + " ," + x);
+            Logger.Log("Other heroes on coordinates: " + otherHeroesString);
+
+            var bombsAndStones = board.FindAll(Element.Bomb, Element.Stone);
+            Logger.Log("Bombs and stones number: " + bombsAndStones.Count);
+
+            var me = board.FindAll(Element.Hero);
+            if (me.Count > 0)
+            {
+                Logger.Log($"Me on coordinates: {{X:{me[0].X}, Y:{me[0].Y} }}");
+                var meIfMoveLeft = Direction.LEFT.Change(me[0]); // point left to the hero
+            }
+
+
+            // direction examples
             Random random = new Random(Environment.TickCount);
             var movements = new List<IDirection>()
             {
                 Direction.LEFT, Direction.RIGHT, Direction.DOWN, Direction.UP
             };
-            
-            var action = movements[random.Next(0,4)];
-            if (random.Next(0, 1) == 1) action = action.WithAct();
+            var action = movements[random.Next(0, 4)];
+
+            if (random.Next(0, 100) > 50 ) action = action.WithAct();
             return action;
         }
-
     }
 }

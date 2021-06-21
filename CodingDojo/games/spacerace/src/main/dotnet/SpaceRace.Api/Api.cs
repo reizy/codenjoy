@@ -38,13 +38,13 @@ namespace SpaceRace.Api
         private readonly CancellationTokenSource _cts;
         private bool _disposedValue;
 
-        public Api(string url, int reconnectionInterval, ISolver solver, IApiLogger logger)
+        public Api(string url, int reconnectionInterval, ISolver solver, IApiLogger logger, CancellationTokenSource cts)
         {
             _reconnectionIntervalMs = reconnectionInterval;
             _solver = solver;
             _logger = logger;
             var _server = url.Replace("http", "ws").Replace("board/player/", "ws?user=").Replace("?code=", "&code=");
-            _cts = new CancellationTokenSource();
+            _cts = cts;
             _socket = new WebSocket(_server); 
             // _socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             // _socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Default;
