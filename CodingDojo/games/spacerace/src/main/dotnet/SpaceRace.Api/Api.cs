@@ -121,9 +121,17 @@ namespace SpaceRace.Api
 
                     var board = new Board(boardString);
                     _logger.LogBoard(board);
-                    var command = _solver.Get(board);
-                    _logger.LogResult(command);
-                    ((WebSocket)sender).Send(command.ToString());
+                    try
+                    {
+                        var command = _solver.Get(board);
+                        _logger.LogResult(command);
+                        ((WebSocket) sender).Send(command.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Log("Exception occurred:", ex);
+                        ((WebSocket) sender).Send("");
+                    }
                 }
             }
         }
