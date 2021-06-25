@@ -44,6 +44,8 @@ var Solver =function (Direction, Element, logger) {
             if(me.length > 0){
                 logger.log("Me on coordinates: {X:" + me[0].getX() + ", Y:" + me[0].getY() + "}");
             }
+            var meIfMoveLeft = me[0].createAt(Direction.LEFT); // point left to the hero
+ 
 
             // direction examples
             var directions = [Direction.UP, Direction.LEFT, Direction.RIGHT, Direction.DOWN];
