@@ -1,4 +1,4 @@
-﻿namespace SpaceRace
+﻿namespace SpaceRace.Player
 {
     public class Configuration
     {

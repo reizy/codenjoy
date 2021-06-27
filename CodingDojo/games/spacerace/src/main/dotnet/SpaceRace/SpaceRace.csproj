@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SpaceRace.Api\SpaceRace.Api.csproj" />
+    <ProjectReference Include="..\SpaceRace.Player\SpaceRace.Player.csproj" />
     <ProjectReference Include="..\Spacerace.UI\SpaceRace.UI.csproj" />
   </ItemGroup>
 

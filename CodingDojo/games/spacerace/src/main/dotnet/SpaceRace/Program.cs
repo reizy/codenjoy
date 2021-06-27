@@ -25,6 +25,7 @@ using System.Threading;
 using System.Windows.Forms;
 using SpaceRace.Api;
 using SpaceRace.Api.Interfaces;
+using SpaceRace.Player;
 using SpaceRace.UI;
 
 namespace SpaceRace

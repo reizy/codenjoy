@@ -19,18 +19,19 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SpaceRace.Api;
 using SpaceRace.Api.Interfaces;
-using System.Linq;
 
-namespace SpaceRace
+namespace SpaceRace.Player
 {
     /// <summary>
     /// This is SpaceRaceAI client demo.
     /// </summary>
-    internal class Solver : ISolver
+    public class Solver : ISolver
     {
         private ILogger Logger { get; }
 
